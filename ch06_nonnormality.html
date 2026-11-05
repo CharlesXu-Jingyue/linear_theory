@@ -1,0 +1,1019 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>6 Non-normality and pseudospectra · Linear Theory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap">
+<link rel="stylesheet" href="assets/lt.css">
+<script src="assets/toc.js"></script>
+<script src="assets/lt.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+</head>
+<body>
+<div class="topbar"><button class="btn" id="lt-menu" type="button" aria-controls="lt-side" aria-expanded="false">Contents</button><span class="topbar-title">6 · Perturbation, non-normality and pseudospectra</span></div>
+<div class="shell">
+<nav class="side" id="lt-side" aria-label="Chapters"></nav>
+<main class="page" id="main" data-chapter="6">
+<div class="content">
+
+<header class="ch-head">
+  <div class="eyebrow">Part II · Linear analysis · Chapter 6</div>
+  <h1 class="ch-title">Perturbation, non-normality and pseudospectra</h1>
+  <p class="ch-lead">A good numerical method returns the exact answer to a slightly different problem, so the useful question is how far answers move when the data move. For linear systems one number, the condition number, bounds that motion. For the eigenvalues of a non-normal matrix the answer can be enormous, and the same mechanism lets the solutions of a stable linear differential equation grow by large factors before they decay; pseudospectra and the numerical range see this, the spectrum does not.</p>
+  <p class="ch-meta"><span><b>Prerequisites</b> chapters 3 and 4 (eigenvalues, Schur form, singular values)</span><span><b>Leads to</b> chapters 7, 10 and 13</span><span><b>Visuals</b> 3</span></p>
+  <ol class="core-q">
+    <li>How far do the solution of $Ax = b$ and the eigenvalues of $A$ move when $A$ or $b$ is perturbed?</li>
+    <li>When do eigenvalues mislead about the size of the powers $A^k$ and of the matrix exponential $e^{tA}$?</li>
+    <li>Which sets and numbers replace the spectrum, and what bounds do they give on transient growth?</li>
+  </ol>
+  <details class="notation">
+    <summary>Notation introduced in this chapter</summary>
+    <div class="tbl-wrap"><table class="tbl">
+      <thead><tr><th>Symbol</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td>$\norm{x}$, $\norm{A}$</td><td>Euclidean norm of a vector; induced spectral norm $\norm{A} = \sigma_1(A)$ of a matrix</td></tr>
+        <tr><td>$\sigma_1 \ge \dots \ge \sigma_n$, $\sigma_{\min}$</td><td>singular values of a square matrix; the smallest one, $\sigma_{\min} = \sigma_n$</td></tr>
+        <tr><td>$\kappa(A) = \norm{A}\norm{A^{-1}}$</td><td>condition number of an invertible matrix; equals $\sigma_1/\sigma_n$ (<a class="xref" href="#prop-cond-props"></a>)</td></tr>
+        <tr><td>$\lambda_k(A)$</td><td>for Hermitian $A$: the $k$-th largest eigenvalue, $\lambda_1 \ge \dots \ge \lambda_n$</td></tr>
+        <tr><td>$x$, $y$</td><td>right and left eigenvectors: $Ax = \lambda x$, $y^*A = \lambda y^*$</td></tr>
+        <tr><td>$\kappa(\lambda)$</td><td>condition number $\norm{x}\norm{y}/\abs{y^*x}$ of a simple eigenvalue</td></tr>
+        <tr><td>$\kappa(V)$</td><td>condition number of a matrix $V$ of eigenvectors with $A = V\Lambda V^{-1}$</td></tr>
+        <tr><td>$J_n(\lambda)$</td><td>Jordan block: $\lambda$ on the diagonal, ones on the superdiagonal, size $n$</td></tr>
+        <tr><td>$\operatorname{dist}(z, \Lambda(A))$</td><td>distance $\min_i\abs{z - \lambda_i}$ from a point $z \in \C$ to the spectrum</td></tr>
+        <tr><td>$\Theta$, $\sin\Theta$</td><td>diagonal matrices of the canonical angles $\theta_j$ between two subspaces and of their sines</td></tr>
+        <tr><td>$R(z) = (zI - A)^{-1}$</td><td>resolvent of $A$ at a point $z \in \C$ outside the spectrum</td></tr>
+        <tr><td>$\Lambda_\eps(A)$</td><td>$\eps$-pseudospectrum of $A$</td></tr>
+        <tr><td>$\Delta_r$</td><td>open disk $\{z \in \C : \abs{z} &lt; r\}$; $\Lambda(A) + \Delta_r$ is the set of points closer than $r$ to the spectrum</td></tr>
+        <tr><td>$W(A)$</td><td>numerical range $\{x^*Ax : \norm{x} = 1\}$</td></tr>
+        <tr><td>$\alpha(A)$, $\omega(A)$, $\alpha_\eps(A)$</td><td>spectral, numerical and $\eps$-pseudospectral abscissas (largest real part of $\Lambda(A)$, $W(A)$, $\Lambda_\eps(A)$)</td></tr>
+        <tr><td>$\mathcal K(A)$</td><td>Kreiss constant $\sup_{\Re z &gt; 0} \Re z\,\norm{(zI-A)^{-1}}$</td></tr>
+        <tr><td>$\operatorname{dep}(A)$</td><td>departure from normality: Frobenius norm of the strictly triangular part of a Schur form</td></tr>
+      </tbody>
+    </table></div>
+  </details>
+</header>
+
+<section class="sec" id="s-cond">
+<h2>Conditioning of linear systems</h2>
+
+<div class="blk prob"><p>A system $Ax = b$, with $A \in \C^{n\times n}$ (a complex $n\times n$ matrix) invertible and $b \neq 0$, is solved from data that carry errors: a measured right-hand side, rounded entries, a model that is only approximately right. Bound the error in the solution $x$ by a quantity that depends on $A$ alone.</p></div>
+
+<p>Throughout the chapter $\norm{x}$ is the Euclidean norm of $x \in \C^n$ and $\norm{A} = \max_{\norm{x} = 1}\norm{Ax}$ the induced spectral norm, which equals the largest singular value $\sigma_1(A)$ (<a href="ch04_svd.html#thm-norms">norms from singular values</a>, chapter 4). The singular values of a square matrix are written $\sigma_1 \ge \dots \ge \sigma_n \ge 0$, and $\sigma_{\min} = \sigma_n$. As elsewhere in the guide, $A^\T$ is the transpose, $A^*$ the conjugate transpose, $e_i$ the $i$-th standard basis vector, $I$ the identity and $\Lambda(A)$ the spectrum of $A$, its set of eigenvalues.</p>
+
+<div class="blk def" id="def-cond" data-name="Condition number">
+<p>The <dfn>condition number</dfn> of an invertible matrix $A$ is $\kappa(A) = \norm{A}\,\norm{A^{-1}}$.</p>
+</div>
+
+<div class="blk prop" id="prop-cond-props" data-name="Properties of the condition number">
+<p>Let $A \in \C^{n\times n}$ be invertible. (i) $\kappa(A) = \sigma_1/\sigma_n \ge 1$, and $\kappa(A) = 1$ if and only if $A$ is a nonzero multiple of a unitary matrix. (ii) $\kappa(cA) = \kappa(A)$ for every scalar $c \neq 0$, and $\kappa(UAV) = \kappa(A)$ for all unitary $U$ and $V$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (i) Let $A = U_A\Sigma V_A^*$ be a singular value decomposition, with $U_A$, $V_A$ unitary and $\Sigma = \diag(\sigma_1, \dots, \sigma_n)$, $\sigma_n &gt; 0$. Then $A^{-1} = V_A\Sigma^{-1}U_A^*$ is a singular value decomposition with singular values $1/\sigma_i$, so $\norm{A^{-1}} = 1/\sigma_n$ and $\kappa(A) = \sigma_1/\sigma_n \ge 1$. Equality holds exactly when all $\sigma_i$ equal some $s &gt; 0$, that is, when $A = s\,U_AV_A^*$ with $U_AV_A^*$ unitary; conversely every singular value of $cQ$, for $Q$ unitary, is $\abs{c}$. (ii) $cA$ has singular values $\abs{c}\sigma_i$, and $UAV = (UU_A)\,\Sigma\,(V^*V_A)^*$ is a singular value decomposition with the same $\Sigma$.</p>
+</div>
+
+<div class="blk thm" id="thm-relerr" data-name="Relative error bounds">
+<p>Let $A$ be invertible, $Ax = b$ and $b \neq 0$.</p>
+<ol>
+<li>If $A(x + \delta x) = b + \delta b$, then $\dfrac{\norm{\delta x}}{\norm{x}} \le \kappa(A)\,\dfrac{\norm{\delta b}}{\norm{b}}$, and equality holds for suitable $b$ and $\delta b$.</li>
+<li>If $(A + \delta A)(x + \delta x) = b$ and $\norm{A^{-1}}\norm{\delta A} &lt; 1$, then $\dfrac{\norm{\delta x}}{\norm{x}} \le \dfrac{\kappa(A)\,\norm{\delta A}/\norm{A}}{1 - \kappa(A)\,\norm{\delta A}/\norm{A}}$.</li>
+</ol>
+</div>
+<dl class="where">
+  <dt>$\delta b$, $\delta A$</dt><dd>errors in the right-hand side and in the matrix</dd>
+  <dt>$\delta x$</dt><dd>the resulting change of the solution</dd>
+</dl>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (1) Subtracting $Ax = b$ gives $\delta x = A^{-1}\delta b$, so $\norm{\delta x} \le \norm{A^{-1}}\norm{\delta b}$, while $\norm{b} \le \norm{A}\norm{x}$ gives $1/\norm{x} \le \norm{A}/\norm{b}$. Multiply. For equality take $x = v_1$, the top right singular vector, so that $\norm{b} = \sigma_1\norm{x}$, and $\delta b$ along the last left singular vector $u_n$, so that $\norm{A^{-1}\delta b} = \norm{\delta b}/\sigma_n$. (2) Subtracting $Ax = b$ gives $A\,\delta x = -\delta A\,(x + \delta x)$, hence $\norm{\delta x} \le \norm{A^{-1}}\norm{\delta A}(\norm{x} + \norm{\delta x})$; solve for $\norm{\delta x}$. The hypothesis also makes $A + \delta A = A(I + A^{-1}\delta A)$ invertible (<a href="ch05_hilbert_spaces.html#cor-perturb">invertibility is stable</a>, chapter 5).</p>
+</div>
+
+<div class="blk probe">
+<p>Four probes. A unitary $Q$ has $\kappa(Q) = 1$: errors are not amplified at all. Scaling changes nothing, $\kappa(cA) = \kappa(A)$ for $c \neq 0$. Both are <a class="xref" href="#prop-cond-props"></a>. The diagonal matrix $\diag(1, \delta)$ with $0 &lt; \delta &lt; 1$ has $\kappa = 1/\delta$, and an error in the second entry of $b$ is divided by $\delta$. Nearly dependent columns do the same in disguise: $A = \begin{bmatrix}1 & 1\\ 1 & 1+\delta\end{bmatrix}$ has determinant $\det A = \delta$ and $A^{-1} = \frac{1}{\delta}\begin{bmatrix}1+\delta & -1\\ -1 & 1\end{bmatrix}$, so changing $b = (2, 2+\delta)^\T$ by $(0, \eta)^\T$ moves the solution from $(1,1)^\T$ by $\frac{\eta}{\delta}(-1, 1)^\T$.</p>
+</div>
+
+<div class="blk thm" id="thm-dist" data-name="Distance to singularity">
+<p>For invertible $A \in \C^{n\times n}$,</p>
+<div class="eq">$$\min\{\norm{E} : A + E \text{ is singular}\} = \sigma_n(A) = \frac{1}{\norm{A^{-1}}},$$</div>
+<p>equivalently</p>
+<div class="eq">$$\min\Big\{\frac{\norm{E}}{\norm{A}} : A + E \text{ singular}\Big\} = \frac{1}{\kappa(A)}.$$</div>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> If $\norm{E} &lt; \sigma_n$, then for every unit vector $x$, $\norm{(A+E)x} \ge \norm{Ax} - \norm{Ex} \ge \sigma_n - \norm{E} &gt; 0$, so $A + E$ is injective. Conversely, with $Av_n = \sigma_n u_n$ for unit singular vectors $u_n, v_n$, the matrix $E = -\sigma_n u_n v_n^*$ has $\norm{E} = \sigma_n$ and $(A + E)v_n = 0$.</p>
+</div>
+
+<div class="blk cex" id="cex-residual">
+<p>"A small residual means an accurate solution" is false. For an approximate solution $\hat x$ with residual $r = b - A\hat x$, the error is $x - \hat x = A^{-1}r$, and <a class="xref" href="#thm-relerr"></a> gives only $\norm{x - \hat x}/\norm{x} \le \kappa(A)\norm{r}/\norm{b}$. In the last probe, $\hat x = (1,1)^\T + \frac{\eta}{\delta}(-1,1)^\T$ has residual of norm $\eta$ but error of norm $\sqrt2\,\eta/\delta$: with $\delta = \eta = 10^{-6}$, a residual of $10^{-6}$ hides an error of $1.4$.</p>
+</div>
+
+<div class="blk pattern">
+<p>Invariants and an equivalence. $\kappa$ is unchanged by unitary factors on either side, $\kappa(UAV) = \kappa(A)$, and by scaling (<a class="xref" href="#prop-cond-props"></a>). By <a class="xref" href="#thm-dist"></a> it is the reciprocal of the relative distance from $A$ to the nearest singular matrix: being ill-conditioned and being close to singular, relative to the size of $A$, are the same property. The determinant does not measure it (<a href="ch01_linear_maps.html#s-det">chapter 1</a>): $\det(\eps I_n) = \eps^n$ while $\kappa(\eps I_n) = 1$.</p>
+</div>
+
+<div class="blk rem">
+<p>Conditioning belongs to the problem; stability belongs to the algorithm. An algorithm for $Ax = b$ is <dfn>backward stable</dfn> if its computed solution $\hat x$ solves a perturbed system $(A + \delta A)\hat x = b + \delta b$ exactly, with $\norm{\delta A} \le \eta\norm{A}$ and $\norm{\delta b} \le \eta\norm{b}$ for some $\eta$ of the order of the unit roundoff $u = 2^{-53} \approx 1.1\times 10^{-16}$ of double precision.</p>
+</div>
+
+<div class="blk prop" id="prop-backward" data-name="Forward error from backward error">
+<p>Let $A$ be invertible, $Ax = b$ with $b \neq 0$, and let $\hat x$ satisfy $(A + \delta A)\hat x = b + \delta b$, where $\norm{\delta A} \le \eta\norm{A}$, $\norm{\delta b} \le \eta\norm{b}$ and $\kappa(A)\,\eta &lt; 1$. Then</p>
+<div class="eq">$$\frac{\norm{\hat x - x}}{\norm{x}} \;\le\; \frac{2\,\kappa(A)\,\eta}{1 - \kappa(A)\,\eta}.$$</div>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Write $\hat x = x + \delta x$. Subtracting $Ax = b$ gives $A\,\delta x = \delta b - \delta A\,x - \delta A\,\delta x$. Apply $A^{-1}$, take norms and use $\norm{\delta b} \le \eta\norm{b} \le \eta\norm{A}\norm{x}$:</p>
+<div class="eq">$$\norm{\delta x} \le \norm{A^{-1}}\,\eta\norm{A}\,\big(2\norm{x} + \norm{\delta x}\big) = \kappa(A)\,\eta\,\big(2\norm{x} + \norm{\delta x}\big);$$</div>
+<p>solve for $\norm{\delta x}$.</p>
+</div>
+
+<div class="blk rem">
+<p>As a rule of thumb, a backward stable solver therefore returns about $16 - \log_{10}\kappa(A)$ correct digits: with $\eta$ a modest multiple of $u$, <a class="xref" href="#prop-backward"></a> bounds the relative error by a quantity of order $\kappa(A)\,u$. Householder QR is backward stable; Gaussian elimination with partial pivoting is backward stable in practice, though not for every matrix (Trefethen and Bau, lectures 12–16 and 22).</p>
+</div>
+</section>
+
+<section class="sec" id="s-herm">
+<h2>Hermitian matrices: Weyl's inequality and the gap</h2>
+
+<div class="blk setting">
+<p>$A$ and $E$ are Hermitian $n\times n$ matrices ($A = A^*$, where $A^*$ is the conjugate transpose). Their eigenvalues are real (<a href="ch04_svd.html#lem-herm">Hermitian basics</a>, chapter 4) and ordered, $\lambda_1(A) \ge \dots \ge \lambda_n(A)$, and $A$ has an orthonormal basis of eigenvectors (<a href="ch04_svd.html#thm-normal">the spectral theorem for normal matrices</a>, chapter 4). Recall the <a href="ch04_svd.html#thm-cf">Courant–Fischer characterization</a> (chapter 4): $\lambda_k(A) = \max_{\dim \mathcal S = k}\ \min_{x \in \mathcal S,\, \norm{x} = 1} x^*Ax$, the maximum taken over subspaces $\mathcal S \subseteq \C^n$ of dimension $k$.</p>
+</div>
+<div class="blk goal"><p>Bound the motion of each eigenvalue, and the rotation of each eigenvector, by the size of the perturbation $E$.</p></div>
+
+<div class="blk thm" id="thm-weyl" data-name="Weyl's inequality">
+<p>For Hermitian $A$ and $E$ and every $k$,</p>
+<div class="eq">$$\lambda_k(A) + \lambda_n(E) \;\le\; \lambda_k(A + E) \;\le\; \lambda_k(A) + \lambda_1(E),$$</div>
+<p>hence</p>
+<div class="eq">$$\abs{\lambda_k(A+E) - \lambda_k(A)} \le \norm{E}.$$</div>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> For every unit vector $x$, $x^*(A+E)x = x^*Ax + x^*Ex$ with $\lambda_n(E) \le x^*Ex \le \lambda_1(E)$. Taking the minimum over unit $x$ in a fixed subspace $\mathcal S$ and then the maximum over $\dim\mathcal S = k$ preserves both inequalities, and Courant–Fischer turns the two sides into $\lambda_k(A+E)$ and $\lambda_k(A) + \lambda_{1}(E)$ or $\lambda_k(A) + \lambda_n(E)$. For Hermitian $E$, $\norm{E} = \max(\abs{\lambda_1(E)}, \abs{\lambda_n(E)})$, because the singular values of a normal matrix are the moduli of its eigenvalues (<a href="ch04_svd.html#thm-eigsv">eigenvalues and singular values</a>, chapter 4).</p>
+</div>
+
+<div class="blk probe">
+<p>The extreme case $E = \eps I$ shifts every eigenvalue by exactly $\eps$, so the bound cannot be improved. A positive semidefinite $E$ can only move eigenvalues up, since then $\lambda_n(E) \ge 0$ (<a href="ch04_svd.html#cor-weyl">Weyl's inequality and monotonicity</a>, chapter 4). By <a class="xref" href="#thm-weyl"></a>, eigenvalues of Hermitian matrices are Lipschitz functions of the matrix, with constant 1 in the spectral norm: perfectly conditioned in absolute terms, however close together they are.</p>
+</div>
+
+<div class="blk thm" id="thm-sintheta" data-name="Eigenvector rotation, one-vector sin θ bound">
+<p>Let $A$ be Hermitian with orthonormal eigenvectors $v_1, \dots, v_n$ for $\lambda_1 \ge \dots \ge \lambda_n$, and let $\lambda_k$ be simple. Let $\hat A = A + E$ be Hermitian and $\hat v$ a unit eigenvector, $\hat A\hat v = \hat\lambda\hat v$. If $\delta = \min_{i \neq k}\abs{\hat\lambda - \lambda_i} &gt; 0$, the angle $\theta \in [0, \pi/2]$ between $\hat v$ and $v_k$, defined by $\cos\theta = \abs{v_k^*\hat v}$, satisfies</p>
+<div class="eq">$$\sin\theta \;\le\; \frac{\norm{E\hat v}}{\delta} \;\le\; \frac{\norm{E}}{\delta}.$$</div>
+<p>If $\hat\lambda = \lambda_k(\hat A)$ and $\norm{E} &lt; g$, where $g = \min_{i\neq k}\abs{\lambda_i - \lambda_k}$ is the gap, then $\sin\theta \le \norm{E}/(g - \norm{E})$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Expand $\hat v = \sum_i c_i v_i$, so that $\sum_i \abs{c_i}^2 = 1$ and $\sin^2\theta = 1 - \abs{c_k}^2$, which equals $\sum_{i\neq k}\abs{c_i}^2$. The residual of $\hat v$ for $A$ is $r = A\hat v - \hat\lambda\hat v = -E\hat v$, and $r = \sum_i c_i(\lambda_i - \hat\lambda)v_i$. By orthonormality,</p>
+<div class="eq">$$\norm{E\hat v}^2 = \sum_i \abs{c_i}^2\abs{\lambda_i - \hat\lambda}^2 \;\ge\; \delta^2\sum_{i\neq k}\abs{c_i}^2 = \delta^2\sin^2\theta.$$</div>
+<p>For the last statement, Weyl gives $\abs{\hat\lambda - \lambda_k} \le \norm{E}$, so $\delta \ge g - \norm{E}$.</p>
+</div>
+
+<div class="blk cex" id="cex-gap">
+<p>Without a gap there is no eigenvector stability. Take $A = \diag(1, 1+\delta)$ and $E = \eps\begin{bmatrix}0 & 1\\ 1 & 0\end{bmatrix}$ with $0 &lt; \delta \ll \eps$. The eigenvalues of $A + E$ are $1 + \frac{\delta}{2} \pm \sqrt{\delta^2/4 + \eps^2}$, within $\eps$ of $1$ and $1 + \delta$ as Weyl promises, but its eigenvectors make an angle $\theta$ with $e_1$ where $\abs{\tan 2\theta} = 2\eps/\delta$. As $\delta/\eps \to 0$ they approach $(1, \pm 1)^\T/\sqrt2$: a perturbation of size $\eps$ turns the eigenvectors by nearly $45^\circ$. The scale is set by the gap, not by the size of $A$.</p>
+</div>
+
+<p>The same argument handles invariant subspaces, with the single angle replaced by the canonical angles between two subspaces and the residual equation replaced by a Sylvester equation.</p>
+
+<div class="blk thm" id="thm-davis-kahan" data-name="Davis–Kahan sin Θ theorem">
+<p>Let $A$ and $\hat A = A + E$ be Hermitian $n\times n$ matrices and $1 \le k &lt; n$. Let $\hat V \in \C^{n\times k}$ have orthonormal columns with $\hat A\hat V = \hat V\hat\Lambda$, where $\hat\Lambda = \hat V^*\hat A\hat V$, and let $\begin{bmatrix}V_1 & V_2\end{bmatrix}$ be unitary with $V_1 \in \C^{n\times k}$ and $AV_2 = V_2\Lambda_2$ for a diagonal matrix $\Lambda_2$. The canonical angles $\theta_1, \dots, \theta_k \in [0, \pi/2]$ between the column spaces (ranges) $\Range(\hat V)$ and $\Range(V_1)$ are defined by: $\cos\theta_1, \dots, \cos\theta_k$ are the singular values of $V_1^*\hat V$. Write $\sin\Theta = \diag(\sin\theta_1, \dots, \sin\theta_k)$ and $\norm{M}_F = \big(\sum_{i,j}\abs{m_{ij}}^2\big)^{1/2}$ for the Frobenius norm.</p>
+<ol>
+<li>If every eigenvalue of $\Lambda_2$ is at distance at least $\delta &gt; 0$ from every eigenvalue of $\hat\Lambda$, then $\norm{\sin\Theta}_F = \norm{V_2^*\hat V}_F \le \norm{E\hat V}_F/\delta$.</li>
+<li>If the eigenvalues of $\hat\Lambda$ lie in an interval $[a, b]$ and those of $\Lambda_2$ lie outside $(a - \delta, b + \delta)$, with $\delta &gt; 0$, then $\norm{\sin\Theta} = \max_j\sin\theta_j \le \norm{E\hat V}/\delta$.</li>
+</ol>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Since $\begin{bmatrix}V_1 & V_2\end{bmatrix}$ is unitary, $I = \hat V^*\hat V = (V_1^*\hat V)^*(V_1^*\hat V) + (V_2^*\hat V)^*(V_2^*\hat V)$, so the eigenvalues of $(V_2^*\hat V)^*(V_2^*\hat V)$ are $1 - \cos^2\theta_j = \sin^2\theta_j$; this gives both equalities. The residual of $\hat V$ for $A$ is $A\hat V - \hat V\hat\Lambda = -E\hat V$. Multiplying it on the left by $V_2^*$ and using $V_2^*A = \Lambda_2V_2^*$ ($A$ is Hermitian and $\Lambda_2$ real), $X = V_2^*\hat V$ solves the Sylvester equation</p>
+<div class="eq">$$\Lambda_2X - X\hat\Lambda = Y,\qquad Y = -V_2^*E\hat V,$$</div>
+<p>and $\norm{Y}_F \le \norm{E\hat V}_F$, $\norm{Y} \le \norm{E\hat V}$ because $V_2^*$ has orthonormal rows. (1) Diagonalize the Hermitian matrix $\hat\Lambda = WDW^*$ with $W$ unitary and $D = \diag(\mu_1, \dots, \mu_k)$. Then $Z = XW$ satisfies $\Lambda_2Z - ZD = YW$, entry by entry $(\lambda_{2,i} - \mu_j)\,z_{ij} = (YW)_{ij}$ with $\abs{\lambda_{2,i} - \mu_j} \ge \delta$, where $\lambda_{2,i}$ are the diagonal entries of $\Lambda_2$. Hence $\norm{X}_F = \norm{Z}_F \le \norm{YW}_F/\delta = \norm{Y}_F/\delta$. (2) Let $c = (a + b)/2$ and $r = (b - a)/2$, so that $\norm{\hat\Lambda - cI} \le r$ and $\norm{(\Lambda_2 - cI)^{-1}} \le 1/(r + \delta)$. Rewriting the equation as $X = (\Lambda_2 - cI)^{-1}\big(Y + X(\hat\Lambda - cI)\big)$ and substituting it into itself $N$ times writes $X$ as the sum of the terms $(\Lambda_2 - cI)^{-j-1}\,Y\,(\hat\Lambda - cI)^j$ for $j &lt; N$ and the remainder $(\Lambda_2 - cI)^{-N}X(\hat\Lambda - cI)^N$, whose norm is at most $\norm{X}\big(r/(r + \delta)\big)^N \to 0$. So $\norm{X} \le \norm{Y}\sum_{j\ge0}r^j/(r + \delta)^{j+1} = \norm{Y}/\delta$.</p>
+</div>
+<p class="src">For $k = 1$, part 1 is the first inequality of <a class="xref" href="#thm-sintheta"></a>. Davis and Kahan (1970); Bhatia, <i>Matrix Analysis</i>, ch. VII, proves part 2 for every unitarily invariant norm.</p>
+</section>
+
+<section class="sec" id="s-nonnormal">
+<h2>Non-normal matrices: Bauer–Fike, condition numbers and Jordan blocks</h2>
+
+<div class="blk probe">
+<p>Drop the Hermitian assumption and the picture changes. $A = \begin{bmatrix}1 & 1000\\ 0 & 1\end{bmatrix}$ has the double eigenvalue $1$. Changing its $(2,1)$ entry from $0$ to $10^{-3}$, a perturbation of norm $10^{-3}$, gives the characteristic polynomial $(\lambda - 1)^2 - 1$ and eigenvalues $0$ and $2$. The eigenvalues moved a thousand times farther than the entries.</p>
+</div>
+
+<p>A matrix is <dfn>normal</dfn> if $A^*A = AA^*$; equivalently it is unitarily diagonalizable (<a href="ch04_svd.html#thm-normal">normal matrices</a>, chapter 4). Hermitian, skew-Hermitian and unitary matrices are normal (<a href="ch04_svd.html#def-classes">chapter 4</a>); the matrix above is not.</p>
+
+<div class="blk thm" id="thm-bauer-fike" data-name="Bauer–Fike">
+<p>Let $A = V\Lambda V^{-1}$ with $\Lambda = \diag(\lambda_1, \dots, \lambda_n)$, and let $E \in \C^{n\times n}$ be arbitrary. Every eigenvalue $\mu$ of $A + E$ satisfies</p>
+<div class="eq">$$\min_i\,\abs{\mu - \lambda_i} \;\le\; \kappa(V)\,\norm{E},\qquad \kappa(V) = \norm{V}\norm{V^{-1}}.$$</div>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> If $\mu \in \Lambda(A)$ there is nothing to prove. Otherwise $\mu I - A$ is invertible and $\mu I - A - E = (\mu I - A)\big(I - (\mu I - A)^{-1}E\big)$ is singular, so $\norm{(\mu I - A)^{-1}E} \ge 1$ (if $\norm{F} &lt; 1$ then $I - F$ is invertible, by the <a href="ch05_hilbert_spaces.html#thm-neumann">Neumann series</a> of chapter 5). Since $(\mu I - A)^{-1} = V(\mu I - \Lambda)^{-1}V^{-1}$ and $\norm{(\mu I - \Lambda)^{-1}} = 1/\min_i\abs{\mu - \lambda_i}$ (the norm of a diagonal matrix is its largest entry in modulus), we get $1 \le \kappa(V)\norm{E}/\min_i\abs{\mu - \lambda_i}$.</p>
+</div>
+<div class="blk cor" id="cor-normal-bf" data-name="Normal matrices">
+<p>If $A \in \C^{n\times n}$ is normal, then for every $E \in \C^{n\times n}$ each eigenvalue of $A + E$ lies within $\norm{E}$ of $\Lambda(A)$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> A normal matrix is unitarily diagonalizable, $A = U\Lambda U^*$ with $U$ unitary. Apply <a class="xref" href="#thm-bauer-fike"></a> with $V = U$: unitary matrices preserve the norm of every vector, so $\norm{U} = \norm{U^{-1}} = \norm{U^*} = 1$ and $\kappa(U) = 1$.</p>
+</div>
+
+<div class="blk def" id="def-eigcond" data-name="Left eigenvectors, eigenvalue condition number">
+<p>A nonzero $y \in \C^n$ with $y^*A = \lambda y^*$ is a <dfn>left eigenvector</dfn> of $A$ for $\lambda$ (equivalently $A^*y = \bar\lambda y$, where the bar denotes complex conjugation). For a simple eigenvalue $\lambda$ with right eigenvector $x$ and left eigenvector $y$, the <dfn>eigenvalue condition number</dfn> is $\kappa(\lambda) = \dfrac{\norm{x}\,\norm{y}}{\abs{y^*x}}$, the reciprocal cosine of the angle between $x$ and $y$.</p>
+</div>
+
+<div class="blk thm" id="thm-first-order" data-name="First-order perturbation of a simple eigenvalue">
+<p>Let $\lambda$ be a simple eigenvalue of $A$ with right and left eigenvectors $x$, $y$. Then $y^*x \neq 0$, and for every $E$ the matrix $A + tE$ has an eigenvalue $\lambda(t)$, analytic near $t = 0$, with $\lambda(0) = \lambda$ and</p>
+<div class="eq">$$\lambda'(0) = \frac{y^*Ex}{y^*x},\qquad\text{so}\qquad \abs{\lambda'(0)} \le \kappa(\lambda)\,\norm{E},$$</div>
+<p>with equality for $E = yx^*/(\norm{x}\norm{y})$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Because $\lambda$ is simple its Jordan block is $1\times 1$ (<a href="ch03_eigenvalues.html#thm-jordan">Jordan normal form</a>, chapter 3), so $\Null((A - \lambda I)^2) = \Null(A - \lambda I)$ and $\C^n$ is the direct sum $\Null(A - \lambda I) \oplus \Range(A - \lambda I)$ of a null space and a range: a vector in both is $(A - \lambda I)w$ with $(A - \lambda I)^2w = 0$, hence zero, and the dimensions add up to $n$ by rank–nullity. The relation $y^*(A - \lambda I) = 0$ says $y \perp \Range(A - \lambda I)$; if also $y \perp x$, then $y$ is orthogonal to all of $\C^n$, impossible. The characteristic polynomial $\det(zI - A - tE)$ is a polynomial in $z$ and $t$ whose $z$-derivative does not vanish at the simple root $\lambda$ for $t = 0$, so by the implicit function theorem that root continues to a root $\lambda(t)$ analytic in $t$, and an eigenvector $x(t)$ can be chosen differentiably as well (Horn and Johnson, ch. 6). Differentiating $(A + tE)x(t) = \lambda(t)x(t)$ at $t = 0$ gives $Ex + Ax' = \lambda' x + \lambda x'$; multiplying by $y^*$ and using $y^*A = \lambda y^*$ cancels the $x'$ terms and leaves $y^*Ex = \lambda'\,y^*x$. The bound is Cauchy–Schwarz, $\abs{y^*Ex} \le \norm{y}\norm{E}\norm{x}$, and the stated $E$ has norm $1$ and gives $y^*Ex = \norm{x}\norm{y}$.</p>
+</div>
+
+<div class="blk ex" id="ex-cond-2x2" data-name="A non-normal 2×2 matrix">
+<p>Let $A = \begin{bmatrix}-1 & w\\ 0 & -2\end{bmatrix}$ with a coupling $w \ge 0$; this matrix returns in <a class="xref" href="#s-transient"></a>. For $\lambda_1 = -1$: $x_1 = e_1$ and $y_1 = (1, w)^\T$. For $\lambda_2 = -2$: $x_2 = (-w, 1)^\T$ and $y_2 = e_2$. Both eigenvalues have $\kappa(\lambda_i) = \sqrt{1 + w^2}$, and the matrix of unit eigenvectors has $\kappa(V) = \sqrt{(1+c)/(1-c)}$ with $c = w/\sqrt{1+w^2}$, about $2w$ for large $w$. For $w = 0$ the matrix is diagonal and both numbers equal 1.</p>
+</div>
+
+<div class="blk thm" id="thm-jordan-pert" data-name="Perturbing a Jordan block">
+<p>For $\eps &gt; 0$ the matrix</p>
+<div class="eq">$$J_n(0) + \eps\, e_n e_1^\T = \begin{bmatrix}0 & 1 & & \\ & \ddots & \ddots & \\ & & 0 & 1\\ \eps & & & 0\end{bmatrix}$$</div>
+<p>has characteristic polynomial $z^n - \eps$, hence the $n$ distinct eigenvalues $\mu_k = \eps^{1/n}e^{2\pi i k/n}$, $k = 0, \dots, n-1$ (here $i$ is the imaginary unit, which engineering texts write $j$), all at distance $\eps^{1/n}$ from the eigenvalue $0$ of $J_n(0)$, although $\norm{\eps e_ne_1^\T} = \eps$.</p>
+</div>
+<dl class="where">
+  <dt>$J_n(0)$</dt><dd>the $n\times n$ nilpotent Jordan block: ones on the superdiagonal, zeros elsewhere</dd>
+  <dt>$e_ne_1^\T$</dt><dd>the matrix with a single 1 in the bottom-left corner</dd>
+</dl>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Expand $\det(zI - J_n(0) - \eps e_ne_1^\T)$ along the first column, which has $z$ in row 1 and $-\eps$ in row $n$. The minor of the $(1,1)$ entry is upper triangular with diagonal $z$, contributing $z\cdot z^{n-1}$. The minor of the $(n,1)$ entry is lower triangular with diagonal $-1$, so it equals $(-1)^{n-1}$, and with the cofactor sign $(-1)^{n+1}$ the contribution is $-\eps(-1)^{n+1}(-1)^{n-1} = -\eps$.</p>
+</div>
+
+<div class="blk cex" id="cex-holder">
+<p>"Eigenvalues are continuous, so small perturbations move them a little" is true only in a weak sense: they are continuous, but with a modulus of continuity as poor as $\norm{E}^{1/n}$ (<a class="xref" href="#prop-elsner"></a>). For $n = 16$ and $\eps = 10^{-16}$, about the unit roundoff, <a class="xref" href="#thm-jordan-pert"></a> moves the eigenvalues of $J_{16}(0)$ by $10^{-1}$: an amplification of $10^{15}$. The eigenvectors behave worse still: $J_n(0)$ has the single eigenvector $e_1$, while the perturbed matrix has $n$ independent eigenvectors $(1, \mu_k, \mu_k^2, \dots, \mu_k^{n-1})^\T$, all of which collapse onto $e_1$ as $\eps \to 0$. Consistently with <a class="xref" href="#thm-first-order"></a>, the defective eigenvalue has $y^*x = 0$: its right eigenvector is $e_1$ and its left eigenvector is $e_n$.</p>
+</div>
+
+<p>The corner perturbation is not special. To leading order only the bottom-left entry of a perturbation matters, and its $n$-th root is taken.</p>
+
+<div class="blk prop" id="prop-jordan-generic" data-name="Generic perturbations of a Jordan block">
+<p>Let $n \ge 2$ and let $E \in \C^{n\times n}$ have bottom-left entry $E_{n1} = e_n^\T Ee_1 \neq 0$, and let $c$ be a fixed $n$-th root of $E_{n1}$. As $\eps \to 0^+$ the eigenvalues of $J_n(0) + \eps E$ can be numbered so that</p>
+<div class="eq">$$\mu_k(\eps) = c\,\eps^{1/n}e^{2\pi ik/n} + O(\eps^{2/n}),\qquad k = 0, \dots, n-1.$$</div>
+<p>In particular $\abs{\mu_k(\eps)} = \abs{E_{n1}}^{1/n}\eps^{1/n}\big(1 + O(\eps^{1/n})\big)$, and $\abs{E_{n1}} \le \norm{E}$.</p>
+</div>
+<details class="proof"><summary>Proof sketch</summary>
+<p>Write $J = J_n(0)$. Since $\det(zI - J) = z^n$ and $z^n(zI - J)^{-1} = \sum_{k=0}^{n-1}z^{n-1-k}J^k$ is the adjugate of $zI - J$, Jacobi's formula for the derivative of a determinant gives</p>
+<div class="eq">$$\det(zI - J - \eps E) = z^n - \eps\sum_{k=0}^{n-1}s_k\,z^{n-1-k} + \eps^2q(z, \eps),$$</div>
+<p>where $s_k = \tr(J^kE)$, with $\tr$ the trace, is the sum of the entries on the $k$-th subdiagonal of $E$, and $q$ is a polynomial; in particular $s_{n-1} = E_{n1}$. Substitute $z = \tau w$ with $\tau = \eps^{1/n}$ and divide by $\eps = \tau^n$: the polynomial becomes $w^n - E_{n1} + \tau\,p(w, \tau)$ with $p$ a polynomial, since for $k &lt; n - 1$ the term with $s_k$ keeps the factor $\tau^{n-1-k}$ and the last term keeps $\tau^n$. At $\tau = 0$ its $n$ roots $c\,e^{2\pi ik/n}$ are simple, so by the implicit function theorem they depend analytically on $\tau$ and move by $O(\tau)$; multiply by $\tau$. Finally $\abs{e_n^\T Ee_1} \le \norm{E}$ by Cauchy–Schwarz. This is the simplest case of the Lidskii–Vishik–Lyusternik perturbation theory for eigenvalues with a given Jordan structure (Moro, Burke and Overton, <i>SIAM J. Matrix Anal. Appl.</i> 18 (1997) 793–817).</p>
+</details>
+
+<figure class="viz" id="viz-jordan">
+  <figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">How far a Jordan block's eigenvalue moves</span><span class="viz-sub">Computed eigenvalues of $J_n(0) + \eps E$: the corner perturbation $E = e_ne_1^\T$ (orange) and 24 random real $E$ scaled to $\norm{E} = 1$ (violet). The right panel plots the eigenvalue displacement against $\eps$ on logarithmic axes.</span></figcaption>
+  <div class="viz-plots cols-2">
+    <div class="plot" id="jor-plane"><div class="plot-cap">Complex plane; dashed circle of radius $\eps^{1/n}$, dotted unit circle</div></div>
+    <div class="plot" id="jor-holder"><div class="plot-cap">Displacement $\abs{\mu}$ against $\eps$: grey lines have slope $1/k$, $k = 1, \dots, 16$</div></div>
+  </div>
+  <div class="viz-controls" id="jor-controls"></div>
+  <div class="viz-notes">
+    <div><h5>Try this</h5><ol>
+      <li>Set $n = 2$ and $\eps = 10^{-8}$. The two eigenvalues sit at $\pm 10^{-4}$: ten thousand times farther from $0$ than the size of the perturbation.</li>
+      <li>Set $n = 16$ and $\eps = 10^{-12}$. The eigenvalues jump to radius $10^{-0.75} \approx 0.18$, an amplification of about $2\times 10^{11}$.</li>
+      <li>Press <i>New random E</i> a few times. At this small $\eps$, random perturbations of the same norm land inside the circle, for large $n$ mostly at 70 to 95 percent of its radius. By <a class="xref" href="#prop-jordan-generic"></a> their moduli are close to $\abs{E_{n1}}^{1/n}\eps^{1/n}$ with $\abs{E_{n1}} \le \norm{E} = 1$, and the $n$-th root pushes $\abs{E_{n1}}^{1/n}$ toward 1: a typical perturbation is nearly as effective as the corner one.</li>
+    </ol></div>
+    <div><h5>What to notice</h5><p>On logarithmic axes the displacement is a line of slope $1/n$, as <a class="xref" href="#thm-jordan-pert"></a> predicts; a simple eigenvalue would follow the line of slope 1 (<a class="xref" href="#thm-first-order"></a>). The ratio $\eps^{1/n}/\eps$ is unbounded as $\eps \to 0$, so no finite condition number describes the eigenvalue $0$ of $J_n(0)$, and every defective eigenvalue behaves this way (<a class="xref" href="#prop-holder"></a>). A perturbation at the level of rounding errors, $\eps \approx 10^{-16}$, already moves it by $10^{-16/n}$.</p></div>
+  </div>
+</figure>
+
+<div class="blk pattern">
+<p>A hierarchy of regularity. Every eigenvalue of $A + E$ lies within $\norm{E}$ of $\Lambda(A)$ when $A$ is normal (<a class="xref" href="#cor-normal-bf"></a>) and within $\kappa(V)\norm{E}$ when $A$ is diagonalizable (<a class="xref" href="#thm-bauer-fike"></a>); a simple eigenvalue moves at a rate at most $\kappa(\lambda)$ (<a class="xref" href="#thm-first-order"></a>); at a defective eigenvalue the motion is only Hölder continuous, with exponent $1/m$ for a largest Jordan block of size $m$ (<a class="xref" href="#prop-holder"></a>); and for arbitrary $A$ and $E$ the exponent $1/n$ always suffices, with a constant that depends only on $\norm{A}$ and $\norm{A + E}$ (<a class="xref" href="#prop-elsner"></a>).</p>
+</div>
+
+<div class="blk prop" id="prop-holder" data-name="Eigenvalue motion without diagonalizability">
+<p>Let $A = SJS^{-1}$ with $J$ a Jordan form, let $E \in \C^{n\times n}$, write $\theta_k = k\,\kappa(S)\norm{E}$ for $k \ge 1$, and let $\operatorname{dist}(\mu, \Lambda(A)) = \min_i\abs{\mu - \lambda_i}$.</p>
+<ol>
+<li>If the Jordan blocks of $A$ have size at most $p$, every eigenvalue $\mu$ of $A + E$ satisfies $\operatorname{dist}(\mu, \Lambda(A)) \le \max(\theta_p, \theta_p^{1/p})$.</li>
+<li>Let $\lambda \in \Lambda(A)$ have largest Jordan block of size $m$, and let $g$ be the distance from $\lambda$ to the other eigenvalues ($g = \infty$ if there are none). There is $\eta &gt; 0$, depending only on $S$ and $J$, such that if $\norm{E} &lt; \eta$, every eigenvalue $\mu$ of $A + E$ with $\abs{\mu - \lambda} &lt; g/2$ satisfies $\abs{\mu - \lambda} \le \max(\theta_m, \theta_m^{1/m})$.</li>
+<li>For every $\eps &gt; 0$ there is an $E$ with $\norm{E} \le \kappa(S)\,\eps$ such that $A + E$ has $m$ eigenvalues at distance exactly $\eps^{1/m}$ from $\lambda$. Hence, if $m \ge 2$, no bound $\abs{\mu - \lambda} \le C\norm{E}$ with a constant $C$ holds for small $E$.</li>
+</ol>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Let $\mu$ be an eigenvalue of $A + E$ with $\mu \notin \Lambda(A)$ (otherwise there is nothing to prove). As in the proof of <a class="xref" href="#thm-bauer-fike"></a>, $1 \le \norm{(\mu I - A)^{-1}}\norm{E} \le \kappa(S)\,\norm{(\mu I - J)^{-1}}\,\norm{E}$. The norm of a block-diagonal matrix is the largest norm of its blocks, and for a block $J_k(\lambda_j) = \lambda_jI + J_k(0)$, where $J_k(0)^k = 0$ and $\norm{J_k(0)} \le 1$,</p>
+<div class="eq">$$\big(\mu I - J_k(\lambda_j)\big)^{-1} = \sum_{i=0}^{k-1}\frac{J_k(0)^i}{(\mu - \lambda_j)^{i+1}},$$</div>
+<p>so, with $d_j = \abs{\mu - \lambda_j}$,</p>
+<div class="eq">$$\norm{\big(\mu I - J_k(\lambda_j)\big)^{-1}} \le \sum_{i=1}^{k}d_j^{-i} \le k\max(d_j^{-1}, d_j^{-k}).$$</div>
+<p>(1) Every $d_j$ is at least $d = \operatorname{dist}(\mu, \Lambda(A))$ and every $k$ at most $p$, so each block's bound is at most $\sum_{i=1}^{p}d^{-i} \le p\max(d^{-1}, d^{-p})$ and $1 \le \theta_p\max(d^{-1}, d^{-p})$: either $d \ge 1$ and $d \le \theta_p$, or $d &lt; 1$ and $d^p \le \theta_p$. (2) Split $J = \diag(J_\lambda, J')$, with $J_\lambda$ the blocks of $\lambda$ and $J'$ the others, of sizes at most $p'$. If $\abs{\mu - \lambda} &lt; g/2$, every eigenvalue of $J'$ is at distance more than $g/2$ from $\mu$, so $\norm{(\mu I - J')^{-1}} \le c_\lambda = \sum_{i=1}^{p'}(2/g)^i$. Take $\eta = 1/(\kappa(S)\,c_\lambda)$ ($\eta = \infty$ if $J'$ is empty). For $\norm{E} &lt; \eta$ we have $\kappa(S)\norm{E}\,c_\lambda &lt; 1$, so the largest block norm in $\norm{(\mu I - J)^{-1}}$ must come from $J_\lambda$: $1 \le \kappa(S)\norm{E}\,\norm{(\mu I - J_\lambda)^{-1}}$, and the argument of (1) with $m$ in place of $p$ and $d = \abs{\mu - \lambda}$ applies. (3) Let $F$ have a single entry 1, at the bottom-left corner of one block $J_m(\lambda)$ of size $m$. By <a class="xref" href="#thm-jordan-pert"></a> the block $J_m(\lambda) + \eps e_me_1^\T$ of $J + \eps F$ has the eigenvalues $\lambda + \eps^{1/m}e^{2\pi ik/m}$, and $E = \eps\,SFS^{-1}$ gives $A + E = S(J + \eps F)S^{-1}$ with $\norm{E} \le \kappa(S)\,\eps$. The ratio $\eps^{1/m}/(\kappa(S)\,\eps)$ is unbounded as $\eps \to 0$ when $m \ge 2$.</p>
+</div>
+
+<div class="blk prop" id="prop-elsner" data-name="Ostrowski–Elsner bound">
+<p>For all $A, E \in \C^{n\times n}$, every eigenvalue $\mu$ of $A + E$ satisfies</p>
+<div class="eq">$$\operatorname{dist}(\mu, \Lambda(A)) \;\le\; \big(\norm{A} + \norm{A + E}\big)^{1 - 1/n}\,\norm{E}^{1/n}.$$</div>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Let $(A + E)v = \mu v$ with $\norm{v} = 1$, and extend $q_1 = v$ to a unitary matrix $Q = \begin{bmatrix}q_1 & \cdots & q_n\end{bmatrix}$. Hadamard's inequality $\abs{\det M} \le \prod_j\norm{m_j}$ for the columns $m_j$ of $M$ (from a QR factorization $M = Q'R$: $\abs{\det M} = \prod_j\abs{r_{jj}}$ and $\abs{r_{jj}} \le \norm{Re_j} = \norm{m_j}$), applied to $M = (A - \mu I)Q$, gives</p>
+<div class="eq">$$\operatorname{dist}(\mu, \Lambda(A))^n \le \prod_{i=1}^n\abs{\lambda_i - \mu} = \abs{\det M} \le \prod_{j=1}^n\norm{(A - \mu I)q_j}.$$</div>
+<p>The first factor is $\norm{(A - \mu I)v} = \norm{Ev} \le \norm{E}$, and each of the others is at most $\norm{A} + \abs{\mu} \le \norm{A} + \norm{A + E}$, since $\abs{\mu} \le \norm{A + E}$ (<a href="ch05_hilbert_spaces.html#prop-rho">the spectral radius is below every induced norm</a>, chapter 5). Take $n$-th roots.</p>
+</div>
+<p class="src">Source and history (Ostrowski's bound, Elsner's constant): Bhatia, <i>Matrix Analysis</i>, ch. VIII.</p>
+<div class="tbl-wrap"><table class="tbl">
+  <thead><tr><th>Class of $A$</th><th>Bound on eigenvalue motion</th><th>Constant</th><th>Mechanism</th><th>Where</th></tr></thead>
+  <tbody>
+    <tr><td>Hermitian, $E$ Hermitian</td><td>$\abs{\lambda_k(A+E) - \lambda_k(A)} \le \norm{E}$</td><td>$1$</td><td>Courant–Fischer</td><td><a class="xref" href="#thm-weyl"></a></td></tr>
+    <tr><td>Normal</td><td>$\operatorname{dist}(\mu, \Lambda(A)) \le \norm{E}$</td><td>$1$</td><td>resolvent norm $= 1/\operatorname{dist}$</td><td><a class="xref" href="#cor-normal-bf"></a></td></tr>
+    <tr><td>Diagonalizable</td><td>$\operatorname{dist}(\mu, \Lambda(A)) \le \kappa(V)\norm{E}$</td><td>$\kappa(V)$</td><td>resolvent through $V$</td><td><a class="xref" href="#thm-bauer-fike"></a></td></tr>
+    <tr><td>Simple eigenvalue</td><td>$\abs{\lambda(t) - \lambda} \le \kappa(\lambda)\,t\norm{E} + O(t^2)$</td><td>$\kappa(\lambda)$</td><td>left and right eigenvectors</td><td><a class="xref" href="#thm-first-order"></a></td></tr>
+    <tr><td>Largest Jordan block of size $m$</td><td>$O(\norm{E}^{1/m})$, attained</td><td>none (not Lipschitz)</td><td>characteristic polynomial $z^m - \eps$</td><td><a class="xref" href="#prop-holder"></a>, <a class="xref" href="#thm-jordan-pert"></a></td></tr>
+    <tr><td>Arbitrary</td><td>$\operatorname{dist}(\mu, \Lambda(A)) \le C\norm{E}^{1/n}$</td><td>$C = (\norm{A} + \norm{A + E})^{1 - 1/n}$</td><td>Hadamard's inequality</td><td><a class="xref" href="#prop-elsner"></a></td></tr>
+  </tbody>
+</table></div>
+<p>Here $\mu$ denotes an eigenvalue of $A + E$, and $\lambda(t)$ the eigenvalue of $A + tE$ that continues a simple eigenvalue $\lambda$; it is analytic in $t$, so Taylor's theorem makes the remainder $O(t^2)$.</p>
+</section>
+
+<section class="sec" id="s-pseudo">
+<h2>Pseudospectra</h2>
+
+<div class="blk prob"><p>Replace the spectrum by a set that moves continuously with $A$, that shows where eigenvalues can go under perturbations of a given size, and that controls functions of $A$ such as $e^{tA}$.</p></div>
+
+<div class="blk def" id="def-pseudo" data-name="Resolvent, pseudospectrum">
+<p>For $z \in \C$ outside the spectrum $\Lambda(A)$ the <dfn>resolvent</dfn> is $R(z) = (zI - A)^{-1}$; set $\norm{R(z)} = \infty$ for $z \in \Lambda(A)$. For $\eps &gt; 0$ the <dfn>$\eps$-pseudospectrum</dfn> is</p>
+<div class="eq">$$\Lambda_\eps(A) = \{z \in \C : \norm{(zI - A)^{-1}} &gt; 1/\eps\}.$$</div>
+</div>
+<p class="src">Trefethen and Embree write $\sigma(A)$ for the spectrum and $\sigma_\eps(A)$ for the pseudospectrum. This guide keeps $\sigma$ for singular values and writes $\Lambda(A)$ and $\Lambda_\eps(A)$.</p>
+
+<div class="blk thm" id="thm-pseudo-eq" data-name="Equivalent definitions">
+<p>For $A \in \C^{n\times n}$ and $\eps &gt; 0$ the following four sets are equal:</p>
+<ol>
+<li>$\{z : \norm{(zI - A)^{-1}} &gt; 1/\eps\}$;</li>
+<li>$\{z : z \in \Lambda(A + E) \text{ for some } E \text{ with } \norm{E} &lt; \eps\}$;</li>
+<li>$\{z : \norm{(A - zI)v} &lt; \eps \text{ for some unit vector } v\}$, the points with an $\eps$-pseudo-eigenvector;</li>
+<li>$\{z : \sigma_{\min}(zI - A) &lt; \eps\}$.</li>
+</ol>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (1) and (4) agree because $\norm{(zI-A)^{-1}} = 1/\sigma_{\min}(zI - A)$ (<a href="ch04_svd.html#thm-norms">norms from singular values</a>, chapter 4), both sides being infinite on $\Lambda(A)$. (4) implies (3): take $v$ the right singular vector for $\sigma_{\min}$. (3) implies (2): with $r = (A - zI)v$, the rank-one matrix $E = -rv^*$ has $\norm{E} = \norm{r} &lt; \eps$ and $(A + E)v = Av - r = zv$. (2) implies (4): if $(A + E)v = zv$ with $\norm{v} = 1$, then $(zI - A)v = Ev$ and $\sigma_{\min}(zI - A) \le \norm{Ev} \le \norm{E} &lt; \eps$.</p>
+</div>
+<p class="src">Trefethen and Embree, <i>Spectra and Pseudospectra</i>, Thm 2.1, states the same equivalence for any matrix norm induced by a vector norm (part 4 is specific to the 2-norm).</p>
+
+<div class="blk thm" id="thm-pseudo-prop" data-name="Properties of pseudospectra">
+<p>Let $A \in \C^{n\times n}$ and $\eps &gt; 0$.</p>
+<ol>
+<li>$\Lambda_\eps(A)$ is open, contained in the disk of radius $\norm{A} + \eps$, and each of its connected components contains an eigenvalue of $A$.</li>
+<li>$\Lambda_{\eps_1}(A) \subseteq \Lambda_{\eps_2}(A)$ for $\eps_1 &lt; \eps_2$, and $\bigcap_{\eps &gt; 0}\Lambda_\eps(A) = \Lambda(A)$.</li>
+<li>$\Lambda(A) + \Delta_\eps \subseteq \Lambda_\eps(A)$, with equality if $A$ is normal; if $A = V\Lambda V^{-1}$ is diagonalizable, $\Lambda_\eps(A) \subseteq \Lambda(A) + \Delta_{\kappa(V)\eps}$.</li>
+<li>$\Lambda_\eps(U^*AU) = \Lambda_\eps(A)$ for unitary $U$; $\Lambda_\eps(A + cI) = c + \Lambda_\eps(A)$ for $c \in \C$; $\Lambda_\eps(A^*) = \overline{\Lambda_\eps(A)}$, the set of complex conjugates.</li>
+</ol>
+</div>
+<dl class="where">
+  <dt>$\Delta_r$</dt><dd>the open disk of radius $r$ about 0, so $\Lambda(A) + \Delta_r$ is the union of the open $r$-disks about the eigenvalues</dd>
+</dl>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (1) $\sigma_{\min}(zI - A)$ is continuous in $z$, since $\abs{\sigma_{\min}(B + F) - \sigma_{\min}(B)} \le \norm{F}$ (apply $\norm{(B+F)x} \ge \norm{Bx} - \norm{F}$ to unit $x$), so the set is open; for $\abs{z} &gt; \norm{A} + \eps$, $\sigma_{\min}(zI - A) \ge \abs{z} - \norm{A} &gt; \eps$. If a component $\Omega$ contained no eigenvalue, $R(z)$ would be analytic on a neighbourhood of the bounded closure of $\Omega$ with $\norm{R} \le 1/\eps$ on its boundary; each entry function $u^*R(z)v$ obeys the maximum modulus principle, hence so does $\norm{R(z)} = \max_{\norm u = \norm v = 1}\abs{u^*R(z)v}$, contradicting $\norm{R} &gt; 1/\eps$ inside $\Omega$. (2) is immediate from the definition. (3) For $\abs{z - \lambda} &lt; \eps$ with $\lambda \in \Lambda(A)$, the shift $E = (z - \lambda)I$ makes $z$ an eigenvalue; for normal $A = U\Lambda U^*$, $\norm{R(z)} = \norm{(zI - \Lambda)^{-1}} = 1/\min_i\abs{z - \lambda_i}$; the last inclusion is <a class="xref" href="#thm-bauer-fike"></a> applied to definition 2 of <a class="xref" href="#thm-pseudo-eq"></a>. (4) Unitary invariance of the norm, and $\norm{(\bar z I - A^*)^{-1}} = \norm{\big((zI - A)^{-1}\big)^*} = \norm{(zI - A)^{-1}}$.</p>
+</div>
+
+<div class="blk probe">
+<p>Three probes. For a normal matrix the pseudospectra are exactly the unions of $\eps$-disks about the eigenvalues (part 3 of <a class="xref" href="#thm-pseudo-prop"></a>): nothing is hidden. For $A = \begin{bmatrix}-1 & w\\ 0 & -2\end{bmatrix}$ with $w &gt; 0$, at the midpoint $z = -3/2$, the matrix $zI - A$ has determinant $-1/4$ and squared Frobenius norm $\norm{zI - A}_F^2 = 1/2 + w^2$. These equal $\sigma_1\sigma_2$ in modulus and $\sigma_1^2 + \sigma_2^2$ (<a href="ch04_svd.html#thm-eigsv">eigenvalues and singular values</a> and <a href="ch04_svd.html#thm-norms">norms from singular values</a>, chapter 4), so $\sigma_1\sigma_2 = 1/4$. The second column of $zI - A$ has norm $(w^2 + 1/4)^{1/2} &gt; w$, so $\sigma_1 &gt; w$ and $\sigma_{\min} = \sigma_2 &lt; 1/(4w)$, with $\sigma_{\min} \approx 1/(4w)$ for large $w$: the point halfway between the eigenvalues lies in $\Lambda_\eps(A)$ for every $\eps \ge 1/(4w)$. For the Jordan block the pseudospectra are disks about 0, and for small $\eps$ their radius is about $\eps^{1/n}$, not $\eps$:</p>
+</div>
+
+<div class="blk prop" id="prop-psa-jordan" data-name="Pseudospectra of a Jordan block">
+<p>Let $n \ge 2$ and $\eps &gt; 0$. Then $\Lambda_\eps(J_n(0))$ is an open disk about $0$ whose radius $r_\eps$ satisfies $r_\eps \ge \eps^{1/n}$, and $r_\eps \le (n\eps)^{1/n}$ when $n\eps \le 1$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Write $J = J_n(0)$. For real $\phi$ the unitary $D = \diag(1, e^{i\phi}, \dots, e^{i(n-1)\phi})$ gives $D^*JD = e^{i\phi}J$, so by part 4 of <a class="xref" href="#thm-pseudo-prop"></a>, $\Lambda_\eps(J) = \Lambda_\eps(e^{i\phi}J)$, which is $e^{i\phi}\Lambda_\eps(J)$ because $\norm{(zI - e^{i\phi}J)^{-1}} = \norm{(e^{-i\phi}zI - J)^{-1}}$: the set is invariant under rotations about 0, hence equal to $\{z : \abs{z} \in \mathcal I\}$ for a set $\mathcal I \subseteq [0, \infty)$. Each connected component contains an eigenvalue (part 1), and $0$ is the only one, so the set is connected and $\mathcal I$ is an interval containing $0$; the set is open and bounded, so $\mathcal I = [0, r_\eps)$. For $0 &lt; \eps' &lt; \eps$ the matrix $J + \eps'e_ne_1^\T$, a perturbation of $J$ of norm $\eps' &lt; \eps$, has eigenvalues of modulus $\eps'^{1/n}$ by <a class="xref" href="#thm-jordan-pert"></a>; hence $r_\eps \ge \eps^{1/n}$. For the upper bound, $J^n = 0$ gives $(zI - J)^{-1} = \sum_{k=0}^{n-1}J^k/z^{k+1}$ for $z \neq 0$, and $\norm{J^k} \le 1$, so with $r = \abs{z}$</p>
+<div class="eq">$$\norm{(zI - J)^{-1}} \le \sum_{k=1}^{n}r^{-k} \le \begin{cases} n & (r \ge 1),\\ n\,r^{-n} & (r &lt; 1).\end{cases}$$</div>
+<p>If $n\eps \le 1$, a point $z \neq 0$ of $\Lambda_\eps(J)$ has $\norm{(zI - J)^{-1}} &gt; 1/\eps \ge n$, which excludes $r \ge 1$ and then forces $n\,r^{-n} &gt; 1/\eps$, that is, $r &lt; (n\eps)^{1/n}$.</p>
+</div>
+
+<div class="blk rem">
+<p>Heuristically, the components around simple eigenvalues are disks whose radii are the condition numbers times $\eps$. By <a class="xref" href="#thm-first-order"></a>, a perturbation $tE$ with $\norm{E} = 1$ moves a simple eigenvalue $\lambda$ at a rate at most $\kappa(\lambda)$, and $E = e^{i\phi}yx^*/(\norm{x}\norm{y})$ with a real phase $\phi$ attains this rate in a direction that turns with $\phi$. That argument is first order in each fixed direction $E$; the next proposition makes the picture exact up to $O(\eps^2)$, uniformly over all perturbations.</p>
+</div>
+
+<div class="blk prop" id="prop-psa-simple" data-name="Pseudospectra near a simple eigenvalue">
+<p>Let $\lambda$ be a simple eigenvalue of $A \in \C^{n\times n}$ with condition number $\kappa(\lambda)$, and let $r_0 &gt; 0$ be smaller than the distance from $\lambda$ to the other eigenvalues. There is a constant $C \ge 0$ such that for every $\eps &gt; 0$ with $C\eps &lt; 1$ and $\kappa(\lambda)\eps &lt; (1 - C\eps)\,r_0$, the connected component $\Omega_\eps$ of $\Lambda_\eps(A)$ that contains $\lambda$ satisfies</p>
+<div class="eq">$$\lambda + \Delta_{\kappa(\lambda)\eps/(1 + C\eps)} \;\subseteq\; \Omega_\eps \;\subseteq\; \lambda + \Delta_{\kappa(\lambda)\eps/(1 - C\eps)}.$$</div>
+<p>So $\Omega_\eps$ is the disk of radius $\kappa(\lambda)\eps$ about $\lambda$ up to $O(\eps^2)$, and every eigenvalue of $A + E$ with $\norm{E} &lt; \eps$ that lies in $\Omega_\eps$ is within $\kappa(\lambda)\eps + O(\eps^2)$ of $\lambda$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Take a Jordan form $A = SJS^{-1}$ whose first block is the $1\times 1$ block of $\lambda$, and let $J'$ be the remaining blocks. Then $x = Se_1$ is a right eigenvector, $\tilde y^* = e_1^\T S^{-1}$ is a left eigenvector, $\tilde y^*x = 1$, and</p>
+<div class="eq">$$(zI - A)^{-1} = \frac{P}{z - \lambda} + H(z),\qquad P = x\tilde y^*,$$</div>
+<p>with $H(z) = S\,\diag\big(0, (zI - J')^{-1}\big)S^{-1}$. $H$ is continuous on the closed disk $\abs{z - \lambda} \le r_0$, which contains no other eigenvalue; let $C$ be the maximum of $\norm{H(z)}$ there. The rank-one matrix $P$ has $\norm{P} = \norm{x}\norm{\tilde y} = \kappa(\lambda)$, because the quotient defining $\kappa(\lambda)$ does not change when $x$ and $y$ are rescaled. For $0 &lt; \abs{z - \lambda} \le r_0$ the triangle inequality gives</p>
+<div class="eq">$$\frac{\kappa(\lambda)}{\abs{z - \lambda}} - C \;\le\; \norm{(zI - A)^{-1}} \;\le\; \frac{\kappa(\lambda)}{\abs{z - \lambda}} + C.$$</div>
+<p>If $\abs{z - \lambda} &lt; \kappa(\lambda)\eps/(1 + C\eps)$, the left side exceeds $1/\eps$, so $z \in \Lambda_\eps(A)$; this disk is connected and contains $\lambda$, so it lies in $\Omega_\eps$. If $z \in \Lambda_\eps(A)$ and $\abs{z - \lambda} \le r_0$, the right side exceeds $1/\eps$, so $\abs{z - \lambda} &lt; \rho = \kappa(\lambda)\eps/(1 - C\eps) &lt; r_0$. Thus $\Lambda_\eps(A)$ misses the annulus $\rho \le \abs{z - \lambda} \le r_0$, and the connected set $\Omega_\eps$, which contains $\lambda$, lies inside it. The last statement follows from definition 2 of <a class="xref" href="#thm-pseudo-eq"></a>.</p>
+</div>
+
+<div class="blk prop" id="prop-psa-normal" data-name="Pseudospectra detect non-normality">
+<p>$A \in \C^{n\times n}$ is normal if and only if $\Lambda_\eps(A) = \Lambda(A) + \Delta_\eps$ for every $\eps &gt; 0$, that is, if and only if $\norm{(zI - A)^{-1}} = 1/\operatorname{dist}(z, \Lambda(A))$ for every $z \notin \Lambda(A)$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> The two conditions are equivalent because $z \in \Lambda_\eps(A)$ means $\norm{(zI - A)^{-1}} &gt; 1/\eps$ and $z \in \Lambda(A) + \Delta_\eps$ means $1/\operatorname{dist}(z, \Lambda(A)) &gt; 1/\eps$. "Only if" is part 3 of <a class="xref" href="#thm-pseudo-prop"></a>. Conversely, assume the resolvent identity and let $A = SJS^{-1}$ be a Jordan form. Let $\lambda \in \Lambda(A)$ have largest Jordan block of size $m$. Expanding each block's resolvent as in the proof of <a class="xref" href="#prop-holder"></a>, $(z - \lambda)^m(zI - A)^{-1} \to SFS^{-1}$ as $z \to \lambda$, where $F \neq 0$ carries $J_m(0)^{m-1}$ in each block of $\lambda$ of size $m$ and zeros elsewhere. Near $\lambda$ the identity says $\norm{(zI - A)^{-1}} = 1/\abs{z - \lambda}$, so $\abs{z - \lambda}^{m-1} \to \norm{SFS^{-1}} &gt; 0$, which forces $m = 1$. Hence $A$ is diagonalizable, and $SFS^{-1} = P_\lambda$ is the projector onto the eigenspace of $\lambda$ along the other eigenspaces, with $\norm{P_\lambda} = \lim_{z\to\lambda}\abs{z - \lambda}\,\norm{(zI - A)^{-1}} = 1$. A nonzero projector of norm 1 is an orthogonal projector (<a href="ch02_least_squares.html#prop-projnorm">norm of a projector</a>, chapter 2), so each eigenspace is orthogonal to the sum of the others. Orthonormal bases of the eigenspaces then form a unitary $U$ with $A = U\Lambda U^*$, and $A$ is normal.</p>
+</div>
+
+<figure class="viz" id="viz-psa">
+  <figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">Pseudospectra explorer</span><span class="viz-sub">Heat map of $\log_{10}\sigma_{\min}(zI - A)$ with contours at $\eps = 10^{-1}, 10^{-2}, \dots$; the orange contour is the boundary of $\Lambda_\eps(A)$ for the chosen $\eps$. Ringed dots are eigenvalues. Click a point to build the perturbation that makes it an eigenvalue.</span></figcaption>
+  <div class="viz-plots cols-1"><div class="plot" id="psa-plot"></div></div>
+  <div class="viz-controls" id="psa-controls"></div>
+  <div class="viz-notes">
+    <div><h5>Try this</h5><ol>
+      <li>Choose <i>Normal 2×2</i> and the overlay <i>disks</i>: the dashed $\eps$-circles coincide with the contours, as <a class="xref" href="#thm-pseudo-prop"></a> requires for normal matrices.</li>
+      <li>Choose <i>Non-normal 2×2</i> and raise $w$ from 0 to 30. The eigenvalues stay at $-1$ and $-2$; the contour for $\eps = 10^{-2}$ swells, and near $w = 25$ the two components merge across the midpoint, as the probe predicts ($1/(4w) = 10^{-2}$).</li>
+      <li>Choose <i>Jordan block</i>, set $\eps = 10^{-3}$ and press <i>Perturbation cloud</i>. Eigenvalues of $A + E$ with random complex $\norm{E} = \eps$ land inside the orange disk (each satisfies $\sigma_{\min}(zI - A) \le \norm{E}$, by the proof of <a class="xref" href="#thm-pseudo-eq"></a>), most of them in a ring at about three quarters of its radius: random perturbations are nearly, but not quite, the worst ones (<a class="xref" href="#prop-jordan-generic"></a>).</li>
+      <li>Click a point outside the spectrum. The readout reports $\sigma_{\min}(zI - A)$ and checks that the rank-one $E$ from the proof makes $z$ an exact eigenvalue of $A + E$.</li>
+    </ol></div>
+    <div><h5>What to notice</h5><p>The heat map is definition 4 of <a class="xref" href="#thm-pseudo-eq"></a>, the cloud is definition 2 and the click is the step from 3 to 2 in its proof. In the non-normal presets the pseudospectra are far larger than the $\eps$-disks while the eigenvalues do not move; only normal matrices have $\Lambda_\eps(A) = \Lambda(A) + \Delta_\eps$ for every $\eps$ (<a class="xref" href="#prop-psa-normal"></a>), and for a diagonalizable matrix the Bauer–Fike disks of radius $\kappa(V)\eps$ always contain the pseudospectra (part 3 of <a class="xref" href="#thm-pseudo-prop"></a>). With the overlay <i>numerical range</i>, every pseudospectrum stays within $\eps$ of $W(A)$ (<a class="xref" href="#prop-psa-in-W"></a>).</p></div>
+  </div>
+</figure>
+
+<div class="blk rem">
+<p>The figure uses the standard algorithm: compute a Schur form $A = UTU^*$ once (<a href="ch03_eigenvalues.html#thm-schur">Schur triangularization</a>, chapter 3), then at each grid point estimate $\sigma_{\min}(zI - T) = \sigma_{\min}(zI - A)$ (unitary invariance, part 4 of <a class="xref" href="#thm-pseudo-prop"></a>) by inverse iteration on $(zI - T)^*(zI - T)$, which needs only two triangular solves per step. Trefethen and Embree discuss this algorithm and its refinements in their part on computing pseudospectra.</p>
+</div>
+</section>
+
+<section class="sec" id="s-numrange">
+<h2>The numerical range and the abscissas</h2>
+
+<div class="blk def" id="def-numrange" data-name="Numerical range">
+<p>The <dfn>numerical range</dfn> (field of values) of $A \in \C^{n\times n}$ is $W(A) = \{x^*Ax : x \in \C^n,\ \norm{x} = 1\}$, the set of all Rayleigh quotients.</p>
+</div>
+
+<div class="blk thm" id="thm-numrange" data-name="Properties of the numerical range">
+<p>Let $A \in \C^{n\times n}$ and let $H = \frac12(A + A^*)$ be its Hermitian part.</p>
+<ol>
+<li>$W(A)$ is compact and convex (Toeplitz–Hausdorff theorem).</li>
+<li>$\Lambda(A) \subseteq W(A)$.</li>
+<li>If $A$ is normal, $W(A)$ is the convex hull of $\Lambda(A)$; if $A$ is Hermitian, $W(A) = [\lambda_n, \lambda_1]$.</li>
+<li>$\Re(x^*Ax) = x^*Hx$, so $\max \Re W(A) = \lambda_{\max}(H)$.</li>
+<li>$W(U^*AU) = W(A)$ for unitary $U$, but in general $W(S^{-1}AS) \neq W(A)$ for invertible $S$.</li>
+</ol>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Compactness: $W(A)$ is the continuous image of the unit sphere. (2) If $Ax = \lambda x$ with $\norm{x} = 1$, then $x^*Ax = \lambda$. (3) For $A = U\Lambda U^*$ and $z = U^*x$, $x^*Ax = \sum_i \abs{z_i}^2\lambda_i$, a convex combination with arbitrary weights $\abs{z_i}^2 \ge 0$ summing to 1. (4) $\overline{x^*Ax} = x^*A^*x$, so $\Re(x^*Ax) = \frac12 x^*(A + A^*)x$, and the maximum over unit $x$ is $\lambda_{\max}(H)$ by the Rayleigh quotient characterization (<a href="ch04_svd.html#thm-rayleigh">Rayleigh's theorem</a>, chapter 4). (5) $x \mapsto Ux$ maps the unit sphere onto itself; an example of the failure follows below.</p>
+</div>
+<p class="src">Convexity: for two points $x^*Ax$ and $y^*Ay$, restrict $A$ to $\spn(x, y)$; the numerical range of the resulting $2\times 2$ compression lies in $W(A)$ and is an elliptical disk (<a class="xref" href="#prop-elliptical"></a>), so it contains the segment. Proofs: Horn and Johnson, <i>Topics in Matrix Analysis</i>, ch. 1; see also Trefethen and Embree, ch. 17.</p>
+
+<div class="blk prop" id="prop-elliptical" data-name="Elliptical range theorem">
+<p>Let $A \in \C^{2\times 2}$ have eigenvalues $\lambda_1, \lambda_2$, and let $b = \big(\tr(A^*A) - \abs{\lambda_1}^2 - \abs{\lambda_2}^2\big)^{1/2}$, where $\tr$ is the trace. Then $W(A)$ is the closed elliptical disk with foci $\lambda_1, \lambda_2$ and minor axis of length $b$. It degenerates to the segment $[\lambda_1, \lambda_2]$ exactly when $b = 0$, that is, when $A$ is normal.</p>
+</div>
+<details class="proof"><summary>Proof sketch</summary>
+<p>Both sides are unchanged by unitary similarity (part 5 of <a class="xref" href="#thm-numrange"></a>; eigenvalues and $\tr(A^*A) = \norm{A}_F^2$ are unitary invariants), so by a Schur form we may take $A = \begin{bmatrix}\lambda_1 & \beta\\ 0 & \lambda_2\end{bmatrix}$, where $\abs{\beta}^2 = \tr(A^*A) - \abs{\lambda_1}^2 - \abs{\lambda_2}^2 = b^2$ because $\tr(A^*A)$ is the sum of the squared moduli of the entries. Since $W(cA + dI) = cW(A) + d$ for scalars $c, d$, and conjugation by $\diag(1, e^{i\psi})$ multiplies $\beta$ by $e^{i\psi}$, we may further take $\lambda_1 = a \ge 0$, $\lambda_2 = -a$ and $\beta = b \ge 0$. Up to a phase, which does not change $x^*Ax$, every unit vector is $x = (\cos\theta, e^{i\phi}\sin\theta)^\T$ with $\theta \in [0, \pi/2]$, and $x^*Ax = a\cos 2\theta + \frac b2 e^{i\phi}\sin 2\theta$. For fixed $\theta$ these points form the circle of radius $\frac b2\sin 2\theta$ about $a\cos 2\theta$. A point $X + iY$ lies on one of these circles exactly when the quadratic $(a^2 + b^2/4)\,s^2 - 2aXs + X^2 + Y^2 - b^2/4$ in $s = \cos 2\theta$ has a root in $[-1, 1]$. For $b &gt; 0$ its discriminant is nonnegative exactly when $X^2/(a^2 + b^2/4) + Y^2/(b^2/4) \le 1$; for such points the vertex $s = aX/(a^2 + b^2/4)$ lies in $[-1, 1]$ and the values at $s = \pm1$ are $(X \mp a)^2 + Y^2 \ge 0$, so a root lies in $[-1, 1]$. This is the elliptical disk with semi-axes $(a^2 + b^2/4)^{1/2}$ and $b/2$, whose foci are $\pm a$. The case $b = 0$ gives the segment $[-a, a]$; and $b = 0$ means that the triangular $A$ is diagonal, which happens exactly when $A$ is normal (<a href="ch04_svd.html#thm-normal">normal matrices</a>, chapter 4).</p>
+</details>
+<p class="src">Horn and Johnson, <i>Topics in Matrix Analysis</i>, ch. 1.</p>
+
+<div class="blk probe">
+<p>For $A = \begin{bmatrix}-1 & w\\ 0 & -2\end{bmatrix}$ the minor axis of <a class="xref" href="#prop-elliptical"></a> is $b = w$, so the ellipse has centre $-3/2$, semi-axes $\frac12\sqrt{1 + w^2}$ and $\frac w2$, and rightmost point $\frac12(-3 + \sqrt{1 + w^2})$, which is positive for $w &gt; 2\sqrt2$. For $J_2(0)$ and $x = (\cos\theta, e^{i\phi}\sin\theta)^\T$, $x^*J_2(0)x = e^{i\phi}\cos\theta\sin\theta$: the numerical range is the closed disk of radius $\frac12$, although the only eigenvalue is 0.</p>
+</div>
+
+<div class="blk cex" id="cex-numrange">
+<p>The numerical range is neither determined by the spectrum nor invariant under similarity. The zero matrix and $J_2(0)$ have the same spectrum $\{0\}$, but $W(0) = \{0\}$ while $W(J_2(0))$ is the disk of radius $\frac12$. And $J_2(0)$ is similar to $sJ_2(0)$ for every $s \neq 0$ (conjugate by $\diag(1, s)$), whose numerical range is the disk of radius $\abs{s}/2$: similarity can make $W$ as large as we like. This is the point: $W(A)$ carries metric information that similarity invariants cannot.</p>
+</div>
+
+<div class="blk def" id="def-abscissas" data-name="Abscissas">
+<p>The <dfn>spectral abscissa</dfn> is $\alpha(A) = \max\Re\Lambda(A)$, the <dfn>numerical abscissa</dfn> is $\omega(A) = \max\Re W(A)$, which equals $\lambda_{\max}\big(\frac12(A + A^*)\big)$ by part 4 of <a class="xref" href="#thm-numrange"></a>, and the <dfn>$\eps$-pseudospectral abscissa</dfn> is $\alpha_\eps(A) = \sup\Re\Lambda_\eps(A)$.</p>
+</div>
+<div class="blk prop" id="prop-abscissas" data-name="Ordering of the abscissas">
+<p>For $A \in \C^{n\times n}$ and $\eps &gt; 0$, $\alpha(A) \le \omega(A)$ and $\alpha(A) + \eps \le \alpha_\eps(A)$. If $A$ is normal, both are equalities: $\omega(A) = \alpha(A)$ and $\alpha_\eps(A) = \alpha(A) + \eps$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> $\Lambda(A) \subseteq W(A)$, and for normal $A$ the set $W(A)$ is the convex hull of $\Lambda(A)$, whose largest real part is attained at an eigenvalue (parts 2 and 3 of <a class="xref" href="#thm-numrange"></a>). Likewise $\Lambda(A) + \Delta_\eps \subseteq \Lambda_\eps(A)$, with equality for normal $A$ (part 3 of <a class="xref" href="#thm-pseudo-prop"></a>), and $\sup\Re\big(\Lambda(A) + \Delta_\eps\big) = \alpha(A) + \eps$.</p>
+</div>
+
+<div class="blk prop" id="prop-psa-in-W" data-name="Pseudospectra lie near the numerical range">
+<p>For every $\eps &gt; 0$, $\Lambda_\eps(A) \subseteq W(A) + \Delta_\eps$; in particular $\alpha_\eps(A) \le \omega(A) + \eps$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> For $z \in \Lambda_\eps(A)$ take a unit $v$ with $\norm{(A - zI)v} &lt; \eps$ (definition 3 of <a class="xref" href="#thm-pseudo-eq"></a>). Then $\abs{v^*Av - z} = \abs{v^*(A - zI)v} \le \norm{(A - zI)v} &lt; \eps$, and $v^*Av \in W(A)$.</p>
+</div>
+</section>
+
+<section class="sec" id="s-transient">
+<h2>Transient growth</h2>
+
+<div class="blk prob"><p>The solution of the linear differential equation $\dot x = Ax$ (where $\dot x = \dd x/\dd t$), $x(0) = x_0$, is $x(t) = e^{tA}x_0$, where $e^{tA}$ is the matrix exponential (<a href="ch07_autonomous_systems.html#thm-exist">existence and uniqueness</a>, chapter 7). If every eigenvalue has negative real part, $x(t) \to 0$ (<a href="ch07_autonomous_systems.html#thm-ct-stability">eigenvalue tests in continuous time</a>, chapter 7). How large can $\norm{x(t)}$ become on the way, and which properties of $A$ decide it?</p></div>
+
+<div class="blk setting">
+<p>The quantity to control is $\norm{e^{tA}} = \max_{x_0 \neq 0}\norm{x(t)}/\norm{x_0}$, the worst amplification at time $t$; it is attained at the top right singular vector of $e^{tA}$ (<a href="ch04_svd.html#thm-norms">norms from singular values</a>, chapter 4). Two facts from chapter 7 are used: the eigenvalues of $e^{tA}$ are $e^{t\lambda_i}$ (<a href="ch07_autonomous_systems.html#thm-expm">properties of the exponential</a>), and in a Jordan basis the entries of $e^{tA}$ are combinations of $t^je^{\lambda_it}$ (<a href="ch07_autonomous_systems.html#prop-jordan-exp">exponential of a Jordan block</a>).</p>
+</div>
+
+<div class="blk thm" id="thm-envelope" data-name="Envelopes and slopes">
+<p>For every $A \in \C^{n\times n}$ and $t \ge 0$,</p>
+<div class="eq">$$e^{t\alpha(A)} \;\le\; \norm{e^{tA}} \;\le\; e^{t\omega(A)}.$$</div>
+<p>Moreover the right derivative at $t = 0$ of $\norm{e^{tA}}$ is $\omega(A)$, and $\lim_{t\to\infty}\frac1t\log\norm{e^{tA}} = \alpha(A)$. In particular $\omega(A)$ is the smallest $\beta$ with $\norm{e^{tA}} \le e^{\beta t}$ for all $t \ge 0$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Lower bound: every induced norm dominates the spectral radius (<a href="ch05_hilbert_spaces.html#prop-rho">chapter 5</a>), and the eigenvalues of $e^{tA}$ are $e^{t\lambda_i}$, so $\norm{e^{tA}} \ge \max_i\abs{e^{t\lambda_i}} = e^{t\alpha}$. Upper bound: along $x(t) = e^{tA}x_0$, $\frac{\dd}{\dd t}\norm{x}^2 = \dot x^*x + x^*\dot x = x^*(A + A^*)x \le 2\omega\norm{x}^2$, so $e^{-2\omega t}\norm{x(t)}^2$ is nonincreasing and $\norm{x(t)} \le e^{\omega t}\norm{x_0}$. Initial slope: $e^{tA} = I + tA + O(t^2)$ and $\norm{I + tA}^2 = \lambda_{\max}\big(I + 2tH + t^2A^*A\big)$, which by <a class="xref" href="#thm-weyl"></a> is $1 + 2t\omega + O(t^2)$; hence $\norm{e^{tA}} = 1 + t\omega + O(t^2)$. Long-time rate: with a Jordan form $A = SJS^{-1}$, $\norm{e^{tA}} \le \kappa(S)\norm{e^{tJ}} \le c\,(1 + t^{n-1})e^{t\alpha}$, which together with the lower bound gives the limit. If $\norm{e^{tA}} \le e^{\beta t}$ for all $t \ge 0$, comparing slopes at $t = 0$ gives $\omega \le \beta$.</p>
+</div>
+
+<div class="blk ex" id="ex-transient" data-name="Transient growth of a stable 2×2 system">
+<p>For $A = \begin{bmatrix}-1 & w\\ 0 & -2\end{bmatrix}$ the exponential is upper triangular,</p>
+<div class="eq">$$e^{tA} = \begin{bmatrix}e^{-t} & w\,(e^{-t} - e^{-2t})\\ 0 & e^{-2t}\end{bmatrix},$$</div>
+<p>(check that it satisfies $\frac{\dd}{\dd t}e^{tA} = Ae^{tA}$ and equals $I$ at $t = 0$). The off-diagonal entry $w(e^{-t} - e^{-2t})$ is maximal where $e^{-t} = 2e^{-2t}$, at $t = \ln 2$, with value $w/4$. Since $\abs{(e^{tA})_{12}} \le \norm{e^{tA}} \le \norm{e^{tA}}_F$ (for any matrix $M$, $\abs{m_{12}} = \abs{e_1^\T Me_2} \le \norm{M}$, and $\norm{M}^2 = \sigma_1^2 \le \sum_i\sigma_i^2 = \norm{M}_F^2$ by <a href="ch04_svd.html#thm-norms">norms from singular values</a>, chapter 4) and the diagonal entries are at most 1,</p>
+<div class="eq">$$\frac{w}{4} \;\le\; \max_{t \ge 0}\norm{e^{tA}} \;\le\; \sqrt{\frac{w^2}{16} + 2},$$</div>
+<p>so the peak is $w/4 + O(1/w)$, although $\alpha(A) = -1$. Here $\omega(A) = \frac12(-3 + \sqrt{1 + w^2})$, positive exactly when $w &gt; 2\sqrt2$, and by <a class="xref" href="#prop-growth"></a> that is exactly when $\norm{e^{tA}}$ exceeds 1 at some time $t \ge 0$. Computed numerically: for $w = 10$ the peak is $2.56$ at $t \approx 0.66$; for $w = 20$ it is $5.03$ at $t \approx 0.69$.</p>
+</div>
+
+<div class="blk prop" id="prop-growth" data-name="When transient growth occurs">
+<p>Let $A \in \C^{n\times n}$.</p>
+<ol>
+<li>$\norm{e^{tA}} &gt; 1$ for some $t \ge 0$ if and only if $\omega(A) &gt; 0$. If $\omega(A) &gt; 0$ this already holds for all small $t &gt; 0$; if $\omega(A) \le 0$, then $\norm{e^{tA}} \le 1$ for all $t \ge 0$.</li>
+<li>If $A$ is normal, $\norm{e^{tA}} = e^{t\alpha(A)}$ for all $t \ge 0$. Hence if $\alpha(A) \le 0$ and $\norm{e^{tA}} &gt; 1$ for some $t \ge 0$, then $A$ is not normal.</li>
+</ol>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (1) If $\omega(A) \le 0$, <a class="xref" href="#thm-envelope"></a> gives $\norm{e^{tA}} \le e^{t\omega(A)} \le 1$. If $\omega(A) &gt; 0$, the same theorem gives right derivative $\omega(A) &gt; 0$ at $t = 0$, where $\norm{e^{0A}} = 1$, so $\norm{e^{tA}} &gt; 1$ for small $t &gt; 0$. (2) With $A = U\Lambda U^*$ and $U$ unitary, $e^{tA} = Ue^{t\Lambda}U^*$ (<a href="ch07_autonomous_systems.html#thm-expm">properties of the exponential</a>, chapter 7), so $\norm{e^{tA}} = \norm{e^{t\Lambda}} = \max_i\abs{e^{t\lambda_i}} = e^{t\alpha(A)}$ for $t \ge 0$, the norm of a diagonal matrix being its largest entry in modulus.</p>
+</div>
+
+<div class="blk cex" id="cex-growth">
+<p>"Non-normality causes transient growth" is false as stated: by <a class="xref" href="#prop-growth"></a>, non-normality is necessary for growth when $\alpha(A) \le 0$, but it is not sufficient. For $0 &lt; w \le 2\sqrt2$ the matrix $A = \begin{bmatrix}-1 & w\\ 0 & -2\end{bmatrix}$ is not normal, since $(A^*A)_{11} = 1$ while $(AA^*)_{11} = 1 + w^2$, yet $\omega(A) = \frac12(-3 + \sqrt{1 + w^2}) \le 0$, so $\norm{e^{tA}} \le 1$ for all $t \ge 0$. Growth occurs exactly when the numerical range reaches into the open right half-plane, which here takes $w &gt; 2\sqrt2$.</p>
+</div>
+
+<div class="blk pattern" id="pat-schur">
+<p>The Schur form exposes the mechanism. Every $A$ can be written $A = UTU^*$ with $U$ unitary and $T = D + N$ upper triangular (<a href="ch03_eigenvalues.html#thm-schur">Schur triangularization</a>, chapter 3), where $D$ is diagonal with the eigenvalues and $N$ is strictly upper triangular. In the coordinates $z = U^*x$ the dynamics $\dot z = Tz$ is a cascade: the last coordinate evolves alone, and each coordinate is driven by those below it. The eigenvalues are the self-loops, and they are the diagonal of $D$ whatever $N$ is: $N$ is a feedforward network that the spectrum cannot see. The $2\times 2$ example is already in Schur form: $\dot x_2 = -2x_2$, and the decaying signal $x_2$ is fed into $\dot x_1 = -x_1 + w x_2$ with gain $w$. The same structure underlies balanced amplification in networks of excitatory and inhibitory neurons (<a href="ch13_neural_bridges.html#prop-schur-ei">the two-population Schur form</a>, chapter 13).</p>
+</div>
+
+<figure class="wide" aria-label="Schur coordinates as a feedforward cascade">
+<svg viewBox="0 0 640 250" role="img" aria-label="Three nodes z3, z2, z1 with self-loops labelled by eigenvalues and feedforward arrows from z3 to z2, z2 to z1 and z3 to z1 labelled by entries of N" style="width:100%;height:auto;max-width:760px;display:block;margin:6px 0 4px">
+  <defs>
+    <marker id="sc-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--c2)"/></marker>
+    <marker id="sc-arr3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--c3)"/></marker>
+  </defs>
+  <text x="320" y="20" text-anchor="middle" font-family="var(--font-ui)" font-size="12" letter-spacing="1.2" fill="var(--muted)">SCHUR COORDINATES  ż = (D + N) z</text>
+  <path d="M146 94 C 232 48, 408 48, 494 94" fill="none" stroke="var(--c2)" stroke-width="2" marker-end="url(#sc-arr)"/>
+  <text x="320" y="50" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="16" fill="var(--ink)">n₁₃</text>
+  <line x1="152" y1="125" x2="284" y2="125" stroke="var(--c2)" stroke-width="2" marker-end="url(#sc-arr)"/>
+  <text x="218" y="114" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="16" fill="var(--ink)">n₂₃</text>
+  <line x1="356" y1="125" x2="488" y2="125" stroke="var(--c2)" stroke-width="2" marker-end="url(#sc-arr)"/>
+  <text x="422" y="114" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="16" fill="var(--ink)">n₁₂</text>
+  <circle cx="118" cy="125" r="32" fill="var(--tint-def)" stroke="var(--c1)" stroke-width="1.5"/>
+  <circle cx="320" cy="125" r="32" fill="var(--tint-def)" stroke="var(--c1)" stroke-width="1.5"/>
+  <circle cx="522" cy="125" r="32" fill="var(--tint-def)" stroke="var(--c1)" stroke-width="1.5"/>
+  <text x="118" y="131" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="18" fill="var(--ink)">z₃</text>
+  <text x="320" y="131" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="18" fill="var(--ink)">z₂</text>
+  <text x="522" y="131" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="18" fill="var(--ink)">z₁</text>
+  <path d="M102 153 C 84 196, 152 196, 134 153" fill="none" stroke="var(--c3)" stroke-width="1.75" marker-end="url(#sc-arr3)"/>
+  <path d="M304 153 C 286 196, 354 196, 336 153" fill="none" stroke="var(--c3)" stroke-width="1.75" marker-end="url(#sc-arr3)"/>
+  <path d="M506 153 C 488 196, 556 196, 538 153" fill="none" stroke="var(--c3)" stroke-width="1.75" marker-end="url(#sc-arr3)"/>
+  <text x="118" y="208" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="16" fill="var(--ink)">λ₃</text>
+  <text x="320" y="208" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="16" fill="var(--ink)">λ₂</text>
+  <text x="522" y="208" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="16" fill="var(--ink)">λ₁</text>
+  <text x="320" y="238" text-anchor="middle" font-family="var(--font-ui)" font-size="12.5" fill="var(--muted)">Self-loops: the diagonal D (eigenvalues λᵢ). Arrows: the entries nᵢⱼ of the strictly upper triangular N.</text>
+</svg>
+</figure>
+
+<div class="blk prop" id="prop-dep" data-name="Departure from normality">
+<p>If $A = U(D + N)U^*$ is a Schur form, then $\norm{N}_F^2 = \norm{A}_F^2 - \sum_i\abs{\lambda_i}^2$, so $\operatorname{dep}(A) = \norm{N}_F$ does not depend on which Schur form is used; $A$ is normal if and only if $\operatorname{dep}(A) = 0$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> The Frobenius norm $\norm{A}_F$ (the square root of the sum of squared moduli of the entries) is unitarily invariant, so $\norm{A}_F^2 = \norm{D + N}_F^2 = \sum_i\abs{\lambda_i}^2 + \norm{N}_F^2$, because $D$ and $N$ occupy disjoint entries. If $N = 0$, $A$ is unitarily diagonalizable, hence normal; conversely a normal triangular matrix is diagonal (compare the $(1,1)$ entries of $T^*T$ and $TT^*$ and induct).</p>
+</div>
+
+<div class="blk thm" id="thm-kreiss" data-name="Pseudospectral lower bound and the Kreiss matrix theorem">
+<p>For every $\eps &gt; 0$,</p>
+<div class="eq">$$\sup_{t \ge 0}\norm{e^{tA}} \;\ge\; \frac{\alpha_\eps(A)}{\eps}.$$</div>
+<p>Hence $\sup_{t\ge0}\norm{e^{tA}} \ge \mathcal K(A)$, where the Kreiss constant is</p>
+<div class="eq">$$\mathcal K(A) = \sup_{\eps&gt;0}\frac{\alpha_\eps(A)}{\eps} = \sup_{\Re z &gt; 0}\,\Re z\,\norm{(zI - A)^{-1}}.$$</div>
+<p>Conversely (the Kreiss matrix theorem), for $A \in \C^{n\times n}$,</p>
+<div class="eq">$$\mathcal K(A) \;\le\; \sup_{t \ge 0}\norm{e^{tA}} \;\le\; e\,n\,\mathcal K(A).$$</div>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof of the lower bound.</span> Let $M = \sup_{t\ge0}\norm{e^{tA}}$; if $M = \infty$ there is nothing to prove, and if $M &lt; \infty$ then $\alpha(A) \le 0$. For $\Re z &gt; 0$ the Laplace transform gives $(zI - A)^{-1} = \int_0^\infty e^{-zt}e^{tA}\,\dd t$ (<a href="ch07_autonomous_systems.html#prop-laplace">Laplace transform of the exponential</a>, chapter 7), so $\norm{(zI - A)^{-1}} \le M\int_0^\infty e^{-t\Re z}\dd t = M/\Re z$. If moreover $z \in \Lambda_\eps(A)$, then $1/\eps &lt; M/\Re z$, so $M &gt; \Re z/\eps$; take the supremum over such $z$. The two formulas for $\mathcal K(A)$ agree because $z \in \Lambda_\eps(A)$ exactly when $\eps &gt; 1/\norm{R(z)}$.</p>
+</div>
+<p class="src">Upper bound: Trefethen and Embree, ch. 18, which also gives the version for powers, $\mathcal K(A) \le \sup_{k\ge0}\norm{A^k} \le e\,n\,\mathcal K(A)$ with $\mathcal K(A) = \sup_{\abs{z}&gt;1}(\abs{z} - 1)\norm{(zI - A)^{-1}}$.</p>
+
+<div class="blk cor" id="cor-kreiss-normal" data-name="Kreiss constant of a normal matrix">
+<p>For every $A \in \C^{n\times n}$, $\mathcal K(A) \ge 1$. If $A$ is normal and $\alpha(A) \le 0$, then $\mathcal K(A) = \sup_{t\ge0}\norm{e^{tA}} = 1$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> For real $x &gt; \norm{A}$, $x\,(xI - A)^{-1} = (I - A/x)^{-1}$ by the Neumann series, and its norm tends to 1 as $x \to \infty$; so $\mathcal K(A) \ge 1$. If $A$ is normal with $\alpha(A) \le 0$, part 2 of <a class="xref" href="#prop-growth"></a> gives $\sup_t\norm{e^{tA}} = \sup_t e^{t\alpha(A)} = 1$, and the lower bound of <a class="xref" href="#thm-kreiss"></a> gives $\mathcal K(A) \le 1$.</p>
+</div>
+
+<div class="blk prop" id="prop-contour" data-name="Pseudospectral upper bound">
+<p>Let $\Gamma$ be a finite union of rectifiable closed curves of total length $L$ that encloses $\Lambda(A)$ once in the positive sense, with $\norm{(zI - A)^{-1}} \le 1/\eps$ on $\Gamma$ (for instance the boundary of $\Lambda_\eps(A)$). Then for $t \ge 0$,</p>
+<div class="eq">$$\norm{e^{tA}} \;\le\; \frac{L}{2\pi\eps}\,\max_{z \in \Gamma} e^{t\Re z}.$$</div>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> The Cauchy integral $e^{tA} = \frac{1}{2\pi i}\oint_\Gamma e^{tz}(zI - A)^{-1}\dd z$ holds for any such contour (expand the resolvent in a Jordan basis and apply Cauchy's formula entry by entry). Bound the integrand by $e^{t\Re z}/\eps$ and the integral by its length.</p>
+</div>
+<div class="blk rem">
+<p>With $\Gamma$ the boundary $\partial\Lambda_\eps(A)$, of length $L_\eps$, <a class="xref" href="#prop-contour"></a> reads $\norm{e^{tA}} \le \frac{L_\eps}{2\pi\eps}e^{t\alpha_\eps(A)}$, so $\sup_{t\ge0}\norm{e^{tA}} \le L_\eps/(2\pi\eps)$ whenever $\alpha_\eps(A) \le 0$; in the other direction <a class="xref" href="#thm-kreiss"></a> gives $\sup_{t\ge0}\norm{e^{tA}} \ge \alpha_\eps(A)/\eps$. As a rule of thumb, then, if some $\Lambda_\eps(A)$ lies in the left half-plane and its boundary is not much longer than $2\pi\eps$, the transient is small, and if $\Lambda_\eps(A)$ extends much farther than $\eps$ into the right half-plane, it is large (Trefethen and Embree, ch. 14–16). Merely reaching the imaginary axis forces nothing: for $A = -\eps I$ the closure of $\Lambda_\eps(A)$ touches it, yet $\norm{e^{tA}} = e^{-\eps t} \le 1$.</p>
+</div>
+
+<div class="blk pattern">
+<p>Three time scales, three sets. The start of the transient is governed by the numerical range, through the initial slope $\omega(A)$, and the end by the spectrum, through the rate $\alpha(A)$ (<a class="xref" href="#thm-envelope"></a>); the height of the hump in between is governed by the pseudospectra, through $\mathcal K(A)$, up to the factor $e\,n$ (<a class="xref" href="#thm-kreiss"></a>). For normal matrices the three coincide: $\omega = \alpha$ and $\alpha_\eps = \alpha + \eps$ (<a class="xref" href="#prop-abscissas"></a>), $\norm{e^{tA}} = e^{t\alpha}$ (<a class="xref" href="#prop-growth"></a>), and $\mathcal K(A) = 1$ when $\alpha \le 0$ (<a class="xref" href="#cor-kreiss-normal"></a>).</p>
+</div>
+<div class="tbl-wrap"><table class="tbl">
+  <thead><tr><th>Time scale</th><th>Governing set</th><th>Number</th><th>Statement</th><th>Computed from</th><th>Where</th></tr></thead>
+  <tbody>
+    <tr><td>$t \to 0^+$</td><td>numerical range $W(A)$</td><td>$\omega(A)$</td><td>initial slope; $\norm{e^{tA}} \le e^{t\omega}$ for all $t \ge 0$</td><td>$\lambda_{\max}$ of the Hermitian part</td><td><a class="xref" href="#thm-envelope"></a></td></tr>
+    <tr><td>intermediate $t$</td><td>pseudospectra $\Lambda_\eps(A)$</td><td>$\alpha_\eps(A)$, $\mathcal K(A)$</td><td>$\mathcal K \le \sup_t\norm{e^{tA}} \le e\,n\,\mathcal K$</td><td>$\sigma_{\min}(zI - A)$ on a grid</td><td><a class="xref" href="#thm-kreiss"></a></td></tr>
+    <tr><td>$t \to \infty$</td><td>spectrum $\Lambda(A)$</td><td>$\alpha(A)$</td><td>$\frac1t\log\norm{e^{tA}} \to \alpha$; $\norm{e^{tA}} \ge e^{t\alpha}$</td><td>eigenvalues</td><td><a class="xref" href="#thm-envelope"></a></td></tr>
+  </tbody>
+</table></div>
+
+<figure class="viz" id="viz-transient">
+  <figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">Transient growth of a stable system</span><span class="viz-sub">$A = \begin{bmatrix}-1 & w\\ 0 & -2\end{bmatrix}$. Left: $\norm{e^{tA}}$ (violet) between the envelopes $e^{\alpha t}$ and $e^{\omega t}$ on a logarithmic axis. Right: the image of the unit circle under $e^{tA}$ at the target time, and the trajectory from the worst initial condition for that time.</span></figcaption>
+  <div class="viz-plots cols-2">
+    <div class="plot" id="tg-time"><div class="plot-cap" id="tg-legend"></div></div>
+    <div class="plot" id="tg-phase"><div class="plot-cap">Phase plane: dotted unit circle; orange ellipse $e^{tA}(\text{unit circle})$; violet worst trajectory</div></div>
+  </div>
+  <div class="viz-controls" id="tg-controls"></div>
+  <div class="viz-notes">
+    <div><h5>Try this</h5><ol>
+      <li>Set $w = 0$. The violet curve lies on the green envelope $e^{-t}$: the matrix is normal and $\omega = \alpha = -1$ (part 2 of <a class="xref" href="#prop-growth"></a>).</li>
+      <li>Set $w = 2.82$, just below $2\sqrt2 \approx 2.828$. Now $\omega \approx -0.004$, slightly negative: the curve starts flat and never exceeds 1 (<a class="xref" href="#cex-growth"></a>).</li>
+      <li>Set $w = 20$ and press <i>Peak time</i>. The peak is about $5.03$ near $t = \ln 2$; the worst initial condition points almost along $e_2$, the input end of the feedforward chain.</li>
+      <li>Drag the target time. The worst initial condition turns with $t$, and the ellipse first stretches beyond the unit circle, then shrinks into it.</li>
+    </ol></div>
+    <div><h5>What to notice</h5><p>The curve starts with slope $\omega(A)$, ends with slope $\alpha(A)$ and stays between the envelopes of <a class="xref" href="#thm-envelope"></a>. The readout checks both sides of <a class="xref" href="#ex-transient"></a> and of the Kreiss matrix theorem (<a class="xref" href="#thm-kreiss"></a>): $\mathcal K(A) \le \max_t\norm{e^{tA}} \le 2e\,\mathcal K(A)$. Every trajectory is a decaying $x_2$ fed forward into $x_1$.</p></div>
+  </div>
+</figure>
+
+<div class="blk rem">
+<p>Discrete time has the same structure, with $\rho(A)$ and $\norm{A}$ in the roles of $e^{\alpha}$ and $e^{\omega}$. For $x_{k+1} = Ax_k$, $\rho(A)^k \le \norm{A^k}$ (<a href="ch03_eigenvalues.html#prop-bounds">two-sided bounds</a>, chapter 3) and $\norm{A^k} \le \norm{A}^k$ by submultiplicativity, with $\rho(A)$ the spectral radius; $\norm{A^k}^{1/k} \to \rho(A)$ (<a href="ch03_eigenvalues.html#thm-gelfand">Gelfand's formula</a>, chapter 3); and the pseudospectra bound transient growth of the powers through the Kreiss constant for powers in the source note after <a class="xref" href="#thm-kreiss"></a> (Trefethen and Embree, ch. 16 and 18).</p>
+</div>
+
+<div class="blk why">
+<p>Trefethen, Trefethen, Reddy and Driscoll, "Hydrodynamic stability without eigenvalues" (<i>Science</i> 261, 1993), observed that the linearized operators of plane Couette and Poiseuille flow are strongly non-normal, so small disturbances can be amplified by large factors before they decay even when every eigenvalue is stable. They argued that this transient amplification, combined with nonlinear effects, offers a route to turbulence at Reynolds numbers where eigenvalue analysis predicts stability. The same lens applies to recurrent neural circuits whose connectivity is far from symmetric (<a href="ch13_neural_bridges.html">chapter 13</a>).</p>
+</div>
+</section>
+
+<section class="selfcheck" id="s-selfcheck">
+<h2>Self-check</h2>
+<ol>
+<li><p>You solve $Ax = b$ in double precision with a backward stable method and $\kappa(A) = 10^8$. Roughly how many digits of $x$ are correct?</p>
+<details><summary>Answer</summary><p>The relative error is of order $\kappa(A)\,u \approx 10^8 \times 10^{-16} = 10^{-8}$ (<a class="xref" href="#prop-backward"></a>): about 8 correct digits. Rounding errors are not the problem; the sensitivity of the problem is.</p></details></li>
+<li><p>A Hermitian $A$ has eigenvalues $1, 2, 5$, and $E$ is Hermitian with $\norm{E} = 0.3$. Where can the eigenvalues of $A + E$ lie, and which eigenvector is best determined?</p>
+<details><summary>Answer</summary><p>In $[0.7, 1.3]$, $[1.7, 2.3]$ and $[4.7, 5.3]$, one in each (<a class="xref" href="#thm-weyl"></a>). The eigenvector for $5$ has gap $3$, so $\sin\theta \le 0.3/2.7 \approx 0.11$; those for $1$ and $2$ have gap $1$, so only $\sin\theta \le 0.3/0.7 \approx 0.43$ (<a class="xref" href="#thm-sintheta"></a>).</p></details></li>
+<li><p>Find the eigenvalues of $\begin{bmatrix}0 & 1\\ \eps & 0\end{bmatrix}$. Why does <a class="xref" href="#thm-first-order"></a> not apply at $\eps = 0$?</p>
+<details><summary>Answer</summary><p>$\pm\sqrt{\eps}$, whose derivative in $\eps$ is infinite at $0$. The eigenvalue $0$ of $J_2(0)$ is not simple: its right eigenvector $e_1$ and left eigenvector $e_2$ satisfy $y^*x = 0$, so the quotient that defines $\kappa(\lambda)$ for simple eigenvalues is infinite, and the motion is of order $\eps^{1/2}$, not $\eps$ (<a class="xref" href="#prop-holder"></a>).</p></details></li>
+<li><p>All eigenvalues of $A$ have negative real part, yet the pseudospectrum $\Lambda_{0.01}(A)$ contains the point $0.5$. What follows about $\norm{e^{tA}}$?</p>
+<details><summary>Answer</summary><p>$\alpha_{0.01}(A) \ge 0.5$, so $\sup_{t\ge0}\norm{e^{tA}} \ge 0.5/0.01 = 50$ by <a class="xref" href="#thm-kreiss"></a>: some initial condition is amplified at least fiftyfold before it decays.</p></details></li>
+<li><p>$A$ has all eigenvalues in the open left half-plane but $\omega(A) &gt; 0$. Show that some solution of $\dot x = Ax$ grows at first.</p>
+<details><summary>Answer</summary><p>Take $x_0$ a unit top eigenvector of $H = \frac12(A + A^*)$. Then $\frac{\dd}{\dd t}\norm{x}^2\big|_{t=0} = 2x_0^*Hx_0 = 2\omega(A) &gt; 0$; this is part 1 of <a class="xref" href="#prop-growth"></a>. The Euclidean norm does not decrease along every solution; chapter 7 finds a weighted norm that does (<a href="ch07_autonomous_systems.html#thm-lyapunov">Lyapunov's theorem</a>).</p></details></li>
+</ol>
+</section>
+
+<section class="refs" id="s-refs">
+<h2>Sources and further reading</h2>
+<ul>
+<li>L. N. Trefethen and M. Embree, <i>Spectra and Pseudospectra: The Behavior of Nonnormal Matrices and Operators</i> (Princeton, 2005): ch. 1–2 for definitions and the equivalence theorem (Thm 2.1); ch. 14–18 for transient behaviour, exponentials, powers, the numerical range and the Kreiss matrix theorem.</li>
+<li>R. Bhatia, <i>Matrix Analysis</i> (Springer, 1997): ch. III (variational principles, Weyl's inequalities), ch. VI–VII (spectral variation of normal matrices, the Davis–Kahan theorems), ch. VIII (non-normal matrices, Ostrowski–Elsner).</li>
+<li>C. Davis and W. M. Kahan, "The rotation of eigenvectors by a perturbation. III", <i>SIAM J. Numer. Anal.</i> 7 (1970) 1–46.</li>
+<li>R. A. Horn and C. R. Johnson, <i>Matrix Analysis</i>, 2nd ed. (Cambridge, 2013), ch. 6 (location and perturbation of eigenvalues, Bauer–Fike); <i>Topics in Matrix Analysis</i> (Cambridge, 1991), ch. 1 (the field of values: convexity, the elliptical range theorem).</li>
+<li>L. N. Trefethen and D. Bau, <i>Numerical Linear Algebra</i> (SIAM, 1997): lecture 12 (conditioning), lectures 14–16 and 22 (stability), lectures 24–26 (eigenvalue problems, Schur and Hessenberg forms).</li>
+<li>G. H. Golub and C. F. Van Loan, <i>Matrix Computations</i>, 4th ed. (Johns Hopkins, 2013): ch. 2 (sensitivity of linear systems), §7.2 (perturbation theory for the unsymmetric eigenproblem), ch. 8 (the symmetric case).</li>
+<li>L. N. Trefethen, A. E. Trefethen, S. C. Reddy and T. A. Driscoll, "Hydrodynamic stability without eigenvalues", <i>Science</i> 261 (1993) 578–584.</li>
+</ul>
+</section>
+
+</div>
+</main>
+</div>
+<script>LT.page.init();</script>
+<script>
+(function () {
+  'use strict';
+  const { Plot, ui, mat: M, fmt, fmtSig, fmtC } = LT;
+
+  /* ---------------- shared helpers ---------------- */
+  const jordan = n => { const A = M.zeros(n, n); for (let i = 0; i < n - 1; i++) A[i][i + 1] = 1; return A; };
+  const pow10 = v => { const k = Math.round(v); if (Math.abs(v - k) > 1e-9) return ''; return k === 0 ? '1' : '10' + LT.sup(k); };
+  const norm2x2 = E => { const a = E[0][0], b = E[0][1], c = E[1][0], d = E[1][1]; const f = a * a + b * b + c * c + d * d, de = a * d - b * c; return Math.sqrt((f + Math.sqrt(Math.max(0, f * f - 4 * de * de))) / 2); };
+  /* Real 2n x 2n embedding [[Re, -Im], [Im, Re]] of a complex matrix: same singular values (each twice),
+     eigenvalues of the matrix together with their complex conjugates. */
+  const embed = (Ar, Ai) => {
+    const n = Ar.length, B = M.zeros(2 * n, 2 * n);
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) { const re = Ar[i][j], im = Ai ? Ai[i][j] : 0; B[i][j] = re; B[i][n + j] = -im; B[n + i][j] = im; B[n + i][n + j] = re; }
+    return B;
+  };
+  /* sigma_min(zI - T) for a complex upper triangular T = Tr + i Ti (a Schur form):
+     inverse iteration on (zI - T)^* (zI - T) with two triangular solves per step, stopped on convergence. */
+  function sigminTri(Tr, Ti, zr, zi) {
+    const n = Tr.length, vr = new Float64Array(n), vi = new Float64Array(n), dr = new Float64Array(n), di = new Float64Array(n);
+    const xr = new Float64Array(n), xi = new Float64Array(n);
+    for (let i = 0; i < n; i++) { vr[i] = 1 + 0.37 * Math.sin(1.7 * i + 0.3); vi[i] = 0.21 * Math.cos(2.3 * i); dr[i] = zr - Tr[i][i]; di[i] = zi - Ti[i][i]; if (dr[i] === 0 && di[i] === 0) return 0; }
+    let lam = 0, prev = 0;
+    for (let it = 0; it < 40; it++) {
+      let nv = 0; for (let i = 0; i < n; i++) nv += vr[i] * vr[i] + vi[i] * vi[i]; nv = Math.sqrt(nv);
+      for (let i = 0; i < n; i++) { vr[i] /= nv; vi[i] /= nv; }
+      for (let i = n - 1; i >= 0; i--) { // (zI - T) x = v
+        let sr = vr[i], si = vi[i]; const Ri = Tr[i], Ii = Ti[i];
+        for (let j = i + 1; j < n; j++) { sr += Ri[j] * xr[j] - Ii[j] * xi[j]; si += Ri[j] * xi[j] + Ii[j] * xr[j]; }
+        const den = dr[i] * dr[i] + di[i] * di[i]; xr[i] = (sr * dr[i] + si * di[i]) / den; xi[i] = (si * dr[i] - sr * di[i]) / den;
+      }
+      for (let i = 0; i < n; i++) { // (zI - T)^* v = x
+        let sr = xr[i], si = xi[i];
+        for (let j = 0; j < i; j++) { const ar = Tr[j][i], ai = Ti[j][i]; sr += ar * vr[j] + ai * vi[j]; si += ar * vi[j] - ai * vr[j]; }
+        const cr = dr[i], ci = -di[i], den = cr * cr + ci * ci; vr[i] = (sr * cr + si * ci) / den; vi[i] = (si * cr - sr * ci) / den;
+      }
+      let ny = 0; for (let i = 0; i < n; i++) ny += vr[i] * vr[i] + vi[i] * vi[i];
+      lam = Math.sqrt(ny);
+      if (it > 1 && Math.abs(lam - prev) <= 1e-3 * lam) break; // about 5e-4 accuracy in log10
+      prev = lam;
+    }
+    return 1 / Math.sqrt(lam);
+  }
+
+  /* ---------------- Visual 6.1: Jordan block sensitivity ---------------- */
+  (function () {
+    const st = { n: 8, eps: 1e-4, seed: 1 };
+    const pz = new Plot('#jor-plane', { xlim: [-1.25, 1.25], ylim: [-1.2, 1.2], equal: true, maxH: 400, label: 'Eigenvalues of perturbed Jordan blocks in the complex plane' });
+    const ph = new Plot('#jor-holder', { xlim: [-12.6, 0.4], ylim: [-12.6, 0.4], frame: true, aspect: 0.9, maxH: 400, grid: 'lines', xlabel: 'perturbation size ε', ylabel: 'eigenvalue displacement', xfmt: pow10, yfmt: pow10, label: 'Eigenvalue displacement against perturbation size on logarithmic axes' });
+    pz.el.insertBefore(pz.canvas, pz.el.firstChild); ph.el.insertBefore(ph.canvas, ph.el.firstChild);
+    const panel = ui.panel('#jor-controls');
+    const later = LT.throttle(() => update());
+    panel.slider({ id: 'jor-n', label: 'Block size $n$', min: 2, max: 16, step: 1, value: st.n, digits: 0, onInput: v => { st.n = Math.round(v); later(); } });
+    panel.slider({ id: 'jor-eps', label: 'Size $\\eps$', min: -12, max: -1, step: 0.1, value: st.eps, log: true, onInput: v => { st.eps = v; later(); } });
+    panel.buttons([{ label: 'New random E', onClick: () => { st.seed++; update(); } }]);
+    const out = panel.readout({});
+    let corner = [], rand = [], randMax = [], cacheKey = '', randE = [];
+    function compute() {
+      const n = st.n, A = jordan(n), Ac = M.clone(A); Ac[n - 1][0] = st.eps;
+      corner = M.eigvals(Ac);
+      if (cacheKey !== n + '|' + st.seed) { // random real E with unit spectral norm, cached per size and seed
+        const g = M.randn(1000 * st.seed + n); randE = [];
+        for (let s = 0; s < 24; s++) { const E = Array.from({ length: n }, () => Array.from({ length: n }, () => g())); randE.push(M.scale(E, 1 / M.norm2(E))); }
+        cacheKey = n + '|' + st.seed;
+      }
+      rand = []; randMax = [];
+      randE.forEach(E => {
+        const ev = M.eigvals(M.add(A, M.scale(E, st.eps))); let mx = 0;
+        ev.forEach(z => { rand.push(z); mx = Math.max(mx, Math.hypot(z.re, z.im)); });
+        randMax.push(mx);
+      });
+    }
+    pz.draw = g => {
+      const r = Math.pow(st.eps, 1 / st.n);
+      g.circle([0, 0], 1, { color: 'muted', width: 1, dash: [2, 4] });
+      g.circle([0, 0], r, { color: 'c1', width: 1.5, dash: [6, 4] });
+      rand.forEach(z => g.dot([z.re, z.im], { r: 2.3, color: 'c7', alpha: 0.7, ring: false }));
+      corner.forEach(z => g.dot([z.re, z.im], { r: 4.5, color: 'c2' }));
+      g.dot([0, 0], { r: 3.2, color: 'ink' });
+      if (r > 0.22) g.text([r * Math.cos(2.3), r * Math.sin(2.3)], 'r = ' + fmt(r, 3), { font: 'ui', italic: false, size: 12, color: 'ink-2', dx: -6, dy: -12, align: 'right' });
+    };
+    ph.draw = g => {
+      const le = Math.log10(st.eps);
+      for (let k = 1; k <= 16; k++) { if (k === st.n) continue; g.line(-12.6, -12.6 / k, 0.4, 0.4 / k, { color: 'muted', width: k === 1 ? 1.4 : 0.8, alpha: k === 1 ? 0.9 : 0.55 }); }
+      g.line(-12.6, -12.6 / st.n, 0.4, 0.4 / st.n, { color: 'c2', width: 2 });
+      g.vline(le, { color: 'muted', width: 1, dash: [4, 4] });
+      randMax.forEach(m => g.dot([le, Math.log10(m)], { r: 2.6, color: 'c7', alpha: 0.8, ring: false }));
+      g.dot([le, le / st.n], { r: 5, color: 'c2' });
+      g.text([-11.6, -11.6], 'slope 1: simple eigenvalue', { font: 'ui', italic: false, size: 11.5, color: 'ink-2', dx: 8, dy: 8 });
+      g.text([-12.2, -12.2 / st.n], 'slope 1/' + st.n, { font: 'ui', italic: false, size: 11.5, color: 'ink', dy: -11 });
+    };
+    function update() {
+      compute();
+      const n = st.n, r = Math.pow(st.eps, 1 / n);
+      let dev = 0; corner.forEach(z => { dev = Math.max(dev, Math.abs(Math.hypot(z.re, z.im) - r) / r); });
+      const rmax = Math.max(...randMax), rmin = Math.min(...randMax);
+      out.set(
+        `<span>predicted radius ε<sup>1/n</sup> <span class="num">${fmtSig(r, 4)}</span></span>` +
+        `<span>corner: computed |μ| deviates from it by at most <span class="num">${fmtSig(Math.max(dev, 1e-16), 2)}</span> (relative)</span>` +
+        `<span>amplification ε<sup>1/n</sup>/ε <span class="num">${fmtSig(r / st.eps, 3)}</span></span>` +
+        `<span>random <i>E</i>: largest |μ| <span class="num">${fmtSig(rmin, 3)} to ${fmtSig(rmax, 3)}</span></span>` +
+        `<span>rounding alone, (2.2×10⁻¹⁶)<sup>1/n</sup> <span class="num">${fmtSig(Math.pow(2.2e-16, 1 / n), 3)}</span></span>`
+      );
+      pz.redraw(); ph.redraw();
+    }
+    update();
+  })();
+
+  /* ---------------- Visual 6.2: pseudospectra explorer ---------------- */
+  (function () {
+    const chainA = w => { const n = 6, A = M.zeros(n, n); for (let i = 0; i < n; i++) { A[i][i] = -0.4 * (i + 1); if (i < n - 1) A[i][i + 1] = w; } return A; };
+    const randA = seed => { const n = 8, A = M.randMat(n, n, seed, 1 / Math.sqrt(n)); for (let i = 0; i < n; i++) A[i][i] -= 1; return A; };
+    const PRESETS = {
+      normal: { make: () => [[-1.5, 0.8], [-0.8, -1.5]], par: null, xlim: [-4.3, 1.3], ylim: [-1.75, 1.75], lo: -3 },
+      nonnormal: { make: v => [[-1, v], [0, -2]], par: 'w', xlim: [-4.6, 1.8], ylim: [-2, 2], lo: -3 },
+      jordan: { make: v => jordan(v), par: 'n', xlim: [-2.3, 2.3], ylim: [-1.3, 1.3], lo: -8 },
+      chain: { make: v => chainA(v), par: 'wc', xlim: [-4.1, 1.1], ylim: [-1.45, 1.45], lo: -6 },
+      random: { make: v => randA(v), par: 'seed', xlim: [-3.6, 1.4], ylim: [-1.45, 1.45], lo: -4 }
+    };
+    const st = { preset: 'nonnormal', w: 20, n: 6, wc: 2, seed: 3, eps: 1e-2, overlay: 'none', cloud: [], click: null, hover: null };
+    const p = new Plot('#psa-plot', { xlim: PRESETS.nonnormal.xlim, ylim: PRESETS.nonnormal.ylim, equal: true, frame: true, maxH: 540, minH: 290, xlabel: 'Re z', ylabel: 'Im z', label: 'Pseudospectra of the selected matrix: heat map of the log of the smallest singular value of zI minus A, with contours' });
+    const panel = ui.panel('#psa-controls');
+    panel.select({ id: 'psa-preset', label: 'Matrix', value: st.preset, options: [['normal', 'Normal 2×2'], ['nonnormal', 'Non-normal 2×2'], ['jordan', 'Jordan block'], ['chain', 'Feedforward chain'], ['random', 'Random 8×8']],
+      onChange: v => { st.preset = v; st.cloud = []; st.click = null; showPar(); setMatrix(); p.setLimits(PRESETS[v].xlim, PRESETS[v].ylim); computeGrid(false); update(); } });
+    const sl = {
+      w: panel.slider({ id: 'psa-w', label: 'Coupling $w$', min: 0, max: 30, step: 0.1, value: st.w, digits: 1, onInput: v => { st.w = v; onPar(); } }),
+      n: panel.slider({ id: 'psa-n', label: 'Size $n$', min: 2, max: 8, step: 1, value: st.n, digits: 0, onInput: v => { st.n = Math.round(v); onPar(); } }),
+      wc: panel.slider({ id: 'psa-wc', label: 'Coupling $w$', min: 0, max: 3, step: 0.05, value: st.wc, digits: 2, onInput: v => { st.wc = v; onPar(); } }),
+      seed: panel.slider({ id: 'psa-seed', label: 'Random seed', min: 1, max: 30, step: 1, value: st.seed, digits: 0, onInput: v => { st.seed = Math.round(v); onPar(); } })
+    };
+    panel.slider({ id: 'psa-eps', label: 'Level $\\eps$', min: -8, max: 0, step: 0.05, value: st.eps, log: true, onInput: v => { st.eps = v; update(); } });
+    panel.select({ id: 'psa-overlay', label: 'Overlay', value: st.overlay, options: [['none', 'none'], ['disks', 'disks of radius ε and κ(V)ε'], ['W', 'numerical range']], onChange: v => { st.overlay = v; update(); } });
+    panel.buttons([
+      { label: 'Perturbation cloud', kind: 'primary', onClick: () => { addCloud(30); update(); } },
+      { label: 'Clear', onClick: () => { st.cloud = []; st.click = null; update(); } }
+    ]);
+    const out = panel.readout({});
+    const out2 = panel.readout({});
+    function showPar() { const par = PRESETS[st.preset].par; Object.keys(sl).forEach(k => { sl[k].el.style.display = k === par ? '' : 'none'; }); }
+
+    let A = null, T = null, eigs = [], kappaV = 1, omega = 0, depA = 0, Wb = [];
+    function setMatrix() {
+      const pr = PRESETS[st.preset];
+      A = pr.make(pr.par ? st[pr.par] : null);
+      const n = A.length;
+      if (n > 2) { const S = M.schur(A); T = { Tr: S.Tr, Ti: S.Ti }; } else T = null;
+      eigs = st.preset === 'jordan' ? Array.from({ length: n }, () => ({ re: 0, im: 0 })) : M.eigvals(A);
+      omega = M.numericalAbscissa(A);
+      let fro2 = 0; A.forEach(r => r.forEach(v => { fro2 += v * v; }));
+      depA = Math.sqrt(Math.max(0, fro2 - eigs.reduce((s, z) => s + z.re * z.re + z.im * z.im, 0)));
+      if (st.preset === 'jordan') kappaV = Infinity;
+      else { const E = M.eig(A); const Vr = M.fromCols(E.vectors.map(v => v.re)), Vi = M.fromCols(E.vectors.map(v => v.im)); kappaV = M.cond(embed(Vr, Vi)); if (!(kappaV < 1e12)) kappaV = Infinity; }
+      Wb = null;
+    }
+    /* Boundary of the numerical range from support points: for each angle theta the top eigenvector x of the
+       Hermitian part of e^{i theta} A gives the boundary point x^* A x (complex Hermitian eigenproblem via its real embedding). */
+    function computeW() {
+      const out = [], n = A.length, Hs = M.sym(A), Ks = A.map((r, i) => r.map((v, j) => 0.5 * (v - A[j][i])));
+      for (let k = 0; k <= 160; k++) {
+        const th = 2 * Math.PI * k / 160, Sm = M.scale(Hs, Math.cos(th)), Km = M.scale(Ks, Math.sin(th));
+        const ev = M.eigSym(M.blocks([[Sm, M.scale(Km, -1)], [Km, Sm]])), u = M.col(ev.vectors, 0), xr = u.slice(0, n), xi = u.slice(n);
+        const Axr = M.mv(A, xr), Axi = M.mv(A, xi), nrm = M.dot(xr, xr) + M.dot(xi, xi);
+        out.push([(M.dot(xr, Axr) + M.dot(xi, Axi)) / nrm, (M.dot(xr, Axi) - M.dot(xi, Axr)) / nrm]);
+      }
+      return out;
+    }
+    const smin = (zr, zi) => (T ? sigminTri(T.Tr, T.Ti, zr, zi) : M.sigminShift(A, zr, zi));
+
+    let grid = null;
+    const keyOf = () => [st.preset, st.w, st.n, st.wc, st.seed, p.W, p.H, p.xlim.join(','), p.ylim.join(',')].join('|');
+    function computeGrid(coarse) {
+      const cell = coarse ? 9 : 3.5, pad = p.o.pad, pw = p.W - pad.l - pad.r, ph = p.H - pad.t - pad.b;
+      const nx = Math.max(20, Math.round(pw / cell)), ny = Math.max(14, Math.round(ph / cell));
+      const { xs, ys } = p.gridXY(nx, ny), F = new Float32Array(nx * ny);
+      const sym = Math.abs(p.ylim[0] + p.ylim[1]) < 1e-9 * (p.ylim[1] - p.ylim[0]);
+      for (let j = 0; j < ny; j++) {
+        const jm = ny - 1 - j;
+        if (sym && jm < j) { for (let i = 0; i < nx; i++) F[j * nx + i] = F[jm * nx + i]; continue; }
+        for (let i = 0; i < nx; i++) F[j * nx + i] = Math.log10(Math.max(1e-300, smin(xs[i], ys[j])));
+      }
+      grid = { F, nx, ny, xs, ys, key: keyOf() };
+    }
+    const fullPass = LT.debounce(() => { computeGrid(false); update(); }, 170);
+    const onPar = LT.throttle(() => { st.cloud = []; st.click = null; setMatrix(); computeGrid(true); update(); fullPass(); });
+    const levelsOf = () => { const out = []; for (let k = -1; k >= PRESETS[st.preset].lo; k--) out.push(k); return out; };
+    /* rightmost point of {log10 sigma_min < L} on the grid, interpolated along rows */
+    function rightmost(L) {
+      if (!grid) return null; const { F, nx, ny, xs, ys } = grid; let best = null;
+      for (let j = 0; j < ny; j++) {
+        if (F[j * nx + nx - 1] < L) return { x: Infinity, y: ys[j] };
+        for (let i = nx - 2; i >= 0; i--) {
+          const a = F[j * nx + i], b = F[j * nx + i + 1];
+          if (a < L && b >= L) { const x = xs[i] + (L - a) / (b - a) * (xs[i + 1] - xs[i]); if (!best || x > best.x) best = { x, y: ys[j] }; break; }
+        }
+      }
+      return best;
+    }
+    function addCloud(K) {
+      const n = A.length, g = M.randn(7919 * (st.cloud.length + 1) + 31 * n + Math.round(1e3 * st.eps));
+      for (let s = 0; s < K; s++) {
+        const Gr = Array.from({ length: n }, () => Array.from({ length: n }, () => g())), Gi = Array.from({ length: n }, () => Array.from({ length: n }, () => g()));
+        const sc = st.eps / M.norm2(embed(Gr, Gi));
+        M.eigvals(embed(M.add(A, M.scale(Gr, sc)), M.scale(Gi, sc))).forEach(z => st.cloud.push([z.re, z.im]));
+      }
+    }
+    function clickAt(zr, zi) {
+      const n = A.length, Zr = M.sub(M.scale(M.eye(n), zr), A), Zi = M.scale(M.eye(n), zi);
+      const S = M.svd(embed(Zr, Zi)), k = S.S.length - 1, s = S.S[k];
+      const ur = S.U.map(r => r[k]).slice(0, n), ui_ = S.U.map(r => r[k]).slice(n), vr = S.V.map(r => r[k]).slice(0, n), vi = S.V.map(r => r[k]).slice(n);
+      // E = s u v^*, so (A + E) v = z v
+      const Er = M.zeros(n, n), Ei = M.zeros(n, n);
+      for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) { Er[i][j] = s * (ur[i] * vr[j] + ui_[i] * vi[j]); Ei[i][j] = s * (ui_[i] * vr[j] - ur[i] * vi[j]); }
+      const chk = M.svd(embed(M.sub(Zr, Er), M.sub(Zi, Ei))).S, after = chk[chk.length - 1];
+      st.click = { z: [zr, zi], s, normE: M.norm2(embed(Er, Ei)), after };
+    }
+    p.onClick = (x, y) => { clickAt(x, y); update(); };
+    p.onHover = (x, y) => { st.hover = [x, y]; showHover(); };
+    p.onLeave = () => { st.hover = null; showHover(); };
+    const requestGrid = LT.debounce(() => { if (!grid || grid.key !== keyOf()) { computeGrid(false); update(); } }, 120);
+    p.draw = (g, pl) => {
+      if (!grid || grid.key !== keyOf()) requestGrid();
+      if (grid) {
+        const lo = PRESETS[st.preset].lo - 0.4, hi = 0.3;
+        g.heatGrid(grid.F, grid.nx, grid.ny, { range: [lo, hi], cmap: t => LT.cmap('seq', 0.04 + 0.86 * Math.pow(1 - Math.max(0, Math.min(1, t)), 0.85)) });
+        const levs = levelsOf();
+        g.contourGrid(grid.F, grid.nx, grid.ny, levs, { color: 'plot-bg', width: 3, alpha: 0.85 });
+        g.contourGrid(grid.F, grid.nx, grid.ny, levs, { color: 'ink', width: 1, alpha: 0.75 });
+        const le = Math.log10(st.eps);
+        g.contourGrid(grid.F, grid.nx, grid.ny, [le], { color: 'plot-bg', width: 4.5 });
+        g.contourGrid(grid.F, grid.nx, grid.ny, [le], { color: 'c2', width: 2.25 });
+      }
+      if (st.overlay === 'disks') {
+        if (Number.isFinite(kappaV)) eigs.forEach(z => g.circle([z.re, z.im], kappaV * st.eps, { color: 'c8', width: 1.75, dash: [6, 5] }));
+        eigs.forEach(z => g.circle([z.re, z.im], st.eps, { color: 'c3', width: 1.75, dash: [3, 3] }));
+      } else if (st.overlay === 'W' && Wb) {
+        g.path(Wb, { color: 'c3', width: 2 });
+        const off = Wb.map((q, k) => { const th = 2 * Math.PI * k / 160; return [q[0] + st.eps * Math.cos(th), q[1] - st.eps * Math.sin(th)]; });
+        g.path(off, { color: 'c3', width: 1.4, dash: [5, 4] });
+      }
+      st.cloud.forEach(q => g.dot(q, { r: 2.1, color: 'c7', ring: false, alpha: 0.9 }));
+      eigs.forEach(z => g.dot([z.re, z.im], { r: 3.8, color: 'ink' }));
+      if (st.click) { g.marker(st.click.z, { shape: 'o', size: 6, color: 'c4', width: 2.5 }); }
+      if (grid) { // contour labels last, at the rightmost point of each contour, skipping collisions
+        const placed = [];
+        levelsOf().forEach(L => {
+          const r = rightmost(L); if (!r || !Number.isFinite(r.x)) return;
+          const X = pl.X(r.x), Y = pl.Y(r.y);
+          if (X > pl.W - pl.o.pad.r - 30) return;
+          if (placed.some(q => Math.abs(q[0] - X) < 34 && Math.abs(q[1] - Y) < 14)) return;
+          placed.push([X, Y]);
+          g.text([X + 4, Y], pow10(L), { px: true, font: 'ui', italic: false, size: 11, color: 'ink' });
+        });
+      }
+    };
+    function showHover() {
+      if (!st.hover) { out2.set(st.click ? clickText() : '<span>Hover over the plane to read σ<sub>min</sub>(<i>zI</i> − <i>A</i>); click to build a perturbation.</span>'); return; }
+      const [x, y] = st.hover, s = smin(x, y);
+      out2.set(`<span><i>z</i> = <span class="num">${fmtC({ re: x, im: y }, 2)}</span></span><span>σ<sub>min</sub>(<i>zI</i> − <i>A</i>) <span class="num">${fmtSig(s, 3)}</span></span><span>so <i>z</i> lies in Λ<sub>ε</sub>(<i>A</i>) for every ε &gt; <span class="num">${fmtSig(s, 3)}</span></span>` + (st.click ? clickText() : ''));
+    }
+    function clickText() {
+      const c = st.click;
+      return `<span>clicked <i>z</i> = <span class="num">${fmtC({ re: c.z[0], im: c.z[1] }, 2)}</span></span><span>rank-one <i>E</i> with ‖<i>E</i>‖ <span class="num">${fmtSig(c.normE, 4)}</span> = σ<sub>min</sub></span><span>σ<sub>min</sub>(<i>zI</i> − <i>A</i> − <i>E</i>) <span class="num">${fmtSig(Math.max(c.after, 1e-300), 2)}</span></span>`;
+    }
+    function update() {
+      if (st.overlay === 'W' && !Wb) Wb = computeW();
+      const r = rightmost(Math.log10(st.eps)), alpha = Math.max(...eigs.map(z => z.re));
+      const aeps = !r ? null : r.x;
+      const aTxt = aeps === null ? 'below grid resolution' : (Number.isFinite(aeps) ? '≈ ' + fmt(aeps, 3) : 'beyond the window');
+      const ratio = aeps !== null && Number.isFinite(aeps) && aeps > 0 ? fmtSig(aeps / st.eps, 3) : '';
+      out.set(
+        `<span>α(<i>A</i>) <span class="num">${fmt(alpha, 3)}</span></span>` +
+        `<span>ω(<i>A</i>) <span class="num">${fmt(omega, 3)}</span></span>` +
+        `<span>κ(<i>V</i>) <span class="num">${Number.isFinite(kappaV) ? fmtSig(kappaV, 3) : '∞'}</span>${Number.isFinite(kappaV) ? '' : ' (not diagonalizable)'}</span>` +
+        `<span>dep(<i>A</i>) <span class="num">${fmt(depA, 3)}</span></span>` +
+        `<span>α<sub>ε</sub>(<i>A</i>) <span class="num">${aTxt}</span>${ratio ? `, so sup<sub><i>t</i></sub>‖e<sup><i>tA</i></sup>‖ ≥ α<sub>ε</sub>/ε <span class="num">${ratio}</span>` : ''}</span>` +
+        (st.cloud.length ? `<span>cloud: <span class="num">${st.cloud.length}</span> eigenvalues of <i>A</i> + <i>E</i>, ‖<i>E</i>‖ = ε</span>` : '')
+      );
+      showHover();
+      p.redraw();
+    }
+    showPar(); setMatrix(); computeGrid(false); update();
+  })();
+
+  /* ---------------- Visual 6.3: transient growth ---------------- */
+  (function () {
+    const st = { w: 10, t: 0.66, others: true };
+    const expA = (t, w) => { const e1 = Math.exp(-t), e2 = Math.exp(-2 * t); return [[e1, w * (e1 - e2)], [0, e2]]; };
+    const pt = new Plot('#tg-time', { xlim: [0, 6], ylim: [0.01, 100], logy: true, frame: true, aspect: 0.78, maxH: 400, xlabel: 'time t', ylabel: 'amplification', label: 'Norm of the matrix exponential against time with exponential envelopes' });
+    const pp = new Plot('#tg-phase', { xlim: [-3, 3], ylim: [-3, 3], equal: true, maxH: 400, label: 'Phase plane with the image of the unit circle and the worst trajectory' });
+    pt.el.insertBefore(pt.canvas, pt.el.firstChild); pp.el.insertBefore(pp.canvas, pp.el.firstChild);
+    document.getElementById('tg-legend').innerHTML = ui.legend([{ color: 'c7', label: '<span>‖e<sup>tA</sup>‖</span>' }, { color: 'c2', label: '<span>‖e<sup>tA</sup>x₀‖ for the worst x₀ at the target time</span>' }, { color: 'c3', label: '<span>e<sup>αt</sup></span>', kind: 'dash' }, { color: 'c8', label: '<span>e<sup>ωt</sup></span>', kind: 'dash' }, { color: 'muted', label: '<span>Kreiss constant</span>', kind: 'dash' }]);
+    const panel = ui.panel('#tg-controls');
+    panel.slider({ id: 'tg-w', label: 'Coupling $w$', min: 0, max: 30, step: 0.01, value: st.w, digits: 2, onInput: v => { st.w = v; update(); } });
+    const tsl = panel.slider({ id: 'tg-t', label: 'Target time $t$', min: 0.02, max: 4, step: 0.01, value: st.t, digits: 2, onInput: v => { st.t = v; update(); } });
+    panel.toggle({ id: 'tg-others', label: 'Trajectories from the unit circle', value: st.others, onChange: v => { st.others = v; update(); } });
+    panel.buttons([{ label: 'Peak time', onClick: () => { st.t = Math.max(0.02, info.tp); tsl.set(st.t); update(); } }]);
+    const out = panel.readout({});
+    let info = {};
+    function analyse() {
+      const w = st.w, f = t => norm2x2(expA(t, w));
+      let best = 1, tb = 0;
+      for (let k = 1; k <= 600; k++) { const t = 6 * k / 600, v = f(t); if (v > best) { best = v; tb = t; } }
+      if (tb > 0) { let a = Math.max(0, tb - 0.01), b = tb + 0.01; for (let k = 0; k < 40; k++) { const m1 = a + (b - a) * 0.382, m2 = a + (b - a) * 0.618; if (f(m1) < f(m2)) a = m1; else b = m2; } tb = (a + b) / 2; best = f(tb); }
+      const A = [[-1, w], [0, -2]];
+      const om = M.numericalAbscissa(A);
+      // Kreiss constant: sup over Re z > 0 of Re z * ||(zI - A)^{-1}|| (closed-form sigma_min for 2 x 2)
+      const g = (x, y) => x / M.sigminShift(A, x, y);
+      let K = 0, kz = [1, 0];
+      for (let i = 0; i <= 70; i++) { const x = Math.pow(10, -2 + 3.5 * i / 70); for (let j = 0; j <= 40; j++) { const y = j === 0 ? 0 : Math.pow(10, -2 + 3.5 * j / 40); const v = g(x, y); if (v > K) { K = v; kz = [x, y]; } } }
+      let hx = kz[0] * 0.1, hy = Math.max(kz[1], 0.05) * 0.2;
+      for (let it = 0; it < 60; it++) {
+        let moved = false;
+        for (const [dx, dy] of [[hx, 0], [-hx, 0], [0, hy], [0, -hy]]) { const x = kz[0] + dx, y = Math.max(0, kz[1] + dy); if (x <= 0) continue; const v = g(x, y); if (v > K) { K = v; kz = [x, y]; moved = true; } }
+        if (!moved) { hx /= 2; hy /= 2; }
+      }
+      info = { tp: tb, peak: best, om, K };
+    }
+    pt.draw = g => {
+      const w = st.w, om = info.om;
+      g.fn(t => Math.exp(-t), { color: 'c3', width: 1.5, dash: [6, 4] });
+      g.fn(t => Math.exp(om * t), { color: 'c8', width: 1.5, dash: [6, 4] });
+      g.hline(info.K, { color: 'muted', width: 1.2, dash: [2, 3] });
+      const x0 = info.x0;
+      g.fn(t => norm2x2(expA(t, w)), { color: 'c7', width: 3 });
+      g.fn(t => M.vnorm(M.mv(expA(t, w), x0)), { color: 'c2', width: 1.5, dash: [7, 3] });
+      g.vline(st.t, { color: 'muted', width: 1, dash: [4, 4] });
+      g.dot([info.tp, info.peak], { r: 4.5, color: 'c4' });
+      g.text([info.tp, info.peak], 'peak ' + fmt(info.peak, 2), { font: 'ui', italic: false, size: 11.5, color: 'ink', dx: 8, dy: -12 });
+    };
+    pp.draw = g => {
+      const w = st.w, E = expA(st.t, w), x0 = info.x0;
+      g.circle([0, 0], 1, { color: 'muted', width: 1.2, dash: [2, 4] });
+      if (st.others) for (let k = 0; k < 16; k++) { const a = Math.PI * k / 16, u = [Math.cos(a), Math.sin(a)]; g.path(Array.from({ length: 121 }, (_, i) => M.mv(expA(6 * i / 120, w), u)), { color: 'c1', width: 1, alpha: 0.4 }); g.path(Array.from({ length: 121 }, (_, i) => M.mv(expA(6 * i / 120, w), [-u[0], -u[1]])), { color: 'c1', width: 1, alpha: 0.4 }); }
+      g.ellipse([0, 0], E, { fill: 'c2', fillAlpha: 0.08, color: 'c2', width: 2 });
+      const traj = Array.from({ length: 241 }, (_, i) => M.mv(expA(6 * i / 240, w), x0));
+      g.path(traj, { color: 'c7', width: 2.25 });
+      const xt = M.mv(E, x0);
+      g.arrow([0, 0], xt, { color: 'c2', width: 2, label: 'x(t)' });
+      g.dot(x0, { r: 5, color: 'c7' });
+      g.text(x0, 'x₀', { size: 14, dx: 12, dy: 12 });
+    };
+    function update() {
+      analyse();
+      const E = expA(st.t, st.w), S = M.eigSym(M.mul(M.T(E), E));
+      info.x0 = M.unit(M.col(S.vectors, 0)); if (info.x0[1] < 0) info.x0 = info.x0.map(v => -v);
+      const R = Math.max(1.6, 1.32 * info.peak);
+      pp.setLimits([-R, R], [-R, R]);
+      const lb = st.w / 4, ub = Math.sqrt(st.w * st.w / 16 + 2);
+      out.set(
+        `<span>α <span class="num">−1.000</span></span><span>ω <span class="num">${fmt(info.om, 3)}</span></span>` +
+        `<span>peak of ‖e<sup>tA</sup>‖ <span class="num">${fmt(info.peak, 3)}</span> at <i>t</i> <span class="num">${fmt(info.tp, 3)}</span>${info.tp === 0 ? ' <span class="tag good">no growth</span>' : ''}</span>` +
+        `<span>bounds <i>w</i>/4 <span class="num">${fmt(lb, 3)}</span> and (<i>w</i>²/16 + 2)<sup>1/2</sup> <span class="num">${fmt(ub, 3)}</span></span>` +
+        `<span>Kreiss: 𝒦(<i>A</i>) <span class="num">${fmt(info.K, 3)}</span> ≤ peak ≤ 2e𝒦(<i>A</i>) <span class="num">${fmt(2 * Math.E * info.K, 3)}</span></span>` +
+        `<span>‖e<sup>tA</sup>‖ at the target time <span class="num">${fmt(norm2x2(E), 3)}</span></span>`
+      );
+      pt.redraw(); pp.redraw();
+    }
+    update();
+  })();
+})();
+</script>
+</body>
+</html>

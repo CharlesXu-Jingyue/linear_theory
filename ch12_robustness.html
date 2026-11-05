@@ -1,0 +1,1303 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>12 Robustness and model reduction · Linear Theory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap">
+<link rel="stylesheet" href="assets/lt.css">
+<script src="assets/toc.js"></script>
+<script src="assets/lt.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+</head>
+<body>
+<div class="topbar"><button class="btn" id="lt-menu" type="button" aria-controls="lt-side" aria-expanded="false">Contents</button><span class="topbar-title">12 · Robustness, fundamental limits and model reduction</span></div>
+<div class="shell">
+<nav class="side" id="lt-side" aria-label="Chapters"></nav>
+<main class="page" id="main" data-chapter="12">
+<div class="content">
+
+<header class="ch-head">
+  <div class="eyebrow">Part IV · Control · Chapter 12</div>
+  <h1 class="ch-title">Robustness, fundamental limits and model reduction</h1>
+  <p class="ch-lead">Every feedback design is computed from a model that is wrong. This chapter measures whole systems with norms, turns the question of how much model error a loop survives into a norm inequality, shows that in multivariable loops margins measured one loop at a time can badly overstate robustness, derives limits that bind every stabilizing controller, and shows how far a model can be shortened with a certificate on the error.</p>
+  <p class="ch-meta"><span><b>Prerequisites</b> chapters 5, 8, 9, 10 and 11</span><span><b>Leads to</b> chapter 13</span><span><b>Visuals</b> 5</span></p>
+  <ol class="core-q">
+    <li>How much model error can a feedback loop tolerate, and in which norm should that error be measured?</li>
+    <li>Which limits bind every stabilizing controller, whatever the design method?</li>
+    <li>How far can a stable model be simplified, with a guaranteed bound on the error?</li>
+  </ol>
+  <details class="notation">
+    <summary>Notation introduced in this chapter</summary>
+    <div class="tbl-wrap"><table class="tbl">
+      <thead><tr><th>Symbol</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td>$\norm{G}_{\mathcal H_2}$</td><td>$\mathcal H_2$ norm: energy of the impulse response</td></tr>
+        <tr><td>$\norm{G}_{\mathcal H_\infty}$</td><td>$\mathcal H_\infty$ norm: peak gain over frequency, the worst-case energy gain</td></tr>
+        <tr><td>$\sigma_{\max}(M)$</td><td>largest singular value of a (complex) matrix $M$</td></tr>
+        <tr><td>$h(t)$</td><td>impulse response $Ce^{At}B$ of a strictly proper system</td></tr>
+        <tr><td>$H_\gamma$</td><td>Hamiltonian matrix used to test $\norm{G}_{\mathcal H_\infty} &lt; \gamma$</td></tr>
+        <tr><td>$L$, $S$, $T$</td><td>loop transfer function $GK$, sensitivity $1/(1+L)$, complementary sensitivity $L/(1+L)$; for transfer matrices (<a class="xref" href="#s-mimo-robust"></a>) the output loop $GK$, $(I + L)^{-1}$ and $L(I + L)^{-1}$</td></tr>
+        <tr><td>$L_I$, $S_I$, $T_I$</td><td>input loop $KG$, input sensitivity $(I + L_I)^{-1}$, input complementary sensitivity $L_I(I + L_I)^{-1}$</td></tr>
+        <tr><td>$A_{cl}$, $P$, $N$</td><td>closed-loop state matrix; number of open-loop poles (or eigenvalues) in the right half-plane; clockwise encirclements in the Nyquist criteria</td></tr>
+        <tr><td>$\ell_j$</td><td>loop transfer function of channel $j$ with the other channels closed</td></tr>
+        <tr><td>$a$; $\delta_1$, $\delta_2$</td><td>spin parameter of the satellite example; actuator gain errors (actual gain $1 + \delta_j$)</td></tr>
+        <tr><td>$\mathcal D$, $\mu(M)$, $\rho(M)$</td><td>complex diagonal matrices; structured singular value for that structure; spectral radius</td></tr>
+        <tr><td>$\omega_{gc}$, $\omega_{pc}$</td><td>gain crossover ($\abs{L} = 1$) and phase crossover ($\arg L = -180^\circ$) frequencies</td></tr>
+        <tr><td>$s_m$</td><td>stability margin $\min_\omega \abs{1 + L(i\omega)}$; gain margin (GM) and phase margin (PM) are defined in the text</td></tr>
+        <tr><td>$\theta$</td><td>time delay, transfer function $e^{-\theta s}$</td></tr>
+        <tr><td>$\Delta$, $W_2$, $M$</td><td>unknown stable perturbation with $\norm{\Delta}_{\mathcal H_\infty} \le 1$, uncertainty weight, transfer function seen by $\Delta$</td></tr>
+        <tr><td>$W_1$, $W_a$, $W_i$</td><td>performance weight; weights of the additive and inverse multiplicative uncertainty models</td></tr>
+        <tr><td>$\phi$</td><td>closed-loop characteristic polynomial</td></tr>
+        <tr><td>$p_i$, $z$, $B_p$</td><td>unstable poles and a right half-plane zero of $L$; Blaschke product of the unstable poles</td></tr>
+        <tr><td>$m$</td><td>gain perturbation at the plant input (nominal value 1)</td></tr>
+        <tr><td>$f$, $d$</td><td>scalar gains of the linear quadratic regulator (LQR) and of the Kalman filter in Doyle's example</td></tr>
+        <tr><td>$q_r$</td><td>recovery weight of loop transfer recovery</td></tr>
+        <tr><td>$\sigma_1 \ge \dots \ge \sigma_n$</td><td>Hankel singular values $\sqrt{\lambda_i(W_cW_o)}$</td></tr>
+        <tr><td>$\Sigma$, $G_r$</td><td>balanced Gramian $\diag(\sigma_1,\dots,\sigma_n)$; balanced truncation of order $r$</td></tr>
+        <tr><td>$\Gamma_G$</td><td>Hankel operator of $G$: past inputs to future outputs</td></tr>
+        <tr><td>$\mathcal R$, $\mathcal O$</td><td>reachability map (past inputs to $x(0)$) and observability map ($x(0)$ to future outputs)</td></tr>
+      </tbody>
+    </table></div>
+  </details>
+</header>
+
+<section class="sec" id="s-norms">
+<h2>Norms of systems</h2>
+
+<div class="blk prob"><p>Robustness statements need a size for a whole system rather than for a single matrix: how large can the output be, relative to the input, over all inputs of a given kind?</p></div>
+
+<div class="blk setting"><p>Throughout, $G(s) = C(sI - A)^{-1}B + D$ is the transfer function of the linear time-invariant (LTI) system $\dot x = Ax + Bu$, $y = Cx + Du$, with state $x(t) \in \R^n$, input $u(t) \in \R^m$ and output $y(t) \in \R^p$ (real vectors of these sizes), Laplace variable $s$ and identity matrix $I$. The matrix $A$ is Hurwitz (every eigenvalue has negative real part), so $G$ is stable: its poles are eigenvalues of $A$ (<a href="ch08_input_output.html#prop-poles-eig">chapter 8</a>). For $D = 0$ the impulse response is $h(t) = Ce^{At}B$, $t \ge 0$, with $e^{At}$ the matrix exponential of chapter 7. The imaginary unit is $i$, so the frequency response is $G(i\omega)$ at real frequency $\omega$; engineering texts write $j$. For a matrix $M$, $M^\T$ is its transpose, $M^*$ its conjugate transpose, $\sigma_{\max}(M)$ its largest singular value and $\norm{M}_F$ its Frobenius norm; $\lambda_i(\cdot)$, $\lambda_{\max}(\cdot)$ and $\Lambda(\cdot)$ denote eigenvalues, the largest eigenvalue and the spectrum; $\Re$ and $\Im$ are real and imaginary parts.</p></div>
+
+<div class="blk def" id="def-h2" data-name="$\mathcal H_2$ norm">
+<p>For stable, strictly proper $G$ ($D = 0$),</p>
+<div class="eq">$$\norm{G}_{\mathcal H_2} = \left(\frac{1}{2\pi}\int_{-\infty}^{\infty}\tr\big(G(i\omega)^*G(i\omega)\big)\,\dd\omega\right)^{1/2} = \left(\int_0^\infty \norm{h(t)}_F^2\,\dd t\right)^{1/2}.$$</div>
+<p>Here $\tr$ is the trace. The two expressions agree by Plancherel's theorem. If $D \ne 0$ the integrand tends to $\norm{D}_F^2 &gt; 0$ as $\abs\omega \to \infty$, so the integral diverges and the norm is infinite.</p>
+</div>
+
+<div class="blk prop" id="prop-h2-lyap" data-name="$\mathcal H_2$ norm from a Lyapunov equation">
+<p>Let $W_c$ and $W_o$ be the controllability and observability Gramians, the unique solutions of $AW_c + W_cA^\T + BB^\T = 0$ and $A^\T W_o + W_oA + C^\T C = 0$ (chapters 7 and 9). Then $\norm{G}_{\mathcal H_2}^2 = \tr(CW_cC^\T) = \tr(B^\T W_oB)$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> $\norm{h(t)}_F^2 = \tr\big(Ce^{At}BB^\T e^{A^\T t}C^\T\big)$. Integrating over $t \ge 0$ and moving the integral inside the trace gives $\tr(CW_cC^\T)$ with $W_c = \int_0^\infty e^{At}BB^\T e^{A^\T t}\,\dd t$. This integral solves the Lyapunov equation, because</p>
+<div class="eq">$$AW_c + W_cA^\T = \int_0^\infty \frac{\dd}{\dd t}\big(e^{At}BB^\T e^{A^\T t}\big)\dd t = -BB^\T$$</div>
+<p>when $e^{At} \to 0$; the solution is unique because $A$ is Hurwitz, so that no two eigenvalues of $A$ sum to zero (<a href="ch07_autonomous_systems.html#prop-lyap-op">the Lyapunov operator</a>, chapter 7). The second formula follows from $\tr(XY) = \tr(YX)$ applied to $\norm{h(t)}_F^2 = \tr\big(B^\T e^{A^\T t}C^\T Ce^{At}B\big)$.</p>
+</div>
+
+<div class="blk prop" id="prop-h2-meaning" data-name="Two meanings of the $\mathcal H_2$ norm">
+<p>Let $G$ be stable and strictly proper.</p>
+<ol>
+<li>If $u$ is white noise with $\mathbb E\,u(t)u(\tau)^\T = I\,\delta(t - \tau)$, applied since $t = -\infty$, where $\mathbb E$ is expectation and $\delta$ the Dirac delta, then $\mathbb E\,x(t)x(t)^\T = W_c$ and $\mathbb E\norm{y(t)}^2 = \norm{G}_{\mathcal H_2}^2$ at every $t$: the squared norm is the mean square output.</li>
+<li>For a single-input single-output (SISO) $G$ and inputs of finite energy (the space $L^2$, with $\norm{u}_{L^2}^2 = \int\abs{u}^2\,\dd t$) applied from rest, $\sup_t\abs{y(t)} \le \norm{G}_{\mathcal H_2}\norm{u}_{L^2}$, and the supremum of $\sup_t\abs{y(t)}/\norm{u}_{L^2}$ over $u \ne 0$ equals $\norm{G}_{\mathcal H_2}$: the gain from energy to peak.</li>
+</ol>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (1) Formally, $x(t) = \int_{-\infty}^t e^{A(t - \tau)}Bu(\tau)\,\dd\tau$, and the delta covariance collapses the double integral: $\mathbb E\,x(t)x(t)^\T = \int_{-\infty}^t e^{A(t - \tau)}BB^\T e^{A^\T(t - \tau)}\,\dd\tau = W_c$. Then $\mathbb E\norm{y(t)}^2 = \tr(CW_cC^\T)$, which is $\norm{G}_{\mathcal H_2}^2$ by <a class="xref" href="#prop-h2-lyap"></a>. (2) By Cauchy–Schwarz, $\abs{y(t)} = \abs{\int h(t - \tau)u(\tau)\,\dd\tau} \le \norm{h}_{L^2}\norm{u}_{L^2}$, and $\norm{h}_{L^2} = \norm{G}_{\mathcal H_2}$ by <a class="xref" href="#def-h2"></a>. The time-reversed impulse response $u(\tau) = h(t_0 - \tau)$ on $[0, t_0]$ gives $y(t_0) = \int_0^{t_0}h^2\,\dd t$ and $\norm{u}_{L^2} = \big(\int_0^{t_0}h^2\,\dd t\big)^{1/2}$, a ratio that tends to $\norm{G}_{\mathcal H_2}$ as $t_0 \to \infty$.</p>
+</div>
+<p>This is why linear quadratic Gaussian (LQG) control, whose steady-state cost is a mean square output under white noise (chapter 11), is also called $\mathcal H_2$-optimal control (Zhou, Doyle and Glover, ch. 14).</p>
+
+<div class="blk def" id="def-hinf" data-name="$\mathcal H_\infty$ norm">
+<p>For stable $G$, $\norm{G}_{\mathcal H_\infty} = \sup_{\omega \in \R}\sigma_{\max}\big(G(i\omega)\big)$. For SISO systems this is the peak of the Bode magnitude $\abs{G(i\omega)}$.</p>
+</div>
+
+<div class="blk thm" id="thm-induced" data-name="$\mathcal H_\infty$ is the induced energy gain">
+<p>For stable $G$ and zero initial state,</p>
+<div class="eq">$$\norm{G}_{\mathcal H_\infty} = \sup_{0 \ne u \in L^2}\frac{\norm{y}_{L^2}}{\norm{u}_{L^2}},\qquad \norm{u}_{L^2}^2 = \int_0^\infty \norm{u(t)}^2\,\dd t.$$</div>
+</div>
+<details class="proof"><summary>Proof sketch</summary><p>By Plancherel, with $\hat u$ the Fourier transform of $u$,</p>
+<div class="eq">$$\norm{y}_{L^2}^2 = \frac{1}{2\pi}\int\norm{G(i\omega)\hat u(i\omega)}^2\dd\omega \le \norm{G}_{\mathcal H_\infty}^2\norm{u}_{L^2}^2.$$</div>
+<p>For the reverse inequality take a long, slowly windowed sinusoid at a frequency $\omega_0$ near the peak, along the top right singular vector of $G(i\omega_0)$: its spectrum concentrates near $\pm\omega_0$ and the energy ratio approaches $\sigma_{\max}(G(i\omega_0))^2$.</p></details>
+<p class="src">Full proofs: Zhou, Doyle and Glover, <i>Robust and Optimal Control</i>, ch. 4; Doyle, Francis and Tannenbaum, <i>Feedback Control Theory</i>, ch. 2, which tabulates the induced gains of SISO systems.</p>
+
+<div class="blk prop" id="prop-ham" data-name="Hamiltonian test">
+<p>Let $G = C(sI - A)^{-1}B$ with $A$ Hurwitz and let $\gamma &gt; 0$. Then $\gamma$ is a singular value of $G(i\omega)$ for some real $\omega$ if and only if $i\omega$ is an eigenvalue of</p>
+<div class="eq">$$H_\gamma = \begin{bmatrix} A & \gamma^{-2}BB^\T\\ -C^\T C & -A^\T\end{bmatrix}.$$</div>
+<p>Consequently $\norm{G}_{\mathcal H_\infty} &lt; \gamma$ if and only if $H_\gamma$ has no eigenvalue on the imaginary axis.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Suppose $G(i\omega)^*G(i\omega)v = \gamma^2 v$ with $v \ne 0$. Put $x = (i\omega I - A)^{-1}Bv$ and $q = (-i\omega I - A^\T)^{-1}C^\T Cx$. Since $G(i\omega)^* = B^\T(-i\omega I - A^\T)^{-1}C^\T$, we get $B^\T q = \gamma^2 v$, hence $i\omega x = Ax + \gamma^{-2}BB^\T q$ and $i\omega q = -C^\T Cx - A^\T q$: the vector $(x, q)$ is an eigenvector of $H_\gamma$ for $i\omega$, and it is nonzero since $x = 0$ would force $q = 0$ and then $v = 0$. The steps reverse: from an eigenvector $(x, q)$ for $i\omega$ set $v = \gamma^{-2}B^\T q$, which is nonzero because $A$ has no imaginary eigenvalues. Finally, $\sigma_{\max}(G(i\omega))$ is continuous and tends to $0$ as $\omega \to \infty$, so it takes the value $\gamma$ somewhere exactly when its supremum is at least $\gamma$.</p>
+</div>
+<p>The test of <a class="xref" href="#prop-ham"></a> passes exactly for $\gamma &gt; \norm{G}_{\mathcal H_\infty}$, so bisection on $\gamma$ brackets $\norm{G}_{\mathcal H_\infty}$ to any accuracy, with a certificate at each step (Boyd, Balakrishnan and Kabamba, 1989); the $\mathcal H_2$ norm costs one Lyapunov solve (<a class="xref" href="#prop-h2-lyap"></a>).</p>
+
+<div class="blk ex" id="ex-first-order" data-name="First-order lag">
+<p>For $G(s) = 1/(s + a)$ with $a &gt; 0$: the impulse response $e^{-at}$ has energy $1/(2a)$, which is also $W_c$ from $-2aW_c + 1 = 0$, so $\norm{G}_{\mathcal H_2} = 1/\sqrt{2a}$. The peak gain is $\abs{G(0)} = 1/a$. The Hamiltonian $H_\gamma = \begin{bmatrix}-a & \gamma^{-2}\\ -1 & a\end{bmatrix}$ has eigenvalues $\pm\sqrt{a^2 - \gamma^{-2}}$, which are imaginary exactly when $\gamma \le 1/a$, as the test predicts.</p>
+</div>
+
+<div class="blk probe">
+<p>For the second-order system $G(s) = \omega_n^2/(s^2 + 2\zeta\omega_n s + \omega_n^2)$ with natural frequency $\omega_n$ and damping ratio $\zeta \in (0, 1/\sqrt2)$, the Lyapunov formula gives $\norm{G}_{\mathcal H_2}^2 = \omega_n/(4\zeta)$: with $A = \begin{bmatrix}0 & 1\\ -\omega_n^2 & -2\zeta\omega_n\end{bmatrix}$, $B = \begin{bmatrix}0\\ 1\end{bmatrix}$ and $C = \begin{bmatrix}\omega_n^2 & 0\end{bmatrix}$, the Gramian is $W_c = \diag\big(1/(4\zeta\omega_n^3),\ 1/(4\zeta\omega_n)\big)$. The resonance peak of <a href="ch08_input_output.html#prop-resonance">chapter 8</a> gives $\norm{G}_{\mathcal H_\infty} = 1/(2\zeta\sqrt{1 - \zeta^2})$. As $\zeta \to 0$ both diverge, but at different rates, $\zeta^{-1/2}$ against $\zeta^{-1}$: the two norms see a resonance differently, one through its energy and one through its peak.</p>
+</div>
+
+<div class="blk cex" id="cex-norms">
+<p>The two norms are not equivalent, even among first-order systems. For $G_a(s) = a/(s + a)$, $\norm{G_a}_{\mathcal H_\infty} = 1$ for every $a &gt; 0$, but $\norm{G_a}_{\mathcal H_2} = \sqrt{a/2}$ tends to $0$ as $a \to 0$ and to $\infty$ as $a \to \infty$. No constant bounds either norm by the other. In finite dimension any two norms are equivalent (<a href="ch05_hilbert_spaces.html#thm-equiv">chapter 5</a>); this family shows that the equivalence fails for systems.</p>
+</div>
+
+<div class="blk pattern">
+<p>Each system norm answers a different input–output question, and the right choice depends on what the inputs are assumed to be.</p>
+</div>
+<div class="tbl-wrap"><table class="tbl">
+  <thead><tr><th>Norm</th><th>Definition</th><th>Input–output meaning</th><th>Computation</th><th>Used for</th></tr></thead>
+  <tbody>
+    <tr><td>$\mathcal H_2$</td><td>$\big(\int_0^\infty \norm{h}_F^2\,\dd t\big)^{1/2}$</td><td>mean square output under unit white noise; SISO: energy to peak (<a class="xref" href="#prop-h2-meaning"></a>)</td><td>$\tr(CW_cC^\T)$, one Lyapunov solve</td><td>LQG and Kalman filtering (chapter 11)</td></tr>
+    <tr><td>$\mathcal H_\infty$</td><td>$\sup_\omega \sigma_{\max}(G(i\omega))$</td><td>worst-case energy gain (<a class="xref" href="#thm-induced"></a>)</td><td>Hamiltonian bisection</td><td>robust stability, small gain</td></tr>
+    <tr><td>Hankel</td><td>$\sigma_1 = \sqrt{\lambda_{\max}(W_cW_o)}$</td><td>gain from past inputs to future outputs (<a class="xref" href="#prop-hankel"></a>)</td><td>two Lyapunov solves</td><td>model reduction (<a class="xref" href="#s-reduction"></a>)</td></tr>
+    <tr><td>Peak to peak (SISO)</td><td>$\int_0^\infty \abs{h(t)}\,\dd t$</td><td>worst-case peak gain (<a href="ch08_input_output.html#thm-bibo">chapter 8</a>)</td><td>quadrature of $h$</td><td>bounded disturbances, actuator limits</td></tr>
+  </tbody>
+</table></div>
+<p>The three gains are ordered:</p>
+
+<div class="blk prop" id="prop-norm-order" data-name="Ordering of system norms">
+<p>For a stable, strictly proper SISO system with impulse response $h$ and largest Hankel singular value $\sigma_1 = \sqrt{\lambda_{\max}(W_cW_o)}$,</p>
+<div class="eq">$$\sigma_1 \le \norm{G}_{\mathcal H_\infty} \le \int_0^\infty\abs{h(t)}\,\dd t .$$</div>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> The second inequality is $\abs{G(i\omega)} = \abs{\int_0^\infty h(t)e^{-i\omega t}\,\dd t} \le \int_0^\infty\abs{h}\,\dd t$ for every $\omega$. For the first, $\sigma_1$ is the norm of the Hankel operator (<a class="xref" href="#prop-hankel"></a>), which applies the convolution by $h$ to inputs supported on $(-\infty, 0]$ and keeps the output on $[0, \infty)$. Restricting the inputs and truncating the outputs cannot raise the $L^2$ gain of the convolution, which is $\norm{G}_{\mathcal H_\infty}$ by <a class="xref" href="#thm-induced"></a> and time invariance.</p>
+</div>
+</section>
+
+<section class="sec" id="s-nyquist">
+<h2>The Nyquist criterion and stability margins</h2>
+
+<div class="blk prob"><p>Decide closed-loop stability from the frequency response of the loop alone, and measure how far a stable loop is from instability.</p></div>
+
+<div class="blk setting"><p>A plant $G(s)$ and a controller $K(s)$, SISO, proper and rational, are connected in negative feedback with loop transfer function $L(s) = G(s)K(s)$ (chapter 10). The sensitivity is $S = 1/(1 + L)$ and the complementary sensitivity is $T = L/(1 + L)$, so $S + T = 1$. Assume that forming $GK$ cancels no pole against a zero in $\Re s \ge 0$; then internal stability is equivalent to all zeros of $1 + L$ lying in the open left half-plane (LHP), by <a href="ch10_feedback.html#thm-intstab">the internal stability theorem</a> of chapter 10.</p></div>
+
+<div class="blk thm" id="thm-nyquist" data-name="Nyquist criterion">
+<p>Let $P$ be the number of poles of $L$ in the open right half-plane (RHP), with multiplicity. Trace $L(i\omega)$ for $\omega$ from $-\infty$ to $\infty$, detouring around poles of $L$ on the imaginary axis along small semicircles into the RHP, and let $N$ be the number of clockwise encirclements of $-1$ by this closed curve, assumed not to pass through $-1$. Then the closed loop has $Z = N + P$ poles in the open RHP. It is stable if and only if $N = -P$: the curve encircles $-1$ counterclockwise exactly $P$ times.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof idea.</span> The closed-loop poles are the zeros of $1 + L$, and the poles of $1 + L$ are the open-loop poles. The argument principle, applied on the imaginary axis closed by a large semicircle in the RHP (on which $L$ is nearly constant because it is proper), says that the number of zeros minus poles of $1 + L$ inside equals the number of clockwise turns of $1 + L$ around $0$, that is, of $L$ around $-1$.</p>
+</div>
+<p class="src">Statement with the detours made precise: Åström and Murray, <i>Feedback Systems</i> (2nd ed.), ch. 10; Doyle, Francis and Tannenbaum, ch. 3.</p>
+
+<div class="blk def" id="def-margins" data-name="Gain, phase and stability margins">
+<p>A gain crossover $\omega_{gc}$ is a frequency with $\abs{L(i\omega_{gc})} = 1$; a phase crossover $\omega_{pc}$ is one with $\arg L(i\omega_{pc}) = -180^\circ$. The <dfn>gain margin</dfn> (GM) is $1/\abs{L(i\omega_{pc})}$, the factor by which the loop gain can grow before the curve reaches $-1$. The <dfn>phase margin</dfn> (PM) is $\varphi_m = 180^\circ + \arg L(i\omega_{gc})$, where $\arg$ is the phase (unwrapped continuously from low frequency): the extra phase lag tolerated at crossover. With several crossovers, the smallest values count. The <dfn>stability margin</dfn> is the distance from the curve to the critical point, $s_m = \min_\omega \abs{1 + L(i\omega)}$.</p>
+</div>
+
+<div class="blk prop" id="prop-margins" data-name="What the stability margin guarantees">
+<p>For a stable closed loop:</p>
+<ol>
+<li>$s_m = 1/\norm{S}_{\mathcal H_\infty}$;</li>
+<li>if the curve crosses the negative real axis only at points $-a$ with $0 &lt; a &lt; 1$, then each $1/a \ge 1/(1 - s_m)$, so the gain margin is at least $1/(1 - s_m)$;</li>
+<li>at every gain crossover, $\abs{\varphi_m} \ge 2\arcsin(s_m/2)$;</li>
+<li>if $L$ is strictly proper, then $s_m \le 1$, that is, $\norm{S}_{\mathcal H_\infty} \ge 1$.</li>
+</ol>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (1) $\abs{1 + L} = 1/\abs{S}$ pointwise. (2) The distance from $-a$ to $-1$ is $1 - a \ge s_m$. (3) At a gain crossover $L = -e^{i\varphi_m}$, so $\abs{1 + L} = \abs{1 - e^{i\varphi_m}} = 2\abs{\sin(\varphi_m/2)} \ge s_m$. (4) $L(i\omega) \to 0$ as $\omega \to \infty$, so $\abs{1 + L(i\omega)} \to 1$.</p>
+</div>
+
+<div class="blk probe">
+<p>Three probes. For $L(s) = k/(\tau s + 1)^3$ with gain $k &gt; 0$ and time constant $\tau &gt; 0$, each factor contributes $-60^\circ$ at $\omega_{pc} = \sqrt3/\tau$, where $\abs{L} = k/8$: the gain margin is $8/k$, and the closed loop is stable exactly for $k &lt; 8$, as the Routh–Hurwitz test confirms: the characteristic polynomial $\tau^3s^3 + 3\tau^2s^2 + 3\tau s + 1 + k$ is stable exactly when $3\tau^2\cdot 3\tau &gt; \tau^3(1 + k)$. For $L(s) = k/\big(s(\tau s + 1)\big)$ the phase lies strictly between $-90^\circ$ and $-180^\circ$, so the gain margin is infinite; with $k = \tau = 1$, $\omega_{gc}^2 = (\sqrt5 - 1)/2$, $\omega_{gc} \approx 0.786$ and $\varphi_m \approx 51.8^\circ$. A delay $e^{-\theta s}$ has unit magnitude and phase $-\omega\theta$; it leaves $\omega_{gc}$ where it is and removes $\omega_{gc}\theta$ radians of phase margin, so with a single gain crossover the loop tolerates any extra delay below the delay margin $\varphi_m/\omega_{gc}$ ($\varphi_m$ in radians; <a class="xref" href="#prop-delay"></a>), about $1.15$ in the second example.</p>
+</div>
+
+<div class="blk prop" id="prop-delay" data-name="Delay margin">
+<p>Let $L$ be strictly proper and rational, let the loop with $L$ be stable, and call the loop with $L(s)e^{-\theta s}$, $\theta \ge 0$, stable when $1 + L(s)e^{-\theta s}$ has no zeros with $\Re s \ge 0$.</p>
+<ol>
+<li>If $\abs{L(i\omega)} = 1$ at exactly one $\omega_{gc} &gt; 0$, with phase margin $\varphi_m \in (0, 2\pi)$ in radians, the loop with delay $\theta$ is stable for every $\theta &lt; \varphi_m/\omega_{gc}$, and at $\theta = \varphi_m/\omega_{gc}$ the function $1 + L(s)e^{-\theta s}$ vanishes at $s = \pm i\omega_{gc}$.</li>
+<li>If $L$ is stable and $\abs{L(i\omega)} &lt; 1$ for every $\omega$, the loop with delay $\theta$ is stable for every $\theta \ge 0$.</li>
+</ol>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Since $\abs{e^{-\theta s}} \le 1$ for $\Re s \ge 0$ and $L$ is strictly proper, $1 + L(s)e^{-\theta s} \to 1$ on the large semicircle, and the argument principle of <a class="xref" href="#thm-nyquist"></a> applies unchanged: the number of zeros in the open RHP is $N(\theta) + P$, with $N(\theta)$ the clockwise encirclements of $-1$ by $L(i\omega)e^{-i\omega\theta}$; the delay adds no poles. (1) The curve passes through $-1$ only where $\abs{L(i\omega)} = 1$, that is at $\omega = \pm\omega_{gc}$, and only if $\omega_{gc}\theta \equiv \varphi_m$ modulo $2\pi$. For $\theta \in [0, \varphi_m/\omega_{gc})$ it therefore avoids $-1$, so no zero lies on the imaginary axis, and $N(\theta)$, an integer that depends continuously on $\theta$, stays at $N(0) = -P$. At $\theta = \varphi_m/\omega_{gc}$, $1 + L(\pm i\omega_{gc})e^{\mp i\omega_{gc}\theta} = 0$. (2) By the maximum modulus principle, as in the proof of <a class="xref" href="#thm-small-gain"></a>, $\abs{L(s)e^{-\theta s}} \le \abs{L(s)} &lt; 1$ for $\Re s \ge 0$, so $1 + L(s)e^{-\theta s} \ne 0$ there.</p>
+</div>
+<p class="src">Delay margin and the Nyquist criterion with delays: Åström and Murray, ch. 10.</p>
+
+<div class="blk cex" id="cex-margins">
+<p>Good gain and phase margins do not imply a good stability margin. The loop</p>
+<div class="eq">$$L(s) = \frac{0.38\,(s^2 + 0.1s + 0.55)}{s(s + 1)(s^2 + 0.06s + 0.5)}$$</div>
+<p>is closed-loop stable, never reaches $-180^\circ$ (infinite gain margin) and has a phase margin of about $70^\circ$, yet its lightly damped pole and zero pair pull the Nyquist curve to within $s_m \approx 0.27$ of $-1$ near $\omega \approx 0.71$, so $\norm{S}_{\mathcal H_\infty} \approx 3.7$ (all values computed numerically; the phase stays above $-180^\circ$, tending to it only as $\omega \to \infty$, where $\abs{L} \to 0$). The margins look at two points of the curve and test one perturbation direction each, pure gain or pure phase; $s_m$ is the distance from the whole curve to $-1$.</p>
+</div>
+
+<figure class="viz" id="viz-nyquist">
+  <figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">Nyquist curve, margins and the closed loop</span><span class="viz-sub">Two loop families with a delay $e^{-\theta s}$. The Nyquist curve is drawn with the critical point $-1$, the unit circle and the largest circle around $-1$ that the curve avoids; the Bode plot and the closed-loop step response are computed from the same loop.</span></figcaption>
+  <div class="viz-plots main-side">
+    <div class="plot" id="nyq-plot"><div class="plot-cap">Nyquist curve $L(i\omega)$: solid for $\omega &gt; 0$, faint for $\omega &lt; 0$</div></div>
+    <div style="min-width:0">
+      <div class="plot" id="nyq-mag"><div class="plot-cap">Bode magnitude $\abs{L}$ in decibels (dB) against $\omega$; dashed at 0 dB</div></div>
+      <div class="plot" id="nyq-ph" style="margin-top:8px"><div class="plot-cap">Bode phase $\arg L$ in degrees; dashed at $-180^\circ$</div></div>
+      <div class="plot" id="nyq-step" style="margin-top:8px"><div class="plot-cap">Closed-loop response $y(t)$ to a unit step reference</div></div>
+    </div>
+  </div>
+  <div class="viz-controls" id="nyq-controls"></div>
+  <div class="viz-notes">
+    <div><h5>Try this</h5><ol>
+      <li>Choose <i>Integrator and lag, no delay</i>: the gain margin is infinite and the phase margin about $52^\circ$. Raise $\theta$ toward $1.15$: the phase margin reaches zero at the delay margin and the step response stops decaying.</li>
+      <li>Choose <i>Triple lag, k = 2</i>: the curve crosses the negative real axis at $-0.25$, a gain margin of 4. Raise $k$ past 8 and the curve encloses $-1$; the closed loop is unstable.</li>
+      <li>Watch the dashed circle around $-1$: its radius is $s_m = 1/\norm{S}_{\mathcal H_\infty}$, and the readout shows the guaranteed bounds of <a class="xref" href="#prop-margins"></a> staying below the actual margins.</li>
+      <li>Choose <i>Small gain</i>: $\abs{L} &lt; 1$ at every frequency, so there is no gain crossover, and by <a class="xref" href="#prop-delay"></a>(2) any delay leaves the loop stable.</li>
+    </ol></div>
+    <div><h5>What to notice</h5><p>The gain and phase margins are read at two points of the curve; the stability margin is its distance to $-1$ everywhere. By <a class="xref" href="#thm-nyquist"></a> and its delayed form in <a class="xref" href="#prop-delay"></a> (here $P = 0$), instability means an encirclement of $-1$, and delay causes it by rotating every point of the curve clockwise by $\omega\theta$, more at high frequency. The last preset is <a class="xref" href="#prop-delay"></a>(2), the small-gain theorem of the next section in its simplest form.</p></div>
+  </div>
+</figure>
+</section>
+
+<section class="sec" id="s-robust">
+<h2>Small gain and robust stability</h2>
+
+<div class="blk prob"><p>The plant is known only up to a set. When does one controller stabilize every member of the set?</p></div>
+
+<div class="blk setting"><p>Model the error as a perturbation $\Delta(s)$ that is stable, otherwise unknown, and normalized to $\norm{\Delta}_{\mathcal H_\infty} \le 1$; a stable weight $W_2(s)$ shapes it over frequency. In the multiplicative model the true plant is $\tilde G = (1 + W_2\Delta)G$, so $\abs{W_2(i\omega)}$ bounds the relative error at frequency $\omega$. Assume that $\tilde G$ has as many RHP poles as $G$ (no unstable pole of $G$ is cancelled). For a loop of two stable systems $M$ and $\Delta$, with signals $v = Mw + d_1$ and $w = \Delta v + d_2$, the loop is internally stable when the maps from $(d_1, d_2)$ to $(v, w)$ are stable; <a class="xref" href="#lem-mdelta"></a> reduces this to one map.</p></div>
+
+<div class="blk lem" id="lem-mdelta" data-name="The loop of $M$ and $\Delta$">
+<p>Let $M$ and $\Delta$ be stable, proper, rational transfer matrices of compatible sizes, with $I - M(\infty)\Delta(\infty)$ invertible. The loop $v = Mw + d_1$, $w = \Delta v + d_2$ is internally stable if and only if $(I - M\Delta)^{-1}$ is stable.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Eliminating $w$ gives $v = (I - M\Delta)^{-1}(d_1 + Md_2)$, and then $w = \Delta(I - M\Delta)^{-1}d_1 + \big(I + \Delta(I - M\Delta)^{-1}M\big)d_2$. If $(I - M\Delta)^{-1}$ is stable, the four maps are sums and products of stable maps; conversely, the map from $d_1$ to $v$ is $(I - M\Delta)^{-1}$ itself.</p>
+</div>
+
+<div class="blk thm" id="thm-small-gain" data-name="Small-gain theorem">
+<p>Let $M$ and $\Delta$ be stable, proper, rational transfer matrices of compatible sizes. If $\norm{M}_{\mathcal H_\infty}\norm{\Delta}_{\mathcal H_\infty} &lt; 1$, the loop is internally stable, and</p>
+<div class="eq">$$\norm{(I - M\Delta)^{-1}}_{\mathcal H_\infty} \le \frac{1}{1 - \norm{M}_{\mathcal H_\infty}\norm{\Delta}_{\mathcal H_\infty}}.$$</div>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> $M$ and $\Delta$ are analytic and bounded in the closed RHP, so by the maximum modulus principle $\sigma_{\max}(M(s)\Delta(s)) \le \norm{M}_{\mathcal H_\infty}\norm{\Delta}_{\mathcal H_\infty} &lt; 1$ for every $s$ with $\Re s \ge 0$. The Neumann series (<a href="ch05_hilbert_spaces.html#thm-neumann">chapter 5</a>) then shows that $I - M(s)\Delta(s)$ is invertible there, with the stated bound on the norm of the inverse; this includes $s = \infty$, so the loop is well posed. Hence $(I - M\Delta)^{-1}$ has no poles in the closed RHP, and the loop is internally stable by <a class="xref" href="#lem-mdelta"></a>.</p>
+</div>
+<p class="src">Linear statements and proofs: Zhou, Doyle and Glover, ch. 9; Doyle, Francis and Tannenbaum, ch. 4. Zames (1966) proved the small-gain theorem for causal, bounded, possibly nonlinear or time-varying operators on $L^2$ in well-posed loops, bounding truncated signals instead of summing a Neumann series.</p>
+
+<div class="blk cor" id="cor-rs-mult" data-name="Robust stability under multiplicative uncertainty">
+<p>In the setting above, $K$ stabilizes every $\tilde G = (1 + W_2\Delta)G$ with $\norm{\Delta}_{\mathcal H_\infty} \le 1$ if and only if $K$ stabilizes $G$ and $\norm{W_2T}_{\mathcal H_\infty} &lt; 1$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof of sufficiency.</span> The perturbed loop is $\tilde L = (1 + W_2\Delta)L$, and $1 + \tilde L = (1 + L)(1 + W_2T\Delta)$. With $M = -W_2T$ (stable, because $K$ stabilizes $G$), the small-gain theorem shows that $1 + W_2T\Delta$ has no zeros in the closed RHP, so the zeros of $1 + \tilde L$ are those of $1 + L$. In the Nyquist picture, $\abs{\tilde L - L} = \abs{W_2\Delta L} \le \abs{W_2L} &lt; \abs{1 + L}$: at each frequency the disk of possible values of $\tilde L$ excludes $-1$. Necessity, by constructing a destabilizing $\Delta$ when $\norm{W_2T}_{\mathcal H_\infty} \ge 1$: Doyle, Francis and Tannenbaum, ch. 4.</p>
+</div>
+
+<figure class="wide" aria-label="Loop with multiplicative uncertainty and the equivalent loop seen by Delta">
+<svg viewBox="0 0 760 236" role="img" aria-label="Left: feedback loop r to K to G with an uncertainty branch W2 then Delta added at the plant input. Right: the same loop redrawn as Delta in feedback with M equal to minus W2 T." style="width:100%;height:auto;max-width:860px;display:block;margin:6px 0 4px">
+  <defs><marker id="rb-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--ink-2)"/></marker></defs>
+  <text x="270" y="22" text-anchor="middle" font-family="var(--font-ui)" font-size="12" letter-spacing="1.2" fill="var(--muted)">PERTURBED LOOP</text>
+  <text x="650" y="22" text-anchor="middle" font-family="var(--font-ui)" font-size="12" letter-spacing="1.2" fill="var(--muted)">LOOP SEEN BY Δ</text>
+  <text x="18" y="151" font-family="var(--font-body)" font-style="italic" font-size="16" fill="var(--ink)">r</text>
+  <path d="M30 146 H54" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#rb-arrow)"/>
+  <circle cx="64" cy="146" r="10" fill="none" stroke="var(--ink-2)" stroke-width="1.5"/>
+  <text x="70" y="176" font-family="var(--font-body)" font-size="15" fill="var(--ink-2)">−</text>
+  <path d="M74 146 H94" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#rb-arrow)"/>
+  <rect x="96" y="128" width="58" height="36" rx="3" fill="var(--tint-def)" stroke="var(--c1)" stroke-width="1.5"/>
+  <text x="125" y="151" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="16" fill="var(--ink)">K(s)</text>
+  <path d="M154 146 H360" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#rb-arrow)"/>
+  <circle cx="178" cy="146" r="3.5" fill="var(--ink-2)"/>
+  <text x="170" y="168" font-family="var(--font-body)" font-style="italic" font-size="15" fill="var(--ink-2)">u</text>
+  <path d="M178 146 V76 H202" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#rb-arrow)"/>
+  <rect x="204" y="58" width="54" height="36" rx="3" fill="none" stroke="var(--c4)" stroke-width="1.5"/>
+  <text x="231" y="81" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="16" fill="var(--ink)">W₂</text>
+  <path d="M258 76 H286" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#rb-arrow)"/>
+  <rect x="288" y="58" width="54" height="36" rx="3" fill="none" stroke="var(--c8)" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="315" y="82" text-anchor="middle" font-family="var(--font-body)" font-size="18" fill="var(--ink)">Δ</text>
+  <text x="315" y="48" text-anchor="middle" font-family="var(--font-ui)" font-size="11.5" fill="var(--muted)">stable, ‖Δ‖∞ ≤ 1</text>
+  <path d="M342 76 H370 V134" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#rb-arrow)"/>
+  <circle cx="370" cy="146" r="10" fill="none" stroke="var(--ink-2)" stroke-width="1.5"/>
+  <text x="378" y="128" font-family="var(--font-body)" font-size="14" fill="var(--ink-2)">+</text>
+  <path d="M380 146 H402" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#rb-arrow)"/>
+  <rect x="404" y="128" width="58" height="36" rx="3" fill="var(--tint-def)" stroke="var(--c1)" stroke-width="1.5"/>
+  <text x="433" y="151" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="16" fill="var(--ink)">G(s)</text>
+  <path d="M462 146 H520" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#rb-arrow)"/>
+  <text x="526" y="151" font-family="var(--font-body)" font-style="italic" font-size="16" fill="var(--ink)">y</text>
+  <path d="M494 146 V206 H64 V158" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#rb-arrow)"/>
+  <circle cx="494" cy="146" r="3.5" fill="var(--ink-2)"/>
+  <rect x="622" y="58" width="56" height="36" rx="3" fill="none" stroke="var(--c8)" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="650" y="82" text-anchor="middle" font-family="var(--font-body)" font-size="18" fill="var(--ink)">Δ</text>
+  <rect x="596" y="128" width="108" height="36" rx="3" fill="var(--tint-def)" stroke="var(--c1)" stroke-width="1.5"/>
+  <text x="650" y="151" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="16" fill="var(--ink)">M = −W₂T</text>
+  <path d="M704 146 H730 V76 H680" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#rb-arrow)"/>
+  <path d="M622 76 H572 V146 H594" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#rb-arrow)"/>
+  <text x="380" y="230" text-anchor="middle" font-family="var(--font-ui)" font-size="12" fill="var(--muted)">Every stable Δ with ‖Δ‖∞ ≤ 1 is tolerated exactly when ‖W₂T‖∞ &lt; 1: the small-gain condition for the loop on the right.</text>
+</svg>
+</figure>
+
+<div class="blk pattern">
+<p>Each uncertainty model reduces to the same picture with a different $M$, so robust stability is always a bound on one weighted closed-loop map: <a class="xref" href="#cor-rs-mult"></a> for the multiplicative model and <a class="xref" href="#prop-models"></a> for the other two.</p>
+</div>
+<div class="tbl-wrap"><table class="tbl">
+  <thead><tr><th>Uncertainty model</th><th>Perturbed plant</th><th>$M$ seen by $\Delta$</th><th>Robust stability for all $\norm{\Delta}_{\mathcal H_\infty} \le 1$</th><th>Typical source</th></tr></thead>
+  <tbody>
+    <tr><td>Additive</td><td>$G + W_a\Delta$</td><td>$-W_aKS$</td><td>$\norm{W_aKS}_{\mathcal H_\infty} &lt; 1$</td><td>absolute errors in the response</td></tr>
+    <tr><td>Multiplicative</td><td>$(1 + W_2\Delta)G$</td><td>$-W_2T$</td><td>$\norm{W_2T}_{\mathcal H_\infty} &lt; 1$</td><td>relative errors: unmodelled fast modes, delays</td></tr>
+    <tr><td>Inverse multiplicative</td><td>$G(1 + W_i\Delta)^{-1}$</td><td>$-W_iS$</td><td>$\norm{W_iS}_{\mathcal H_\infty} &lt; 1$</td><td>uncertain low-frequency or unstable poles</td></tr>
+  </tbody>
+</table></div>
+
+<div class="blk prop" id="prop-models" data-name="Additive and inverse multiplicative uncertainty">
+<p>Let $K$ stabilize the SISO plant $G$, and let $W_a$ and $W_i$ be stable weights playing the role of $W_2$.</p>
+<ol>
+<li>$K$ stabilizes every $G + W_a\Delta$ with $\Delta$ stable and $\norm{\Delta}_{\mathcal H_\infty} \le 1$ if and only if $\norm{W_aKS}_{\mathcal H_\infty} &lt; 1$.</li>
+<li>$K$ stabilizes every $G(1 + W_i\Delta)^{-1}$ with $\Delta$ stable and $\norm{\Delta}_{\mathcal H_\infty} \le 1$ if and only if $\norm{W_iS}_{\mathcal H_\infty} &lt; 1$.</li>
+<li>Unlike the other two models, $G(1 + W_i\Delta)^{-1}$ can have more poles in the RHP than $G$.</li>
+</ol>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof of sufficiency in (1), and of (3).</span> With $\tilde L = (G + W_a\Delta)K$, $1 + \tilde L = (1 + L)(1 + W_aKS\Delta)$, and $W_aKS$ is stable because $K$ stabilizes $G$; the stable term $W_a\Delta$ adds no RHP pole to $G$, so the argument of <a class="xref" href="#cor-rs-mult"></a> applies with $M = -W_aKS$. (3) For $W_i = 2$ and $\Delta(s) = -1/(s + 1)$, $1 + W_i\Delta = (s - 1)/(s + 1)$, so $G(1 + W_i\Delta)^{-1} = G(s)(s + 1)/(s - 1)$ has the pole $s = 1$ unless $G(1) = 0$.</p>
+</div>
+<p class="src">The full statements, including necessity and the changing pole count in (2), which the reduction to the loop of $M = -W_iS$ and $\Delta$ handles: Doyle, Francis and Tannenbaum, ch. 4; Skogestad and Postlethwaite, ch. 7.</p>
+
+<div class="blk probe">
+<p>Unmodelled delay. If the true plant is $e^{-\theta s}G$ with unknown $\theta \in [0, \theta_{\max}]$, the relative error is $\abs{e^{-i\omega\theta} - 1} = 2\abs{\sin(\omega\theta/2)} \le \min(\omega\theta_{\max}, 2)$. A multiplicative weight on or above this bound covers the delays, and for the weight on the bound the condition $\abs{T(i\omega)} &lt; 1/\abs{W_2(i\omega)}$ of <a class="xref" href="#cor-rs-mult"></a> (stated there for rational $\Delta$) asks for $\abs{T(i\omega)} &lt; 1/(\omega\theta_{\max})$ wherever $\omega\theta_{\max} &lt; 2$. Where the loop gain is large, $\abs{1 - T} = \abs{S}$ is small, at most $1/(\abs{L} - 1)$, so the condition forces crossover below roughly $1/\theta_{\max}$. The limit is genuine, not an artefact of the weight: by <a class="xref" href="#prop-delay"></a>, a loop with a single gain crossover that tolerates every delay up to $\theta_{\max}$ needs $\omega_{gc} &lt; \varphi_m/\theta_{\max}$, and $\varphi_m \le \pi$ whenever the phase at crossover lies between $-180^\circ$ and $0^\circ$. Uncertainty about delay caps bandwidth.</p>
+</div>
+
+<div class="blk cex" id="cex-small-gain">
+<p>The small-gain condition is sufficient for a given $\Delta$, not necessary. Take $M(s) = -2/(s + 1)$, with $\norm{M}_{\mathcal H_\infty} = 2$. For $\Delta = 1$, $1 - M\Delta = (s + 3)/(s + 1)$ and the loop is stable although $\norm{M}\norm{\Delta} = 2 &gt; 1$. For $\Delta = -1$, of the same norm, $1 - M\Delta = (s - 1)/(s + 1)$ and the loop is unstable. The bound is sharp only over the whole ball of perturbations, as in <a class="xref" href="#cor-rs-mult"></a> and <a class="xref" href="#thm-rs-input"></a>(3); when $\Delta$ is known to have structure (real, diagonal, repeated) it can be very conservative (<a class="xref" href="#cex-mu-gap"></a>), which leads to the structured singular value of <a class="xref" href="#s-mimo-robust"></a>.</p>
+</div>
+
+<div class="blk pattern">
+<p>Since $S + T = 1$, $\abs{S(i\omega)} + \abs{T(i\omega)} \ge 1$ at every frequency: $\abs{S}$ and $\abs{T}$ cannot both be below $\tfrac12$. Disturbance rejection asks for small $\abs{S}$, usually at low frequency, and robustness to unmodelled dynamics asks for small $\abs{T}$, usually at high frequency, so the two demands must be separated in frequency, and the crossover region is where they collide. Nominal performance, $\norm{W_1S}_{\mathcal H_\infty} &lt; 1$ for a stable performance weight $W_1$, and robust stability are both needed for performance under every $\Delta$, but together they bound only the larger of $\abs{W_1S}$ and $\abs{W_2T}$, while <a class="xref" href="#prop-rp"></a> bounds their sum.</p>
+</div>
+
+<div class="blk prop" id="prop-rp" data-name="Robust performance">
+<p>In the setting of this section (in particular, each $\tilde G = (1 + W_2\Delta)G$ has as many RHP poles as $G$), let $K$ stabilize the SISO plant $G$, let $W_1$ be a stable weight, and let $\tilde S = 1/(1 + \tilde GK)$. Then $K$ stabilizes every $\tilde G$ with $\Delta$ stable and $\norm{\Delta}_{\mathcal H_\infty} \le 1$ and achieves $\norm{W_1\tilde S}_{\mathcal H_\infty} &lt; 1$ for all of them if and only if</p>
+<div class="eq">$$\big\|\,\abs{W_1S} + \abs{W_2T}\,\big\|_{\mathcal H_\infty} &lt; 1 .$$</div>
+</div>
+<details class="proof"><summary>Proof sketch</summary><p>The condition contains $\norm{W_2T}_{\mathcal H_\infty} &lt; 1$, robust stability by <a class="xref" href="#cor-rs-mult"></a>. From $1 + \tilde GK = (1 + L)(1 + W_2T\Delta)$, $W_1\tilde S = W_1S/(1 + W_2T\Delta)$, and at each frequency $\abs{W_1\tilde S} \le \abs{W_1S}/(1 - \abs{W_2T})$, which is below 1 exactly when $\abs{W_1S} + \abs{W_2T} &lt; 1$. For necessity, a stable $\Delta$ with $\norm{\Delta}_{\mathcal H_\infty} \le 1$ can be chosen with $W_2T\Delta = -\abs{W_2T}$ at the worst frequency.</p></details>
+<p class="src">Doyle, Francis and Tannenbaum, ch. 4.</p>
+</section>
+
+<section class="sec" id="s-mimo-robust">
+<h2>Multivariable robustness: margins one loop at a time can mislead</h2>
+
+<div class="blk prob"><p>A plant with several inputs and outputs is controlled by a multivariable controller. The classical check breaks the loop in one channel, keeps the other channels closed, and reads the gain and phase margins of the scalar loop that remains. If every channel passes, does the loop tolerate errors in all channels at once?</p></div>
+
+<div class="blk setting"><p>The plant $G(s)$ is a proper real-rational $p\times m$ transfer matrix, with $m$ inputs and $p$ outputs, and the controller $K(s)$ is a proper real-rational $m\times p$ matrix, connected in negative feedback: $u = K(r - y)$ and $y = Gu$. Breaking the loop at the plant output or at the plant input gives two loop transfer functions, the <dfn>output loop</dfn> $L = GK$ ($p\times p$) and the <dfn>input loop</dfn> $L_I = KG$ ($m\times m$). The output sensitivity and complementary sensitivity are $S = (I + L)^{-1}$ and $T = L(I + L)^{-1}$; at the input, $S_I = (I + L_I)^{-1}$ and $T_I = L_I(I + L_I)^{-1} = KG(I + KG)^{-1}$. For $m = p = 1$ these are the scalars of <a class="xref" href="#s-nyquist"></a>. Matrix products do not commute (<a href="ch01_linear_maps.html#cex-commute">chapter 1</a>), so $GK$ and $KG$ differ in general, even when $m = p$. When $I + G(\infty)K(\infty)$ is invertible (the loop is well posed), realizations of $G$ and $K$ give a closed-loop state matrix $A_{cl}$, and $K$ <dfn>stabilizes</dfn> $G$ when $A_{cl}$ is Hurwitz; for realizations without unstable hidden modes this is internal stability, the stability of every closed-loop transfer matrix as in chapter 10 (Zhou, Doyle and Glover, ch. 5; Skogestad and Postlethwaite, §4.7). Model error at the actuators is an <dfn>input multiplicative perturbation</dfn>: the true plant is $G(I + \Delta)$ with $\Delta(s)$ a stable $m\times m$ transfer matrix. A constant $\Delta = \diag(\delta_1, \dots, \delta_m)$ with real $\delta_j$ means that actuator $j$ delivers $1 + \delta_j$ times the commanded input.</p></div>
+
+<div class="blk prop" id="prop-loops" data-name="Input and output loops">
+<p>Let $G \in \C^{p\times m}$ and $K \in \C^{m\times p}$, with $\C$ the complex numbers, for instance the values of the plant and the controller at one point $s$.</p>
+<ol>
+<li>$\det(I_p + GK) = \det(I_m + KG)$, where $I_k$ is the $k\times k$ identity.</li>
+<li>If $I + GK$ is invertible, so is $I + KG$, and $S + T = I$, $S_I + T_I = I$.</li>
+<li>Push-through: $G(I + KG)^{-1} = (I + GK)^{-1}G$ and $K(I + GK)^{-1} = (I + KG)^{-1}K$.</li>
+<li>$T = GX$ and $T_I = XG$ with $X = K(I + GK)^{-1}$, so $T$ and $T_I$ have the same nonzero eigenvalues, with multiplicity.</li>
+</ol>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (1) By the theorem on $AB$ and $BA$ (<a href="ch03_eigenvalues.html#thm-abba">chapter 3</a>), $GK$ and $KG$ have the same nonzero eigenvalues $\lambda_k$, with multiplicity, and both determinants equal $\prod_k(1 + \lambda_k)$. (2) Invertibility follows from (1); then $S + T = (I + L)(I + L)^{-1} = I$, and likewise at the input. (3) $(I + GK)G = G + GKG = G(I + KG)$; multiply by $(I + GK)^{-1}$ on the left and by $(I + KG)^{-1}$ on the right. The second identity is the first with the roles of $G$ and $K$ exchanged. (4) $T = GK(I + GK)^{-1} = GX$; by (3), $XG = (I + KG)^{-1}KG$, which equals $KG(I + KG)^{-1} = T_I$ because $KG$ commutes with $I + KG$. The eigenvalue statement is again the theorem on $AB$ and $BA$.</p>
+</div>
+
+<div class="blk cex" id="cex-gk-kg">
+<p>$T$ and $T_I$ need not have the same singular values: unlike eigenvalues, singular values depend on where the loop is broken. For the constant matrices $G = \begin{bmatrix}1 & \eta\\ 0 & 1\end{bmatrix}$ and $K = \begin{bmatrix}1 & 0\\ 0 & 0\end{bmatrix}$ with $\eta &gt; 0$, $GK = K$ and $T = \tfrac12 K$, while $KG = \begin{bmatrix}1 & \eta\\ 0 & 0\end{bmatrix}$ and $T_I = \tfrac12 KG$. Both have eigenvalues $\tfrac12$ and $0$, as <a class="xref" href="#prop-loops"></a> requires, but $\sigma_{\max}(T) = \tfrac12$ while $\sigma_{\max}(T_I) = \tfrac12\sqrt{1 + \eta^2}$.</p>
+</div>
+
+<div class="blk thm" id="thm-gnc" data-name="Generalized Nyquist criterion">
+<p>Let $(A, B, C, D)$, with $A \in \R^{n\times n}$, realize a $p\times p$ loop transfer matrix $L(s) = C(sI - A)^{-1}B + D$ with $\det(I + D) \ne 0$. Close the loop by $u = v - y$, with an external input $v$; the closed loop has state matrix $A_{cl} = A - B(I + D)^{-1}C$, and</p>
+<div class="eq">$$\det\big(I + L(s)\big) = \det(I + D)\,\frac{\det(sI - A_{cl})}{\det(sI - A)}.$$</div>
+<p>Let $P$ be the number of eigenvalues of $A$ in the open RHP, with multiplicity. Trace $\det(I + L(s))$ along the contour of <a class="xref" href="#thm-nyquist"></a>, with small detours into the RHP around the eigenvalues of $A$ on the imaginary axis, assume that the curve does not pass through $0$, and let $N$ be its number of clockwise encirclements of $0$. Then $A_{cl}$ has $N + P$ eigenvalues in the open RHP, counted with multiplicity. It is Hurwitz if and only if $N = -P$ and no eigenvalue of $A$ on the imaginary axis is an eigenvalue of $A_{cl}$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> From $u = v - Cx - Du$, $u = (I + D)^{-1}(v - Cx)$ and $\dot x = A_{cl}x + B(I + D)^{-1}v$. Next, $I + L(s) = (I + D)\big(I + (I + D)^{-1}C(sI - A)^{-1}B\big)$, and <a class="xref" href="#prop-loops"></a>(1) moves the factor $(sI - A)^{-1}B$ to the front:</p>
+<div class="eq">$$\det\big(I + (I + D)^{-1}C(sI - A)^{-1}B\big) = \det\big(I + (sI - A)^{-1}B(I + D)^{-1}C\big) = \frac{\det(sI - A_{cl})}{\det(sI - A)}.$$</div>
+<p>So $\det(I + L)$ is a rational function whose zeros and poles are eigenvalues of $A_{cl}$ and of $A$; a common root cancels, which leaves the difference of the two counts inside the contour unchanged. On the large semicircle $\det(I + L) \to \det(I + D) \ne 0$, which adds no turns. The argument principle, as in the proof of <a class="xref" href="#thm-nyquist"></a>, gives $N = Z - P$, with $Z$ the number of eigenvalues of $A_{cl}$ inside the contour, that is, in the open RHP once the detours are small. Since the curve avoids $0$, every imaginary eigenvalue of $A_{cl}$ is a detour point, which gives the last statement.</p>
+</div>
+<p class="src">MacFarlane and Postlethwaite (1977) stated the criterion through the characteristic loci, the curves traced by the eigenvalues of $L(i\omega)$, whose encirclements of $-1$ are counted together; Desoer and Wang (1980) gave a rigorous proof. Textbook treatment: Skogestad and Postlethwaite, §4.9.2.</p>
+
+<div class="blk def" id="def-lat" data-name="Loop-at-a-time margins">
+<p>Let $K$ stabilize $G$ and fix an input channel $j$. Break the loop at the $j$-th plant input: drive $u_j$ by an external signal $w$, keep every other channel closed, and let $z_j$ be the $j$-th controller output. The <dfn>loop transfer function of channel $j$</dfn> is the scalar $\ell_j(s)$ with $z_j = -\ell_j w$, so that reconnecting $w = z_j$ closes a negative-feedback loop around $\ell_j$. The <dfn>loop-at-a-time</dfn> gain and phase margins of channel $j$ are the margins of $\ell_j$ (<a class="xref" href="#def-margins"></a>).</p>
+</div>
+
+<div class="blk ex" id="ex-satellite" data-name="The spinning satellite">
+<p>A model motivated by the control of the angular velocities of a satellite spinning about one of its principal axes (Skogestad and Postlethwaite, §3.7.1) is, with a spin parameter $a &gt; 0$,</p>
+<div class="eq">$$G(s) = \frac{1}{s^2 + a^2}\begin{bmatrix}s - a^2 & a(s + 1)\\ -a(s + 1) & s - a^2\end{bmatrix},\qquad A = \begin{bmatrix}0 & a\\ -a & 0\end{bmatrix},\quad B = I,\quad C = \begin{bmatrix}1 & a\\ -a & 1\end{bmatrix},\quad D = 0.$$</div>
+<p>Indeed $(sI - A)^{-1} = \frac{1}{s^2 + a^2}\begin{bmatrix}s & a\\ -a & s\end{bmatrix}$, and multiplying by $C$ on the left gives $G$. The open loop has the poles $\pm ia$ on the imaginary axis. With $K = I$, $L = L_I = G$, the closed-loop matrix is $A_{cl} = A - BC = -I$, and the identity of <a class="xref" href="#thm-gnc"></a> reads $\det(I + G(s)) = (s + 1)^2/(s^2 + a^2)$: the double closed-loop eigenvalue $-1$ over the open-loop pair $\pm ia$. The complementary sensitivity is</p>
+<div class="eq">$$T(s) = C(sI - A_{cl})^{-1}B = \frac{1}{s + 1}\begin{bmatrix}1 & a\\ -a & 1\end{bmatrix} = T_I(s).$$</div>
+<p>The constant matrix is $\sqrt{1 + a^2}$ times a rotation, so both singular values of $T(i\omega)$ equal $\sqrt{1 + a^2}/\sqrt{1 + \omega^2}$, and $\norm{T}_{\mathcal H_\infty} = \sqrt{1 + a^2}$, attained at $\omega = 0$; for $a = 10$ it is $\sqrt{101} \approx 10.05$. Each diagonal entry $1/(s + 1)$ has peak gain 1: the large gain sits in the coupling.</p>
+</div>
+
+<div class="blk probe"><p>One loop at a time. Break channel 1 of the satellite loop and keep channel 2 closed, $u_2 = -y_2$. With $g_{ij}$ the entries of $G$, $u_2 = -g_{21}w/(1 + g_{22})$, and</p>
+<div class="eq">$$\ell_1 = g_{11} - \frac{g_{12}\,g_{21}}{1 + g_{22}} = \frac{s - a^2}{s^2 + a^2} + \frac{a^2(s + 1)}{s(s^2 + a^2)} = \frac{s^2 + a^2}{s(s^2 + a^2)} = \frac{1}{s},$$</div>
+<p>using $1 + g_{22} = s(s + 1)/(s^2 + a^2)$ and $g_{12}g_{21} = -a^2(s + 1)^2/(s^2 + a^2)^2$. Since $g_{22} = g_{11}$, the same computation gives $\ell_2 = 1/s$. An integrator has phase $-90^\circ$ at every frequency: there is no phase crossover, so the gain margin is infinite, the gain crossover is at $\omega = 1$ with phase margin $90^\circ$, and $\abs{1 + \ell_j(i\omega)} = \sqrt{1 + \omega^{-2}}$ gives the stability margin $s_m = 1$, the largest value <a class="xref" href="#prop-margins"></a> allows for a strictly proper loop. By the single-loop test, each channel is as robust as a loop can be, for every $a$.</p></div>
+
+<div class="blk cex" id="cex-satellite">
+<p>Errors in both actuators at once. Let actuator $j$ of the satellite deliver $(1 + \delta_j)u_j$, with real $\delta_1, \delta_2$, so the plant is $G(I + \Delta)$ with $\Delta = \diag(\delta_1, \delta_2)$. The closed-loop matrix and its characteristic polynomial are</p>
+<div class="eq">$$A - (I + \Delta)C = \begin{bmatrix}-(1 + \delta_1) & -a\delta_1\\ a\delta_2 & -(1 + \delta_2)\end{bmatrix},\qquad s^2 + (2 + \delta_1 + \delta_2)\,s + (1 + \delta_1)(1 + \delta_2) + a^2\delta_1\delta_2 .$$</div>
+<p>On the axis $\delta_2 = 0$ the roots are $-1$ and $-(1 + \delta_1)$, as $\ell_1 = 1/s$ predicts, and on the diagonal $\delta_1 = \delta_2 = \delta$ they are $-(1 + \delta) \pm ia\delta$, since the polynomial is $(s + 1 + \delta)^2 + a^2\delta^2$: both are stable for every value above $-1$. With $\delta_1 = -\delta_2 = \delta$ it is $(s + 1)^2 - (1 + a^2)\delta^2$, with roots $-1 \pm \sqrt{1 + a^2}\,\delta$: the loop is unstable for $\abs\delta &gt; 1/\sqrt{1 + a^2}$, with an eigenvalue at $0$ at equality, and $1/\sqrt{101} \approx 0.0995$ for $a = 10$. A gain 10% too high in one actuator and 10% too low in the other destabilizes a loop whose loop-at-a-time margins are infinite and $90^\circ$. The single-loop tests probe the coordinate axes of the $(\delta_1, \delta_2)$ plane; the loop fails along the line $\delta_1 = -\delta_2$.</p>
+</div>
+
+<div class="blk lem" id="lem-hurwitz" data-name="Hurwitz polynomials">
+<p>(1) If every root of a real monic polynomial lies in the open LHP, all its coefficients are positive. (2) The quadratic $s^2 + bs + c$ with real $b$ and $c$ has both roots in the open LHP if and only if $b &gt; 0$ and $c &gt; 0$; equivalently, a real $2\times 2$ matrix is Hurwitz if and only if its trace is negative and its determinant positive.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (1) The polynomial is a product of factors $s + r$ with $r &gt; 0$, one for each real root $-r$, and $s^2 + 2\alpha s + \alpha^2 + \beta^2$ with $\alpha &gt; 0$, one for each conjugate pair $-\alpha \pm i\beta$; each factor has positive coefficients, hence so has the product. (2) Necessity is (1). Conversely, if $b, c &gt; 0$, the roots satisfy $r_1 + r_2 = -b$ and $r_1r_2 = c$: real roots have the same sign and a negative sum, and a complex pair has real part $-b/2 &lt; 0$. A $2\times 2$ matrix $A$ has characteristic polynomial $s^2 - (\tr A)\,s + \det A$.</p>
+</div>
+
+<div class="blk prop" id="prop-sat-region" data-name="Stability region of the satellite loop">
+<p>For the satellite of <a class="xref" href="#ex-satellite"></a> with $a \ge 0$, $K = I$ and the plant $G(I + \Delta)$, $\Delta = \diag(\delta_1, \delta_2)$ real, the closed loop is stable if and only if</p>
+<div class="eq">$$b(\delta) = 2 + \delta_1 + \delta_2 &gt; 0\qquad\text{and}\qquad c(\delta) = 1 + \delta_1 + \delta_2 + (1 + a^2)\,\delta_1\delta_2 &gt; 0 .$$</div>
+<p>Consequently: (i) it is stable whenever $\delta_1, \delta_2 &gt; -1$ and $\delta_1\delta_2 \ge 0$, in particular on both axes; (ii) for $a &gt; 0$ and fixed $\delta_1 = x &gt; 0$, it is stable if and only if $\delta_2 &gt; -(1 + x)/\big(1 + (1 + a^2)x\big)$, a threshold that increases from $-1$ toward $-1/(1 + a^2)$ as $x$ grows; (iii) on the line $\delta_1 = -\delta_2 = \delta$ it is stable if and only if $\abs\delta &lt; 1/\sqrt{1 + a^2}$; (iv) for $a = 0$ it is stable if and only if $\delta_1 &gt; -1$ and $\delta_2 &gt; -1$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> The characteristic polynomial of <a class="xref" href="#cex-satellite"></a> is $s^2 + bs + c$, since $(1 + \delta_1)(1 + \delta_2) + a^2\delta_1\delta_2 = c(\delta)$, and <a class="xref" href="#lem-hurwitz"></a>(2) gives the criterion. (i) If $\delta_1, \delta_2 &gt; -1$ then $b &gt; 0$, and $c = (1 + \delta_1)(1 + \delta_2) + a^2\delta_1\delta_2 &gt; 0$ when $\delta_1\delta_2 \ge 0$. (ii) For $x &gt; 0$, $c = (1 + x) + \big(1 + (1 + a^2)x\big)\delta_2$ is positive exactly when $\delta_2$ exceeds the threshold, and the threshold exceeds $-1 &gt; -2 - x$, so $b &gt; 0$ follows. The derivative of $(1 + x)/\big(1 + (1 + a^2)x\big)$ is $-a^2/\big(1 + (1 + a^2)x\big)^2 &lt; 0$, and its limit is $1/(1 + a^2)$. (iii) $b = 2$ and $c = 1 - (1 + a^2)\delta^2$. (iv) $c = (1 + \delta_1)(1 + \delta_2)$ is positive exactly when both factors have the same sign, and both negative would give $b &lt; 0$.</p>
+</div>
+
+<div class="blk thm" id="thm-rs-input" data-name="Input multiplicative uncertainty">
+<p>Let $G$ be strictly proper with $m$ inputs, let the proper controller $K$ stabilize $G$, and let $\phi(s) = \det(sI - A_{cl})$ be the nominal closed-loop characteristic polynomial. Let $\Delta$ be a stable, proper, rational $m\times m$ matrix, with a realization whose state matrix $A_\Delta$ is Hurwitz (no state if $\Delta$ is constant). With the plant $G(I + \Delta)$:</p>
+<ol>
+<li>the closed-loop characteristic polynomial is $\det(sI - A_\Delta)\,\phi(s)\,\det\big(I + \Delta(s)T_I(s)\big)$, so the perturbed loop is stable if and only if $\det(I + \Delta(s)T_I(s)) \ne 0$ for every $s$ with $\Re s \ge 0$;</li>
+<li>it is stable whenever $\norm{\Delta}_{\mathcal H_\infty} &lt; 1/\norm{T_I}_{\mathcal H_\infty}$;</li>
+<li>this radius is the largest possible: for every $r &gt; 1/\norm{T_I}_{\mathcal H_\infty}$ some stable $\Delta$, in general a full matrix rather than a diagonal one, with $\norm{\Delta}_{\mathcal H_\infty} &lt; r$ destabilizes the loop.</li>
+</ol>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof of (1) and (2).</span> $T_I$ is stable: it is minus the closed-loop map from a signal added at the plant input to the controller output, so its poles are eigenvalues of $A_{cl}$. Connect realizations in series, $K$ then $I + \Delta$ then $G$, and break the loop at the plant output. The open-loop state matrix is block triangular with diagonal blocks the state matrices of $G$, $\Delta$ and $K$, so its characteristic polynomial is $\det(sI - A_\Delta)\,\phi_0(s)$, with $\phi_0$ that of the nominal open loop $GK$; the feedthrough is $0$ because $G$ is strictly proper. By <a class="xref" href="#prop-loops"></a>(1),</p>
+<div class="eq">$$\det\big(I + G(I + \Delta)K\big) = \det\big(I + KG + \Delta KG\big) = \det\big(I + \Delta T_I\big)\det(I + KG) = \det\big(I + \Delta T_I\big)\det(I + GK),$$</div>
+<p>since $I + KG + \Delta KG = (I + \Delta T_I)(I + KG)$. Multiply by $\det(sI - A_\Delta)\,\phi_0(s)$: by the identity of <a class="xref" href="#thm-gnc"></a>, applied to the perturbed and to the nominal loop, the left side becomes the perturbed closed-loop polynomial and $\phi_0\det(I + GK)$ becomes $\phi$. This is (1). For $\Re s \ge 0$ the factors $\det(sI - A_\Delta)$ and $\phi(s)$ are nonzero and all three factors are finite, so the polynomial vanishes there exactly when $\det(I + \Delta T_I)$ does. (2) As in the proof of <a class="xref" href="#thm-small-gain"></a>, the maximum modulus principle gives $\sigma_{\max}\big(\Delta(s)T_I(s)\big) \le \norm{\Delta}_{\mathcal H_\infty}\norm{T_I}_{\mathcal H_\infty} &lt; 1$ for $\Re s \ge 0$, so $I + \Delta(s)T_I(s)$ is invertible there.</p>
+</div>
+<p class="src">Part (2) is the small-gain theorem, stated for transfer matrices in <a class="xref" href="#thm-small-gain"></a>, applied to the loop that $\Delta$ sees: from the output of $\Delta$ back to its input the nominal loop is $M = -T_I$. Part (3), by constructing $\Delta$ from the singular vectors of $T_I$ at its peak frequency: Zhou, Doyle and Glover, ch. 9; Skogestad and Postlethwaite, §8.6.</p>
+
+<div class="blk def" id="def-mu" data-name="Structured singular value, diagonal structure">
+<p>Let $\mathcal D$ be the set of complex diagonal $m\times m$ matrices; the largest singular value of $\diag(\delta_1, \dots, \delta_m)$ is $\max_j\abs{\delta_j}$. For $M \in \C^{m\times m}$, the <dfn>structured singular value</dfn> is $\mu(M) = 0$ if $I - M\Delta$ is invertible for every $\Delta \in \mathcal D$, and otherwise</p>
+<div class="eq">$$\mu(M) = \Big(\min\big\{\sigma_{\max}(\Delta) : \Delta \in \mathcal D,\ \det(I - M\Delta) = 0\big\}\Big)^{-1}.$$</div>
+<p>Thus $1/\mu(M)$ is the size of the smallest diagonal perturbation that makes $I - M\Delta$ singular.</p>
+</div>
+
+<div class="blk thm" id="thm-mu" data-name="Bounds on $\mu$ and the structured robustness test">
+<p>(1) For every $M \in \C^{m\times m}$ and every diagonal $D$ with positive diagonal entries (a scaling, not a feedthrough term),</p>
+<div class="eq">$$\rho(M) \le \mu(M) \le \sigma_{\max}(DMD^{-1}),\qquad\text{in particular}\qquad \rho(M) \le \mu(M) \le \sigma_{\max}(M),$$</div>
+<p>where $\rho(M)$ is the spectral radius, the largest modulus of an eigenvalue. (2) Let $M$ be a stable, proper, rational $m\times m$ matrix and $\beta &gt; 0$. The loop of $M$ and $\Delta$ in <a class="xref" href="#thm-small-gain"></a> is well posed and internally stable for every stable, proper, rational, diagonal $\Delta$ with $\norm{\Delta}_{\mathcal H_\infty} &lt; 1/\beta$ if and only if $\sup_\omega\mu\big(M(i\omega)\big) \le \beta$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof of (1).</span> If $\rho(M) &gt; 0$, pick an eigenvalue $\lambda$ with $\abs\lambda = \rho(M)$; then $\Delta = \lambda^{-1}I \in \mathcal D$ makes $I - M\Delta$ singular, so the minimum is at most $1/\rho(M)$. If $\det(I - M\Delta) = 0$, then $1$ is an eigenvalue of $M\Delta$, so $1 \le \rho(M\Delta) \le \sigma_{\max}(M\Delta) \le \sigma_{\max}(M)\,\sigma_{\max}(\Delta)$, by <a href="ch04_svd.html#thm-eigsv">the comparison of eigenvalues and singular values</a> (chapter 4) and the submultiplicativity of induced norms (chapter 5); hence $\sigma_{\max}(\Delta) \ge 1/\sigma_{\max}(M)$ and $\mu(M) \le \sigma_{\max}(M)$. Finally diagonal matrices commute, so $I - DMD^{-1}\Delta = D(I - M\Delta)D^{-1}$ for $\Delta \in \mathcal D$, and the two determinants vanish together: $M$ and $DMD^{-1}$ have the same $\mu$, and the bound just proved applies to $DMD^{-1}$.</p>
+</div>
+<p class="src">Part (2): Doyle (1982), who introduced $\mu$; Zhou, Doyle and Glover, ch. 11; Skogestad and Postlethwaite, §8.8–8.9, which also treat full blocks and real parameters. In (2) the values $\Delta(i\omega)$ of a dynamic $\Delta$ range over the complex structure $\mathcal D$. For real parameters, such as constant real $\delta_j$, $\mu$ is defined with real diagonal $\Delta$; the lower bound $\rho(M)$ can then fail (for the $1\times 1$ matrix $M = i$, $1 - i\delta \ne 0$ for every real $\delta$), and the test of (2) is sufficient only.</p>
+
+<div class="blk cex" id="cex-mu-gap">
+<p>The small-gain bound can be arbitrarily conservative for diagonal perturbations. For $M = \begin{bmatrix}0 & \eta\\ 0 & 0\end{bmatrix}$ with $\eta &gt; 0$, $I - M\Delta$ is unit upper triangular for every $\Delta \in \mathcal D$, so $\mu(M) = 0$, while $\sigma_{\max}(M) = \eta$. The scaled bound of <a class="xref" href="#thm-mu"></a> recovers the truth: with $D = \diag(1, d)$, the only nonzero entry of $DMD^{-1}$ is $\eta/d$, which tends to $0$ as $d \to \infty$. For this constant $M$, $\det(I - M\Delta(s)) = 1$ for every diagonal $\Delta(s)$, so the loop is stable whatever the size of $\Delta$: with one-way coupling, independent errors in the two channels cannot destabilize, however large $\eta$ is.</p>
+</div>
+
+<div class="blk probe"><p>The satellite once more. With $K = I$, $T_I = T$ and $\norm{T_I}_{\mathcal H_\infty} = \sqrt{1 + a^2}$ (<a class="xref" href="#ex-satellite"></a>), while a constant $\Delta = \diag(\delta_1, \delta_2)$ has $\norm{\Delta}_{\mathcal H_\infty} = \max_j\abs{\delta_j}$. So <a class="xref" href="#thm-rs-input"></a> guarantees stability on the open square $\max_j\abs{\delta_j} &lt; \delta^* = 1/\sqrt{1 + a^2}$, and by <a class="xref" href="#prop-sat-region"></a>(iii) its corners $(\delta^*, -\delta^*)$ and $(-\delta^*, \delta^*)$ lie on the boundary of the stable set, beyond which the loop is unstable: no larger square fits, and the small-gain bound is exact here, even for real, constant, diagonal errors. For the complex structure $\mathcal D$, <a class="xref" href="#thm-mu"></a> shows that diagonality buys nothing at any frequency: $T(i\omega)$ is a scalar multiple of the normal matrix $\begin{bmatrix}1 & a\\ -a & 1\end{bmatrix}$, so its spectral radius equals its largest singular value (<a href="ch04_svd.html#thm-eigsv">chapter 4</a>), and the two bounds pin $\mu(T(i\omega)) = \sigma_{\max}(T(i\omega))$. That argument does not reach the real $\delta_j$, because the lower bound uses the perturbation $\lambda^{-1}I$, which is complex here (the eigenvalues of $T(0)$ are $1 \pm ia$). For them exactness comes from the real perturbation $\Delta = \diag(\delta^*, -\delta^*)$ at $\omega = 0$: $\det\big(I + \Delta T_I(0)\big) = 1 - (1 + a^2)\delta^{*2} = 0$.</p></div>
+
+<figure class="viz" id="viz-mimo">
+  <figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">One loop at a time versus all loops together</span><span class="viz-sub">The spinning satellite with $K = I$ and actuator gains $1 + \delta_1$ and $1 + \delta_2$. Left: the plane of gain errors with the unstable set shaded, the two axes that the loop-at-a-time margins examine, the small-gain square and a draggable perturbation. Right: the closed-loop eigenvalues for the current errors.</span></figcaption>
+  <div class="viz-plots main-side">
+    <div class="plot" id="mr-plane"><div class="plot-cap">Gain errors $(\delta_1, \delta_2)$: red where the closed loop is unstable</div></div>
+    <div class="plot" id="mr-eig"><div class="plot-cap">Closed-loop eigenvalues (crosses), joined to the nominal double eigenvalue $-1$ (circle); the RHP is shaded</div></div>
+  </div>
+  <div class="viz-controls" id="mr-controls"></div>
+  <div class="viz-notes">
+    <div><h5>Try this</h5><ol>
+      <li>The figure opens on opposite errors of $\pm 10\%$: the point sits just beyond a corner of the green square, inside the red set, and one eigenvalue is at $+0.005$. Drag the point toward the origin along the dashed line $\delta_1 = -\delta_2$: the loop becomes stable exactly at the corner, $\abs\delta = 1/\sqrt{101} \approx 0.0995$.</li>
+      <li>Choose <i>One loop, gain ×3</i>: the loop is stable, as the infinite loop-at-a-time gain margin promises, but the readout shows that channel 2 now tolerates a gain decrease of less than 1.5%, the threshold $-3/203$ of <a class="xref" href="#prop-sat-region"></a>(ii).</li>
+      <li>Choose <i>Both +10%</i> and drag anywhere in the first quadrant: errors of the same sign, each above $-1$, never destabilize (<a class="xref" href="#prop-sat-region"></a>(i)), and on the diagonal $\delta_1 = \delta_2 = \delta$ the eigenvalues are the pair $-(1 + \delta) \pm ia\delta$.</li>
+      <li>Lower $a$ to 0, or choose <i>Decoupled plant</i>: the red set retreats to $\delta_1 \le -1$ or $\delta_2 \le -1$, the square grows to $\abs{\delta_j} &lt; 1$, and the loop-at-a-time ranges $\delta_j &gt; -1$ become the true stable set.</li>
+    </ol></div>
+    <div><h5>What to notice</h5><p>The blue axes are the only perturbations that the loop-at-a-time margins examine, and along them the loop is stable for every $\delta_j &gt; -1$ (<a class="xref" href="#prop-sat-region"></a>). The red set reaches toward the origin along $\delta_1 = -\delta_2$ and, for large $a$, hugs both axes: by part (ii), once one gain is raised, the other may fall only by less than a threshold that tends to $1/(1 + a^2)$. The green square is the guarantee of <a class="xref" href="#thm-rs-input"></a> with $\norm{T_I}_{\mathcal H_\infty} = \sqrt{1 + a^2}$; its corners lie on the boundary by part (iii), so for this plant the small-gain bound is exact. Crossing the red boundary $c(\delta) = 0$ moves a real eigenvalue through $0$; the straight line $b(\delta) = 0$ appears only in the wide view.</p></div>
+  </div>
+</figure>
+
+<div class="blk pattern"><p>Three certificates for three perturbation structures, each containing the one before: one channel at a time (the loop-at-a-time margins, errors of any size), every channel independently ($\mu$, a ball of diagonal $\Delta$), and full matrices (small gain, a ball of full $\Delta$). Moving the break point leaves stability unchanged, since $\det(I + GK) = \det(I + KG)$ and $T$ and $T_I$ share their nonzero eigenvalues (<a class="xref" href="#prop-loops"></a>), but not the singular values that measure robustness (<a class="xref" href="#cex-gk-kg"></a>).</p></div>
+<div class="tbl-wrap"><table class="tbl">
+  <thead><tr><th>Test</th><th>Perturbations certified</th><th>Computed from</th><th>Blind to</th></tr></thead>
+  <tbody>
+    <tr><td>Loop at a time (<a class="xref" href="#def-lat"></a>)</td><td>one channel at a time, the others nominal</td><td>margins of each scalar loop $\ell_j$</td><td>simultaneous errors (<a class="xref" href="#cex-satellite"></a>)</td></tr>
+    <tr><td>Small gain (<a class="xref" href="#thm-rs-input"></a>)</td><td>every stable $\Delta$ with $\norm{\Delta}_{\mathcal H_\infty} &lt; 1/\norm{T_I}_{\mathcal H_\infty}$</td><td>one number, $\norm{T_I}_{\mathcal H_\infty}$</td><td>the structure of $\Delta$: conservative for diagonal errors (<a class="xref" href="#cex-mu-gap"></a>)</td></tr>
+    <tr><td>Structured singular value (<a class="xref" href="#thm-mu"></a>)</td><td>every stable diagonal $\Delta$ (complex on the imaginary axis) with $\norm{\Delta}_{\mathcal H_\infty} &lt; 1/\beta$</td><td>$\sup_\omega\mu(T_I(i\omega)) \le \beta$</td><td>nothing within that set (an equivalence); for real $\delta_j$ it is sufficient only</td></tr>
+    <tr><td>Generalized Nyquist (<a class="xref" href="#thm-gnc"></a>)</td><td>none: nominal stability only</td><td>encirclements of $0$ by $\det(I + L(i\omega))$</td><td>the distance to instability</td></tr>
+  </tbody>
+</table></div>
+
+<div class="blk rem"><p>Disk margins. Gain and phase margins perturb the loop by a real gain or by a pure phase, one at a time. Seiler, Packard and Gahinet (2020) let a complex factor vary over a disk of simultaneous gain and phase variations that contains the nominal value $1$; their multiloop disk margin lets an independent factor act in every channel at once, which is a diagonal $\Delta$ as above, and is computed from $\mu$. Their own example is this satellite: input gains $0.9$ and $1.1$ destabilize it, and its multiloop disk margin at the plant input is about $0.1$.</p></div>
+</section>
+
+<section class="sec" id="s-limits">
+<h2>Fundamental limits</h2>
+
+<div class="blk prob"><p>Which properties of the sensitivity are forced by the plant, whatever stabilizing controller is used?</p></div>
+
+<div class="blk setting"><p>$L = GK$ is proper and rational with no poles on the imaginary axis, the closed loop is internally stable, and $p_1, \dots, p_{n_p}$ are the poles of $L$ in the open RHP, with multiplicity. Internal stability forbids cancelling them (<a href="ch10_feedback.html#thm-intstab">chapter 10</a>), so they are exactly the unstable poles of $G$ and $K$. The relative degree of $L$ is the degree of its denominator minus that of its numerator.</p></div>
+
+<div class="blk probe">
+<p>Two constraints hold for every stabilizing $K$ before any integral is computed: the algebraic identity $S + T = 1$, and the interpolation conditions of <a class="xref" href="#prop-interpolation"></a>, which pin $S$ and $T$ at the unstable poles and zeros of $L$ because internal stability forbids the controller to cancel them.</p>
+</div>
+
+<div class="blk prop" id="prop-interpolation" data-name="Interpolation constraints">
+<p>In the setting above, let $p$ be a pole of $L$ in the open RHP and $z$ a zero of $L$ with $\Re z \ge 0$. Then $S(p) = 0$, $T(p) = 1$, $S(z) = 1$ and $T(z) = 0$, and the zero of $S$ at $p$ has the multiplicity of the pole.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Write $L = n/d$ with coprime polynomials $n$ and $d$. Then $S = d/(d + n)$ and $T = n/(d + n)$, and $d + n$ has no roots in $\Re s \ge 0$, since its roots are among those of the closed-loop characteristic polynomial of <a href="ch10_feedback.html#thm-intstab">chapter 10</a>. At $p$, $d(p) = 0$ with the multiplicity of the pole and $n(p) \ne 0$; at $z$, $n(z) = 0$ and $d(z) \ne 0$.</p>
+</div>
+
+<div class="blk thm" id="thm-bode" data-name="Bode sensitivity integral">
+<p>In the setting above, if $L$ has relative degree at least 2,</p>
+<div class="eq">$$\int_0^\infty \ln\abs{S(i\omega)}\,\dd\omega = \pi\sum_{i=1}^{n_p} \Re p_i.$$</div>
+<p>If $L$ has relative degree 1 and $\kappa = \lim_{s\to\infty} sL(s)$, the right side is $\pi\sum_i \Re p_i - \frac{\pi}{2}\kappa$.</p>
+</div>
+<details class="proof"><summary>Proof sketch</summary><p>Take first $n_p = 0$. Then $S$ has no poles (stable loop) and no zeros (its zeros are the poles of $L$) in the closed RHP, so $\ln S$ is analytic there, and Cauchy's theorem applies on the boundary of a half-disk of radius $R$. Because $\arg S(i\omega)$ is odd in $\omega$, the imaginary-axis part is</p>
+<div class="eq">$$i\int_{-R}^{R}\ln S(i\omega)\,\dd\omega = 2i\int_0^R\ln\abs{S(i\omega)}\,\dd\omega.$$</div>
+<p>On the arc $s = Re^{i\phi}$, $\ln S = -\ln(1 + L) \approx -\kappa/s$, so the arc contributes $\int_{\pi/2}^{-\pi/2}(-\kappa/s)\,iRe^{i\phi}\,\dd\phi = i\pi\kappa$. The sum vanishes, giving $-\pi\kappa/2$, which is $0$ for relative degree at least 2. Unstable poles are zeros of $S$; dividing $S$ by the Blaschke product $B_p(s) = \prod_i (s - p_i)/(s + \bar p_i)$, which has modulus 1 on the imaginary axis and satisfies $\ln B_p(s) \approx -2\sum_i\Re p_i/s$ for large $\abs s$, removes them and adds $\pi\sum_i\Re p_i$.</p></details>
+<p class="src">Bode (1945) for stable loops; Freudenberg and Looze (1985) for unstable poles and the zero integrals below; Doyle, Francis and Tannenbaum, ch. 6; Åström and Murray, ch. 14.</p>
+
+<div class="blk lem" id="lem-logint" data-name="A logarithmic integral">
+<p>For $a, b &gt; 0$,</p>
+<div class="eq">$$\int_0^\infty \ln\frac{\omega^2 + a^2}{\omega^2 + b^2}\,\dd\omega = \pi(a - b).$$</div>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> The integrand is $O(\omega^{-2})$ as $\omega \to \infty$, and its derivative in $a$, $2a/(\omega^2 + a^2)$, is dominated by an integrable function for $a$ in any compact subset of $(0, \infty)$, so differentiation under the integral is allowed: the derivative of the integral is $\int_0^\infty 2a/(\omega^2 + a^2)\,\dd\omega = \pi$. The integral vanishes at $a = b$.</p>
+</div>
+
+<div class="blk ex" id="ex-bode-check" data-name="Checking the formula by hand">
+<p>We use <a class="xref" href="#lem-logint"></a>. For $L = \kappa/(s + a)$ with $a, \kappa &gt; 0$, $\abs{S}^2 = (\omega^2 + a^2)/(\omega^2 + (a + \kappa)^2)$ and the integral is $\frac{\pi}{2}(a - a - \kappa) = -\pi\kappa/2$. For the unstable plant $L = \kappa/(s - p)$ with $\kappa &gt; p &gt; 0$ (stable closed loop), $\abs{S}^2 = (\omega^2 + p^2)/(\omega^2 + (\kappa - p)^2)$ and the integral is $\frac{\pi}{2}(2p - \kappa) = \pi p - \pi\kappa/2$. Both agree with <a class="xref" href="#thm-bode"></a>.</p>
+</div>
+
+<div class="blk pattern">
+<p>The waterbed. With the integral of $\ln\abs{S}$ fixed by <a class="xref" href="#thm-bode"></a> (relative degree at least 2), pushing $\abs{S}$ below 1 over a band (negative area) forces $\abs{S} &gt; 1$ elsewhere (positive area), and every unstable pole adds $\pi\Re p_i$ that must be paid as extra positive area: the price of stabilization.</p>
+</div>
+
+<div class="blk rem"><p>Where the area goes. Heuristically, beyond crossover $\abs{L} \ll 1$ and $\ln\abs{S} \approx -\Re L \approx 0$, so the positive area cannot be spread there cheaply, and in practice it piles up near crossover as a sensitivity peak. On a linear frequency axis the area could in principle be spread thinly over a very long band, but real loops have a finite available bandwidth. Stein ("Respect the unstable", 2003) makes the practical point: the area $\pi\sum\Re p_i$ must be paid within that bandwidth, so unstable poles that are fast relative to it force large peaks.</p></div>
+
+<figure class="viz" id="viz-waterbed">
+  <figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">The waterbed: area under $\ln\abs{S}$</span><span class="viz-sub">The loop is $L(s) = k\,(1 + s/\omega_b)^{-2}$, optionally times an extra lag $(1 + s/\omega_\ell)^{-1}$ and, for the unstable case, times $(s + p)/(s - p)$: the plant $1/(s - p)$ with a controller that has a zero at $-p$. The integral is computed numerically on $[0, \infty)$ and compared with $\pi p$.</span></figcaption>
+  <div class="viz-plots main-side">
+    <div class="plot" id="wb-plot"><div class="plot-cap">$\ln\abs{S(i\omega)}$ on a linear frequency axis: blue area below zero, red area above</div></div>
+    <div class="plot" id="wb-nyq"><div class="plot-cap">Nyquist curve; inside the shaded disk $\abs{1 + L} &lt; 1$, so $\abs{S} &gt; 1$</div></div>
+  </div>
+  <div class="viz-controls" id="wb-controls"></div>
+  <div class="viz-notes">
+    <div><h5>Try this</h5><ol>
+      <li>Raise the gain $k$: the blue area at low frequency grows, the red peak grows with it, and the total stays at $0$, as <a class="xref" href="#thm-bode"></a> demands for a stable loop of relative degree 2.</li>
+      <li>Switch on the extra lag and lower $\omega_\ell$: the peak sharpens and the integral is still $0$.</li>
+      <li>Switch on the unstable pole: $\abs{L(i\omega)}$ is unchanged (the extra factor has modulus 1), yet the total jumps to $\pi p$, as <a class="xref" href="#thm-bode"></a> requires, and the Nyquist curve now encircles $-1$ counterclockwise once, as <a class="xref" href="#thm-nyquist"></a> requires with $P = 1$.</li>
+      <li>Raise $p$ toward $\omega_b$, or lower $k$ toward 1, until the tag reports an unstable closed loop: the theorem no longer applies.</li>
+    </ol></div>
+    <div><h5>What to notice</h5><p>Only the phase of $L$ distinguishes the stable and the unstable cases, and only the phase decides where the curve runs relative to the shaded disk, which is where sensitivity is amplified. The area beyond the plotted range is not negligible, because for relative degree 2 the excess $\ln\abs{S} \approx -\Re L$ decays only like $\omega^{-2}$; it is computed separately and included in the total, which matches $\pi\sum\Re p_i$ to the displayed accuracy whenever the closed loop is stable.</p></div>
+  </div>
+</figure>
+
+<div class="blk prop" id="prop-interp" data-name="A zero near a pole">
+<p>Suppose $L$ has a real zero $z &gt; 0$ and a real pole $p &gt; 0$ with $p \ne z$. Then every internally stabilizing controller gives</p>
+<div class="eq">$$\norm{S}_{\mathcal H_\infty} \ge \frac{z + p}{\abs{z - p}}.$$</div>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Let $B(s) = (s - p)/(s + p)$. Since $S(p) = 0$ by <a class="xref" href="#prop-interpolation"></a>, the function $S/B$ is analytic and bounded in the closed RHP, and $\abs{S/B} = \abs{S}$ on the imaginary axis because $\abs{B(i\omega)} = 1$. By the maximum modulus principle and $S(z) = 1$,</p>
+<div class="eq">$$\norm{S}_{\mathcal H_\infty} = \sup_{\Re s \ge 0}\abs{\frac{S(s)}{B(s)}} \ge \abs{\frac{S(z)}{B(z)}} = \frac{z + p}{\abs{z - p}}.$$</div>
+</div>
+<p>With $z = 2p$ no controller can keep the sensitivity peak below 3; as $z \to p$ the bound diverges. A right half-plane zero alone also constrains where the waterbed can spread:</p>
+
+<div class="blk thm" id="thm-poisson" data-name="Poisson integral for a right half-plane zero">
+<p>In the setting above, let $z = x + iy$ with $x &gt; 0$ be a zero of $L$. Then</p>
+<div class="eq">$$\int_{-\infty}^{\infty}\ln\abs{S(i\omega)}\,\frac{x}{x^2 + (\omega - y)^2}\,\dd\omega = \pi\sum_{i=1}^{n_p}\ln\abs{\frac{z + \bar p_i}{z - p_i}}.$$</div>
+<p>Here $x$ and $y$ are the real and imaginary parts of $z$ and $\bar p_i$ is the complex conjugate of $p_i$.</p>
+</div>
+<p class="src">Idea: $\ln\abs{S/B_p}$ is harmonic and suitably bounded in the RHP, equals $\ln\abs{S}$ on the imaginary axis, and takes the value $\ln\abs{1/B_p(z)}$ at $z$; the identity is the Poisson integral formula for the half-plane. Freudenberg and Looze (1985); Skogestad and Postlethwaite, ch. 5; Seron, Braslavsky and Goodwin, <i>Fundamental Limitations in Filtering and Control</i> (1997).</p>
+<div class="blk rem"><p>Reading the Poisson integral. The weight $x/\big(x^2 + (\omega - y)^2\big)$ is positive and integrates to $\pi$, and half of that mass lies within distance $x$ of the frequency $y$, since $\int_{-x}^{x}x/(x^2 + u^2)\,\dd u = 2\arctan 1 = \pi/2$. Heuristically, sensitivity reduction below the zero frequency must therefore be paid for near it, whatever the bandwidth.</p></div>
+<p>The table collects the limits of this section.</p>
+
+<div class="tbl-wrap"><table class="tbl">
+  <thead><tr><th>Limit</th><th>Hypothesis</th><th>Statement</th><th>Consequence for design</th></tr></thead>
+  <tbody>
+    <tr><td>Algebraic</td><td>any loop</td><td>$S + T = 1$</td><td>small $\abs{S}$ and small $\abs{T}$ at different frequencies only</td></tr>
+    <tr><td>Roll-off</td><td>$L$ strictly proper</td><td>$\norm{S}_{\mathcal H_\infty} \ge 1$ (<a class="xref" href="#prop-margins"></a>)</td><td>no uniform attenuation: $\abs{S}$ reaches 1, at least as $\omega \to \infty$</td></tr>
+    <tr><td>Bode integral</td><td>relative degree $\ge 2$</td><td>$\int_0^\infty \ln\abs{S}\,\dd\omega = \pi\sum\Re p_i$ (<a class="xref" href="#thm-bode"></a>)</td><td>waterbed; instability costs area</td></tr>
+    <tr><td>Poisson integral</td><td>zero $z$ in the RHP</td><td>weighted integral fixed by $z$ and the $p_i$ (<a class="xref" href="#thm-poisson"></a>)</td><td>reduction below $\abs{z}$ is paid near $\abs{z}$</td></tr>
+    <tr><td>Interpolation</td><td>real zero $z$ and pole $p$ in the RHP</td><td>$\norm{S}_{\mathcal H_\infty} \ge (z + p)/\abs{z - p}$ (<a class="xref" href="#prop-interp"></a>)</td><td>a zero close to a pole defeats every controller</td></tr>
+    <tr><td>Delay</td><td>delay $\theta$, one gain crossover</td><td>phase lag $\omega\theta$; tolerating every delay up to $\theta$ needs $\omega_{gc} &lt; \varphi_m/\theta$ (<a class="xref" href="#prop-delay"></a>)</td><td>bandwidth cap</td></tr>
+  </tbody>
+</table></div>
+
+<div class="blk rem"><p>Hard limits in biology. Chandra, Buzi and Doyle (2011) study a minimal two-state model of glycolysis. In their model, autocatalysis (ATP must be invested to make ATP) gives the linearized plant a positive real zero, and for some parameters also an unstable pole; combining Bode's integral with a weighted version strengthened by the zero, they derive hard trade-offs between robustness and efficiency, with oscillations as an unavoidable side effect, and argue that the trade-offs hold for any autocatalytic network.</p></div>
+</section>
+
+<section class="sec" id="s-lqg">
+<h2>LQG has no guaranteed margins</h2>
+
+<div class="blk prob"><p>The linear quadratic regulator (LQR) with state feedback has guaranteed margins: its return difference satisfies $\abs{1 + K(i\omega I - A)^{-1}B} \ge 1$, so its gain margin runs from $1/2$ to $\infty$ and its phase margin is at least $60^\circ$ (<a href="ch11_lqr_kalman.html#cor-margins">chapter 11</a>). The Kalman filter is the dual of LQR. Does the LQG controller, which feeds the Kalman estimate to the LQR gain, inherit these margins?</p></div>
+
+<div class="blk setting"><p>Doyle's example. The plant is $\dot x = Ax + Bu + \mathbf 1\,w$, $y = Cx + v$ with</p>
+<div class="eq">$$A = \begin{bmatrix}1 & 1\\ 0 & 1\end{bmatrix},\quad B = \begin{bmatrix}0\\ 1\end{bmatrix},\quad C = \begin{bmatrix}1 & 0\end{bmatrix},\quad \mathbf 1 = \begin{bmatrix}1\\ 1\end{bmatrix},$$</div>
+<p>so $G(s) = C(sI - A)^{-1}B = 1/(s - 1)^2$. The process noise $w$ and measurement noise $v$ are white, with intensities $\nu &gt; 0$ and $1$; the cost is $\int_0^\infty \big(q\,(x_1 + x_2)^2 + u^2\big)\dd t$ with $q &gt; 0$, that is, state weight $Q = q\,\mathbf 1\mathbf 1^\T$ and input weight $R = 1$. Doyle writes $\sigma$ for $\nu$. In this section $K$ is the LQR gain (a row vector), $L$ is the Kalman gain (a column vector), loop transfer functions carry subscripts, and $m$ is a scalar gain, not the number of inputs.</p></div>
+
+<div class="blk ex" id="ex-doyle" data-name="Doyle (1978)">
+<p>The stabilizing solution of the continuous-time algebraic Riccati equation $A^\T P + PA - PBB^\T P + Q = 0$ is</p>
+<div class="eq">$$P = \begin{bmatrix}2f & f\\ f & f\end{bmatrix},\qquad K = B^\T P = f\begin{bmatrix}1 & 1\end{bmatrix},\qquad f = 2 + \sqrt{4 + q}.$$</div>
+<p>Indeed, write $P = \begin{bmatrix}p_{11} & p_{12}\\ p_{12} & p_{22}\end{bmatrix}$. With $p_{12} = p_{22} = f$, the $(2,2)$ entry of the equation, $2p_{12} + 2p_{22} - p_{22}^2 + q = 0$, holds when $f^2 - 4f - q = 0$; the $(1,1)$ entry, $2p_{11} - p_{12}^2 + q = 0$, then gives $p_{11} = (f^2 - q)/2 = 2f$; and the $(1,2)$ entry, $p_{11} + 2p_{12} - p_{12}p_{22} + q = 0$, holds as well. This $P$ is positive definite ($P \succ 0$), since $2f &gt; 0$ and $\det P = f^2 &gt; 0$ (Sylvester's criterion, <a href="ch04_svd.html#thm-pd">chapter 4</a>), and $A - BK$ has trace $2 - f &lt; 0$ and determinant 1, so it is Hurwitz by <a class="xref" href="#lem-hurwitz"></a>. Swapping the two state coordinates turns the filter Riccati equation into the same equation, so the Kalman gain is $L = d\,\mathbf 1$ with $d = 2 + \sqrt{4 + \nu}$. Now let the plant input be multiplied by an unknown gain $m$, nominally 1. With plant state $x$ and estimate $\hat x$, the closed-loop matrix is</p>
+<div class="eq">$$\begin{bmatrix}A & -mBK\\ LC & A - BK - LC\end{bmatrix},$$</div>
+<p>and expanding its characteristic polynomial gives $s^4 + p_3 s^3 + p_2 s^2 + p_1 s + p_0$ with</p>
+<div class="eq">$$p_1 = d + f - 4 + 2(m - 1)df,\qquad p_0 = 1 + (1 - m)df,$$</div>
+<p>while $p_3 = d + f - 4$ and $p_2 = 2 + (d - 2)(f - 2)$ do not depend on $m$. At $m = 1$ the polynomial factors as $(s^2 + (f - 2)s + 1)(s^2 + (d - 2)s + 1)$, as the separation principle requires (<a href="ch10_feedback.html#thm-separation">chapter 10</a>). Positive coefficients are necessary for stability (<a class="xref" href="#lem-hurwitz"></a>), so the loop can be stable only if</p>
+<div class="eq">$$1 - \frac{d + f - 4}{2df} &lt; m &lt; 1 + \frac{1}{df}.$$</div>
+<p>As $q$ and $\nu$ grow, $df$ grows and the interval shrinks to the single point $m = 1$: arbitrarily small gain margins, in both directions, for a controller built from two components with large guaranteed margins. For $q = \nu = 60$, $f = d = 10$ and a gain increase of 1% destabilizes the loop.</p>
+</div>
+<p class="src">J. C. Doyle, "Guaranteed margins for LQG regulators", <i>IEEE Trans. Autom. Control</i> 23(4) (1978) 756–757. The coefficients above were checked against the eigenvalues of the $4\times 4$ closed-loop matrix; the visual computes the exact stable interval from those eigenvalues.</p>
+
+<div class="blk why"><p>Why separation does not carry robustness. The separation principle is a statement about eigenvalues of the nominal closed loop, $\Lambda(A - BK) \cup \Lambda(A - LC)$. Margins are a statement about the loop gain at the point where the model error enters, here the plant input, and the loop broken there is $L_{\mathrm{in}}(s) = K_{\mathrm{LQG}}(s)G(s)$ with the observer-based controller $K_{\mathrm{LQG}}(s) = K(sI - A + BK + LC)^{-1}L$ of <a href="ch10_feedback.html#cor-output-fb">chapter 10</a>, not the LQR loop $L_{\mathrm{LQR}}(s) = K(sI - A)^{-1}B$. The LQR guarantee comes from the return difference of a loop that exists only when the whole state is measured; once the state is estimated, the observer dynamics sit inside the loop. In this example the filter is tuned for noise entering along $\mathbf 1$, while a gain error at the input acts along $B$.</p></div>
+
+<figure class="viz" id="viz-lqg">
+  <figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">LQR margins and LQG margins</span><span class="viz-sub">Doyle's plant. Left: Nyquist curves of the LQR loop $K(sI - A)^{-1}B$ and of the LQG loop broken at the plant input, near the critical point. Right: the input gains $m$ for which each closed loop is stable, computed from eigenvalues.</span></figcaption>
+  <div class="viz-plots cols-2">
+    <div class="plot" id="lqg-nyq"><div class="plot-cap">Nyquist curves near $-1$; the shaded disk $\abs{1 + L} &lt; 1$ is what LQR avoids</div></div>
+    <div class="plot" id="lqg-int"><div class="plot-cap">Stable range of the input gain $m$ (logarithmic axis)</div></div>
+  </div>
+  <div class="viz-controls" id="lqg-controls"></div>
+  <div class="viz-notes">
+    <div><h5>Try this</h5><ol>
+      <li>Start at $q = \nu = 1$: the LQR curve (blue) stays outside the disk, the LQG curve (orange) passes inside it, and the LQG gain range is only about $(0.92, 1.06)$.</li>
+      <li>Raise both sliders: the LQG range collapses toward $m = 1$; at $q = \nu = 60$ its upper end is $1.01$, exactly the bound $1 + 1/(df)$, while the LQR range only widens.</li>
+      <li>Switch on loop transfer recovery and raise the recovery weight: the orange curve moves toward the blue one, as <a class="xref" href="#thm-ltr"></a> predicts, and the LQG range widens toward the LQR range.</li>
+    </ol></div>
+    <div><h5>What to notice</h5><p>The two controllers have the same nominal closed-loop eigenvalues apart from the observer's, yet their loop gains at the plant input differ completely: <a class="xref" href="#ex-doyle"></a> is about loops, not spectra. The upper end of the LQG range coincides with $p_0 = 0$, a real closed-loop pole crossing the origin; the lower end comes from a complex pair and lies slightly inside the necessary bound from $p_1 &gt; 0$.</p></div>
+  </div>
+</figure>
+
+<div class="blk rem"><p>Two responses. Loop transfer recovery (<a class="xref" href="#thm-ltr"></a>) adds fictitious process noise at the plant input until the loop seen there approaches the LQR loop, at the price of a filter that trusts the measurements more and more. $\mathcal H_\infty$ control (Doyle, Glover, Khargonekar and Francis, 1989) designs for robustness directly, minimizing the $\mathcal H_\infty$ norm of a weighted closed-loop map such as $W_2T$ through a pair of Riccati equations (Zhou, Doyle and Glover, ch. 16–17).</p></div>
+
+<div class="blk thm" id="thm-ltr" data-name="Loop transfer recovery">
+<p>Let $G(s) = C(sI - A)^{-1}B$, with $(A, B)$ stabilizable and $(C, A)$ detectable, have as many inputs as outputs and no transmission zeros in $\Re s \ge 0$ (minimum phase; <a href="ch08_input_output.html">chapter 8</a>). Let $K$ be a fixed gain with $A - BK$ Hurwitz, and for $q_r &gt; 0$ let $L(q_r)$ be the steady-state Kalman gain for process noise of intensity $W + q_rBB^\T$, with $W \succeq 0$, and measurement noise of intensity $V \succ 0$, which gives the observer-based controller</p>
+<div class="eq">$$K_{\mathrm{LQG}}(s; q_r) = K\big(sI - A + BK + L(q_r)C\big)^{-1}L(q_r).$$</div>
+<p>Then, at every $\omega$ at which $G(i\omega)$ is defined and invertible,</p>
+<div class="eq">$$\lim_{q_r\to\infty}K_{\mathrm{LQG}}(i\omega; q_r) = K(i\omega I - A)^{-1}B\,G(i\omega)^{-1},\qquad\text{so}\qquad \lim_{q_r\to\infty}K_{\mathrm{LQG}}(i\omega; q_r)\,G(i\omega) = K(i\omega I - A)^{-1}B .$$</div>
+<p>For the LQR gain $K$ the right side is $L_{\mathrm{LQR}}(i\omega)$: the loop at the plant input recovers the LQR loop at each frequency.</p>
+</div>
+<p class="src">Idea: for such a plant $L(q_r)/\sqrt{q_r} \to BN$ for an invertible $N$ (with $NVN^\T = I$); substituting this into $(X + LC)^{-1}L = X^{-1}L(I + CX^{-1}L)^{-1}$, where $X = sI - A + BK$ (push-through, <a class="xref" href="#prop-loops"></a>(3)), gives the limit $KX^{-1}B(CX^{-1}B)^{-1}$, which equals $K(sI - A)^{-1}B\,G(s)^{-1}$. J. C. Doyle and G. Stein, "Robustness with observers", <i>IEEE Trans. Autom. Control</i> 24(4) (1979) 607–611.</p>
+</section>
+
+<section class="sec" id="s-reduction">
+<h2>Model reduction by balanced truncation</h2>
+
+<div class="blk prob"><p>Replace a stable model of order $n$ by one of order $r &lt; n$ with a guaranteed bound on $\norm{G - G_r}_{\mathcal H_\infty}$.</p></div>
+
+<div class="blk setting"><p>$(A, B, C, D)$ is stable and minimal, so the infinite-horizon Gramians $W_c$ and $W_o$ are positive definite (<a href="ch09_controllability.html">chapter 9</a>). A change of state coordinates $\tilde x = Tx$ with invertible $T$ (in this section $T$ is a state transformation, not the complementary sensitivity) gives the realization $(TAT^{-1}, TB, CT^{-1}, D)$ of the same $G$ (<a href="ch08_input_output.html#thm-sim">chapter 8</a>).</p></div>
+
+<div class="blk cex" id="cex-coords">
+<p>Truncating "the states that are hard to reach" is not a coordinate-free idea. Under $\tilde x = Tx$ the controllability Gramian becomes $TW_cT^\T$; with the diagonal matrix $T = \diag(1, \dots, 1, \eps)$ and small $\eps &gt; 0$ the last state can be made as hard to reach as desired, and correspondingly easy to observe, without changing $G$. Dropping it on the basis of $W_c$ alone can discard a state that dominates the output. A sound criterion has to combine both Gramians into an invariant.</p>
+</div>
+
+<div class="blk prop" id="prop-hsv" data-name="Hankel singular values are invariants">
+<p>Under $\tilde x = Tx$, $\tilde W_c = TW_cT^\T$ and $\tilde W_o = T^{-\T}W_oT^{-1}$, hence $\tilde W_c\tilde W_o = T(W_cW_o)T^{-1}$. The eigenvalues of $W_cW_o$ are real and positive and depend only on $G$. Their square roots, ordered $\sigma_1 \ge \dots \ge \sigma_n &gt; 0$, are the <dfn>Hankel singular values</dfn> of $G$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Substituting the transformed realization,</p>
+<div class="eq">$$\tilde A(TW_cT^\T) + (TW_cT^\T)\tilde A^\T + \tilde B\tilde B^\T = T\big(AW_c + W_cA^\T + BB^\T\big)T^\T = 0,$$</div>
+<p>and the Lyapunov solution is unique (<a href="ch07_autonomous_systems.html#prop-lyap-op">chapter 7</a>); the observability Gramian is similar. $W_cW_o$ is similar to $W_c^{1/2}W_oW_c^{1/2} \succ 0$, whose eigenvalues are positive.</p>
+</div>
+
+<p>What the Gramians and the Hankel singular values measure:</p>
+
+<div class="blk prop" id="prop-hankel" data-name="Energies and the Hankel operator">
+<p>Let $(A, B, C, D)$ be stable and minimal, and $x_0 \in \R^n$.</p>
+<ol>
+<li>The least input energy $\int_{-\infty}^0\norm{u}^2\,\dd t$ that brings the state from $0$ at $t = -\infty$ to $x(0) = x_0$ is $x_0^\T W_c^{-1}x_0$.</li>
+<li>The output energy $\int_0^\infty\norm{y}^2\,\dd t$ released from $x(0) = x_0$ with zero input is $x_0^\T W_ox_0$.</li>
+<li>The Hankel operator $\Gamma_G$, which maps inputs on $(-\infty, 0]$ to the outputs they produce on $[0, \infty)$, has rank at most $n$, and its nonzero singular values are the Hankel singular values $\sigma_i$; in particular $\norm{\Gamma_G} = \sigma_1$.</li>
+</ol>
+</div>
+<details class="proof"><summary>Proof sketch</summary><p>The reachability map $\mathcal R u = \int_{-\infty}^0 e^{-A\tau}Bu(\tau)\,\dd\tau$, from $L^2(-\infty, 0]$ to $\R^n$, gives $x(0)$ and satisfies $\mathcal R\mathcal R^* = W_c$, so by the minimum-norm theorem of <a href="ch05_hilbert_spaces.html#thm-minnorm">chapter 5</a> the least-energy input is $u = \mathcal R^*W_c^{-1}x_0$, with energy $x_0^\T W_c^{-1}x_0$: this is (1). The output from $x_0$ is $(\mathcal O x_0)(t) = Ce^{At}x_0$, with $\mathcal O^*\mathcal O = W_o$, which gives (2). For (3), the inputs vanish on $[0, \infty)$, so $\Gamma_G = \mathcal O\mathcal R$ factors through $\R^n$, and the nonzero eigenvalues of $\Gamma_G\Gamma_G^* = \mathcal O W_c\mathcal O^*$ are those of $W_c\mathcal O^*\mathcal O = W_cW_o$, by the argument of <a href="ch03_eigenvalues.html#thm-abba">the theorem on $AB$ and $BA$</a> (chapter 3), which applies to these finite-rank maps.</p></details>
+<p class="src">Glover (1984); Antoulas, ch. 5. The Hankel singular values take their name from this operator.</p>
+
+<div class="blk def" id="def-balanced" data-name="Balanced realization">
+<p>A realization is <dfn>balanced</dfn> if $W_c = W_o = \Sigma = \diag(\sigma_1, \dots, \sigma_n)$.</p>
+</div>
+
+<div class="blk prop" id="prop-sqrt" data-name="Square-root balancing">
+<p>Let $(A, B, C, D)$ be stable and minimal. Factor $W_c = L_cL_c^\T$ and $W_o = L_oL_o^\T$, take the singular value decomposition $L_o^\T L_c = U\Sigma V^\T$ (chapter 4), and set $T = \Sigma^{-1/2}U^\T L_o^\T$. Then $T^{-1} = L_cV\Sigma^{-1/2}$, and $(TAT^{-1}, TB, CT^{-1}, D)$ is balanced, with $\Sigma$ the diagonal matrix of Hankel singular values.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> The Gramians are positive definite, so $L_c$ and $L_o$ are invertible and so is $\Sigma$. Substituting,</p>
+<div class="eq">$$TW_cT^\T = \Sigma^{-1/2}U^\T\big(U\Sigma V^\T\big)\big(V\Sigma U^\T\big)U\Sigma^{-1/2} = \Sigma,$$</div>
+<p>likewise $T^{-\T}W_oT^{-1} = \Sigma$ for $T^{-1} = L_cV\Sigma^{-1/2}$, and $T\,L_cV\Sigma^{-1/2} = \Sigma^{-1/2}U^\T\big(U\Sigma V^\T\big)V\Sigma^{-1/2} = I$. By <a class="xref" href="#prop-hsv"></a> these are the Gramians of the new realization. The squares of the singular values of $L_o^\T L_c$ are the eigenvalues of $L_c^\T W_oL_c$, which is similar to $W_cW_o$, so the diagonal of $\Sigma$ holds the Hankel singular values.</p>
+</div>
+<p>By <a class="xref" href="#prop-hankel"></a>, in balanced coordinates the basis state $e_i$ costs input energy $1/\sigma_i$ to reach and releases output energy $\sigma_i$: a small $\sigma_i$ means hard to reach and hard to see at once. Moore (1981) introduced balancing in this sense, as a principal component analysis of the system.</p>
+
+<div class="blk thm" id="thm-bt" data-name="Balanced truncation">
+<p>Let the realization be balanced and partitioned conformally with $\Sigma = \diag(\Sigma_1, \Sigma_2)$, $\Sigma_1 = \diag(\sigma_1, \dots, \sigma_r)$, and assume $\sigma_r &gt; \sigma_{r+1}$. Then the truncation $G_r = (A_{11}, B_1, C_1, D)$ is stable, minimal and balanced with Gramian $\Sigma_1$, and</p>
+<div class="eq">$$\sigma_{r+1} \;\le\; \norm{G - G_r}_{\mathcal H_\infty} \;\le\; 2\sum_{j}\bar\sigma_j,$$</div>
+<p>where the $\bar\sigma_j$ are the distinct values among $\sigma_{r+1}, \dots, \sigma_n$. Moreover every stable $\hat G$ of order at most $r$ satisfies $\norm{G - \hat G}_{\mathcal H_\infty} \ge \sigma_{r+1}$. For SISO systems the upper bound is attained when a single value is discarded ($\sigma_{r+1} = \dots = \sigma_n$, for instance $r = n - 1$), and, for every $r$, when $G$ has a state-space symmetric realization ($A = A^\T$ and $C = B^\T$), in which case the error peaks at $\omega = 0$.</p>
+</div>
+<details class="proof"><summary>Proof sketch</summary><p>The $(1,1)$ blocks of the two Lyapunov equations read $A_{11}\Sigma_1 + \Sigma_1A_{11}^\T + B_1B_1^\T = 0$ and $A_{11}^\T\Sigma_1 + \Sigma_1A_{11} + C_1^\T C_1 = 0$, so $G_r$ is balanced with Gramian $\Sigma_1$. If $A_{11}v = \lambda v$ with $v \ne 0$, the second equation gives $2\Re\lambda\; v^*\Sigma_1 v = -\norm{C_1v}^2 \le 0$, so $\Re\lambda \le 0$; ruling out imaginary eigenvalues uses $\sigma_r \ne \sigma_{r+1}$ (Pernebo and Silverman, 1982). The upper bound is due to Enns (1984) and Glover (1984). For the lower bound: the Hankel operator of $\hat G$ has rank at most $r$, since it factors through an $r$-dimensional state; the Hankel operator of $G - \hat G$ is the convolution by $G - \hat G$ restricted to past inputs and observed in the future, so its norm is at most $\norm{G - \hat G}_{\mathcal H_\infty}$; and by the argument of the Eckart–Young–Mirsky theorem (<a href="ch04_svd.html#thm-ey">chapter 4</a>), which applies to finite-rank operators such as $\Gamma_G$ (<a class="xref" href="#prop-hankel"></a>), every operator of rank at most $r$ lies at distance at least $\sigma_{r+1}$ from $\Gamma_G$.</p></details>
+<p class="src">Antoulas, <i>Approximation of Large-Scale Dynamical Systems</i> (2005), ch. 7; Zhou, Doyle and Glover, ch. 7. Cases of equality: Enns (1984) for a single discarded value; Liu, Sreeram and Teo (1998) for state-space symmetric systems; S. Reiter, T. Damm, M. Embree and S. Gugercin (2024), §2.2 and Theorem 3.1, which extend the symmetric case and show that the error then peaks at $\omega = 0$. B. C. Moore, "Principal component analysis in linear systems: controllability, observability, and model reduction", <i>IEEE Trans. Autom. Control</i> 26 (1981) 17–32.</p>
+
+<div class="blk probe">
+<p>Extreme cases. With $r = 0$ the theorem bounds the whole system: $\sigma_1 \le \norm{G - D}_{\mathcal H_\infty} \le 2\sum_j\bar\sigma_j$, which recovers the first inequality of <a class="xref" href="#prop-norm-order"></a>. If the tail $\sigma_{r+1}, \dots, \sigma_n$ is a single repeated value $\sigma$, the bound is $2\sigma$ instead of $2(n - r)\sigma$: a repeated value counts once. And the factor 2 cannot be removed: the collocated ladder in the visual below ($A$ symmetric, input and output at the same state, so $C = B^\T$) is state-space symmetric, and by <a class="xref" href="#thm-bt"></a> its error equals the upper bound for every $r$, attained at zero frequency.</p>
+</div>
+
+<figure class="viz" id="viz-bt">
+  <figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">Balanced truncation with its error bounds</span><span class="viz-sub">A stable single-input single-output system of order 10 to 12 is balanced by the square-root algorithm and truncated to order $r$. The Bode magnitudes of $G$, $G_r$ and the error are compared with the lower bound $\sigma_{r+1}$ and the upper bound $2\sum_{j&gt;r}\sigma_j$.</span></figcaption>
+  <div class="viz-plots main-side">
+    <div class="plot" id="bt-bode"><div class="plot-cap">Magnitudes against $\omega$ (both axes logarithmic)</div></div>
+    <div style="min-width:0">
+      <div class="plot" id="bt-hsv"><div class="plot-cap">Hankel singular values $\sigma_i$: kept (blue) and discarded (grey)</div></div>
+      <div class="plot" id="bt-err" style="margin-top:8px"><div class="plot-cap">Error $\norm{G - G_r}_{\mathcal H_\infty}$ for every order $r$, between its bounds</div></div>
+    </div>
+  </div>
+  <div class="viz-controls" id="bt-controls"></div>
+  <div class="viz-notes">
+    <div><h5>Try this</h5><ol>
+      <li>Move $r$: the red error curve peaks between the grey dashed line $\sigma_{r+1}$ and the yellow dashed line $2\sum_{j&gt;r}\sigma_j$, as <a class="xref" href="#thm-bt"></a> requires.</li>
+      <li>Choose the collocated ladder: the Hankel singular values fall by a factor of 4 or more per state, and the error sits exactly on the upper bound, attained at the low-frequency end of the Bode plot, the symmetric case of <a class="xref" href="#thm-bt"></a>.</li>
+      <li>Choose the random system and press <i>New random system</i> a few times: the error stays between the bounds and reaches the upper bound $2\sigma_n$ when only the last state is discarded ($r = n - 1$), and $G_r$ is stable for every $r$, both as <a class="xref" href="#thm-bt"></a> states.</li>
+    </ol></div>
+    <div><h5>What to notice</h5><p>The bounds are computed from the Hankel singular values alone, before any truncation, so they say in advance how small a model can be for a required accuracy; the lower bound holds for every reduction method, not only truncation. Truncation need not match the static gain: for the ladders the error is largest at or near zero frequency. Liu and Anderson (1989) showed that replacing the discarded states by their steady state (singular perturbation) matches the static gain and obeys the same upper bound.</p></div>
+  </div>
+</figure>
+</section>
+
+<section class="selfcheck" id="s-selfcheck">
+<h2>Self-check</h2>
+<ol>
+<li><p>Compute $\norm{G}_{\mathcal H_2}$ and $\norm{G}_{\mathcal H_\infty}$ for $G(s) = 1/\big((s + 1)(s + 2)\big)$.</p>
+<details><summary>Answer</summary><p>$h(t) = e^{-t} - e^{-2t}$, so $\int_0^\infty h^2\,\dd t = \frac12 - \frac23 + \frac14 = \frac{1}{12}$ and $\norm{G}_{\mathcal H_2} = 1/\sqrt{12} \approx 0.289$. $\abs{G(i\omega)} = 1/\sqrt{(1 + \omega^2)(4 + \omega^2)}$ decreases in $\omega$, so $\norm{G}_{\mathcal H_\infty} = \abs{G(0)} = 1/2$.</p></details></li>
+<li><p>A loop has a single gain crossover at $\omega_{gc} = 2$ rad/s with phase margin $40^\circ$. How much extra delay can it tolerate?</p>
+<details><summary>Answer</summary><p>The delay removes $\omega_{gc}\theta$ radians at crossover, so by <a class="xref" href="#prop-delay"></a> instability occurs at $\theta = (40\pi/180)/2 \approx 0.35$ s.</p></details></li>
+<li><p>A plant has an unstable pole at $p = 1$, and the loop has relative degree 2. If $\abs{S(i\omega)} \le 0.1$ on $[0, 1]$, how large must the area of $\ln\abs{S}$ above zero be?</p>
+<details><summary>Answer</summary><p>The negative area on $[0, 1]$ is at least $\ln 10 \approx 2.30$ in magnitude, and by <a class="xref" href="#thm-bode"></a> the total must be $\pi \cdot 1$, so the positive area is at least $\pi + 2.30 \approx 5.44$.</p></details></li>
+<li><p>Explain why no controller can be robust to relative model errors above 100% ($\abs{W_2(i\omega)} &gt; 1$) at frequencies where the loop gain is large.</p>
+<details><summary>Answer</summary><p>Robust stability needs $\abs{W_2T} &lt; 1$ (<a class="xref" href="#cor-rs-mult"></a>), hence $\abs{T} &lt; 1/\abs{W_2} &lt; 1$ there. With large $\abs{L}$, $T = L/(1 + L) \approx 1$, since $\abs{1 - T} = \abs{S}$ is at most $1/(\abs{L} - 1)$. The loop gain must therefore fall below about 1 wherever the relative error can exceed 100%, which is why crossover is placed below the frequencies of unmodelled dynamics.</p></details></li>
+<li><p>For the spinning satellite with $a = 5$ and $K = I$, how large must equal and opposite actuator errors $\delta_1 = -\delta_2 = \delta$ be to destabilize the loop? Compare with the guarantee of <a class="xref" href="#thm-rs-input"></a>. What do the loop-at-a-time margins say?</p>
+<details><summary>Answer</summary><p>The closed-loop eigenvalues are $-1 \pm \sqrt{1 + a^2}\,\delta$ (<a class="xref" href="#cex-satellite"></a>), so stability is lost at $\abs\delta = 1/\sqrt{26} \approx 0.196$. Here $\norm{T_I}_{\mathcal H_\infty} = \sqrt{26}$, so the theorem guarantees stability for $\max_j\abs{\delta_j} &lt; 0.196$: the guarantee is exact. The loop-at-a-time margins are those of $\ell_j = 1/s$ for every $a$: an infinite gain margin and a $90^\circ$ phase margin, with no warning at all.</p></details></li>
+<li><p>A system has Hankel singular values $4, 1, 0.2, 0.05$. What do the bounds of <a class="xref" href="#thm-bt"></a> say for $r = 1$ and $r = 2$? Can any first-order model achieve an error below $0.9$?</p>
+<details><summary>Answer</summary><p>$r = 1$: $1 \le \norm{G - G_1}_{\mathcal H_\infty} \le 2(1 + 0.2 + 0.05) = 2.5$. $r = 2$: $0.2 \le \norm{G - G_2}_{\mathcal H_\infty} \le 0.5$. No: every stable model of order at most 1 has error at least $\sigma_2 = 1$.</p></details></li>
+</ol>
+</section>
+
+<section class="refs" id="s-refs">
+<h2>Sources and further reading</h2>
+<ul>
+<li>J. C. Doyle, B. A. Francis and A. R. Tannenbaum, <i>Feedback Control Theory</i> (Macmillan, 1992): ch. 2 (norms for signals and systems), ch. 3 (internal stability and the Nyquist criterion), ch. 4 (uncertainty and robustness), ch. 6 (design constraints, including Bode's integral). <a href="https://www.control.utoronto.ca/people/profs/francis/dft.pdf">PDF</a><span class="free">Free</span></li>
+<li>K. J. Åström and R. M. Murray, <i>Feedback Systems</i>, 2nd ed. (Princeton, 2021): ch. 10 (frequency domain analysis, Nyquist, margins), ch. 13 (robust performance), ch. 14 (fundamental limits). <a href="https://www.cds.caltech.edu/~murray/amwiki/Second_Edition.html">book site</a><span class="free">Free</span></li>
+<li>K. Zhou, J. C. Doyle and K. Glover, <i>Robust and Optimal Control</i> (Prentice Hall, 1996): ch. 4 ($\mathcal H_2$ and $\mathcal H_\infty$ spaces), ch. 5 (stability and performance of feedback systems), ch. 6 (performance limitations), ch. 7 (balanced model reduction), ch. 8 (Hankel norm approximation), ch. 9 (model uncertainty and robustness), ch. 10 (linear fractional transformations), ch. 11 (structured singular value), ch. 14 ($\mathcal H_2$ optimal control), ch. 16–17 ($\mathcal H_\infty$ control).</li>
+<li>S. Skogestad and I. Postlethwaite, <i>Multivariable Feedback Control</i>, 2nd ed. (Wiley, 2005): ch. 3 (introduction to multivariable control; the spinning satellite, §3.7.1), ch. 4 (internal stability, §4.7; the multivariable Nyquist criterion and the small-gain theorem, §4.9), ch. 5 (limitations on performance in SISO systems), ch. 7 (uncertainty and robustness for SISO systems), ch. 8 (robust stability and performance of multivariable systems; the structured singular value, §8.8–8.9), ch. 11 (model reduction). The first three chapters are a free sample on the <a href="https://skoge.folk.ntnu.no/book/">authors' book page</a><span class="free">Free</span></li>
+<li>A. G. J. MacFarlane and I. Postlethwaite, "The generalized Nyquist stability criterion and multivariable root loci", <i>Int. J. Control</i> 25(1) (1977) 81–127; C. A. Desoer and Y. T. Wang, "On the generalized Nyquist stability criterion", <i>IEEE Trans. Autom. Control</i> 25(2) (1980) 187–196, first issued as Berkeley memorandum UCB/ERL M79/11. <a href="https://www2.eecs.berkeley.edu/Pubs/TechRpts/1979/28420.html">memorandum</a><span class="free">Free</span></li>
+<li>J. C. Doyle, "Analysis of feedback systems with structured uncertainties", <i>IEE Proceedings D</i> 129(6) (1982) 242–250.</li>
+<li>P. Seiler, A. Packard and P. Gahinet, "An introduction to disk margins", <i>IEEE Control Systems Magazine</i> 40(5) (2020) 78–95. <a href="https://arxiv.org/abs/2003.04771">arXiv:2003.04771</a><span class="free">Open access</span></li>
+<li>A. C. Antoulas, <i>Approximation of Large-Scale Dynamical Systems</i> (SIAM, 2005): ch. 5 (Hankel operators), ch. 7 (balancing and balanced truncation).</li>
+<li>G. Zames, "On the input-output stability of time-varying nonlinear feedback systems. Part I: Conditions derived using concepts of loop gain, conicity, and positivity", <i>IEEE Trans. Autom. Control</i> 11(2) (1966) 228–238.</li>
+<li>S. Boyd, V. Balakrishnan and P. Kabamba, "A bisection method for computing the $\mathcal H_\infty$ norm of a transfer matrix and related problems", <i>Math. Control Signals Systems</i> 2 (1989) 207–219.</li>
+<li>H. W. Bode, <i>Network Analysis and Feedback Amplifier Design</i> (Van Nostrand, 1945); J. S. Freudenberg and D. P. Looze, "Right half plane poles and zeros and design tradeoffs in feedback systems", <i>IEEE Trans. Autom. Control</i> 30(6) (1985) 555–565; M. M. Seron, J. H. Braslavsky and G. C. Goodwin, <i>Fundamental Limitations in Filtering and Control</i> (Springer, 1997).</li>
+<li>G. Stein, "Respect the unstable", <i>IEEE Control Systems Magazine</i> 23(4) (2003) 12–25.</li>
+<li>F. A. Chandra, G. Buzi and J. C. Doyle, "Glycolytic oscillations and limits on robust efficiency", <i>Science</i> 333 (2011) 187–192.</li>
+<li>J. C. Doyle, "Guaranteed margins for LQG regulators", <i>IEEE Trans. Autom. Control</i> 23(4) (1978) 756–757; J. C. Doyle and G. Stein, "Robustness with observers", <i>IEEE Trans. Autom. Control</i> 24(4) (1979) 607–611; J. C. Doyle, K. Glover, P. P. Khargonekar and B. A. Francis, "State-space solutions to standard $\mathcal H_2$ and $\mathcal H_\infty$ control problems", <i>IEEE Trans. Autom. Control</i> 34(8) (1989) 831–847.</li>
+<li>B. C. Moore (1981), cited above; L. Pernebo and L. M. Silverman, "Model reduction via balanced state space representations", <i>IEEE Trans. Autom. Control</i> 27(2) (1982) 382–387; D. F. Enns, "Model reduction with balanced realizations: an error bound and a frequency weighted generalization", <i>Proc. 23rd IEEE Conf. Decision and Control</i> (1984) 127–132; Y. Liu and B. D. O. Anderson, "Singular perturbation approximation of balanced systems", <i>Int. J. Control</i> 50(4) (1989) 1379–1405; K. Glover, "All optimal Hankel-norm approximations of linear multivariable systems and their $L^\infty$-error bounds", <i>Int. J. Control</i> 39(6) (1984) 1115–1193.</li>
+<li>W. Q. Liu, V. Sreeram and K. L. Teo, "Model reduction for state-space symmetric systems", <i>Systems &amp; Control Letters</i> 34 (1998) 209–215; S. Reiter, T. Damm, M. Embree and S. Gugercin, "On the balanced truncation error bound and sign parameters from arrowhead realizations", <i>Advances in Computational Mathematics</i> 50(1) (2024), article 10: when the balanced truncation bound is attained. <a href="https://arxiv.org/abs/2011.07170">arXiv:2011.07170</a><span class="free">Open access</span></li>
+</ul>
+</section>
+
+</div>
+</main>
+</div>
+<script>LT.page.init();</script>
+<script>
+(function () {
+  'use strict';
+  const { Plot, ui, mat: M, sys: S, cx: Cx, fmt, fmtSig } = LT;
+  const ONE = { re: 1, im: 0 };
+  const DEG = 180 / Math.PI;
+
+  /* ---------- shared helpers ---------- */
+  // Bisection for a sign change of f on [a, b] (geometric midpoints when both ends are positive).
+  function bisect(f, a, b, n) {
+    let fa = f(a);
+    for (let i = 0; i < (n || 100); i++) {
+      const m = (a > 0 && b > 0) ? Math.sqrt(a * b) : 0.5 * (a + b), fm = f(m);
+      if ((fm > 0) === (fa > 0)) { a = m; fa = fm; } else b = m;
+    }
+    return (a > 0 && b > 0) ? Math.sqrt(a * b) : 0.5 * (a + b);
+  }
+  // Minimize f on a log-spaced grid of [lo, hi], then refine by golden section around the best point.
+  function minLog(f, lo, hi, n) {
+    let best = Infinity, bi = 0; const N = n || 800, xs = [];
+    for (let i = 0; i <= N; i++) { const x = lo * Math.pow(hi / lo, i / N); xs.push(x); const v = f(x); if (v < best) { best = v; bi = i; } }
+    let a = xs[Math.max(0, bi - 1)], b = xs[Math.min(N, bi + 1)];
+    for (let it = 0; it < 60; it++) { const m1 = a + 0.381966 * (b - a), m2 = a + 0.618034 * (b - a); if (f(m1) < f(m2)) b = m2; else a = m1; }
+    const x = 0.5 * (a + b), v = f(x);
+    return v < best ? { x, v } : { x: xs[bi], v: best };
+  }
+  const polymul = (a, b) => { const r = new Array(a.length + b.length - 1).fill(0); a.forEach((x, i) => b.forEach((y, j) => { r[i + j] += x * y; })); return r; };
+  const polyadd = (a, b) => { const n = Math.max(a.length, b.length), r = new Array(n).fill(0); a.forEach((x, i) => { r[n - a.length + i] += x; }); b.forEach((x, i) => { r[n - b.length + i] += x; }); return r; };
+  const dB = x => 20 * Math.log10(x);
+  const fmtInf = (x, d) => (Number.isFinite(x) ? fmt(x, d) : '∞');
+
+  /* ---------------- Visual 12.1: Nyquist curve, margins, closed loop ---------------- */
+  (function () {
+    const st = { fam: 'A', k: 1, tau: 1, th: 0.2 };
+    const presets = {
+      a: { fam: 'A', k: 1, tau: 1, th: 0.2 }, a0: { fam: 'A', k: 1, tau: 1, th: 0 }, adm: { fam: 'A', k: 1, tau: 1, th: 1.1 },
+      b2: { fam: 'B', k: 2, tau: 1, th: 0 }, b9: { fam: 'B', k: 9, tau: 1, th: 0 }, bsg: { fam: 'B', k: 0.8, tau: 1, th: 1.5 }
+    };
+    const mag = w => (st.fam === 'A' ? st.k / (w * Math.sqrt(1 + st.tau * st.tau * w * w)) : st.k / Math.pow(1 + st.tau * st.tau * w * w, 1.5));
+    const ph = w => (st.fam === 'A' ? -Math.PI / 2 - Math.atan(st.tau * w) - st.th * w : -3 * Math.atan(st.tau * w) - st.th * w);
+    const Lw = w => { const m = mag(w), p = ph(w); return { re: m * Math.cos(p), im: m * Math.sin(p) }; };
+    let an = null, curve = [], step = null;
+    function analyse() {
+      const lo = 1e-6, hi = 1e5;
+      let wpc = null, GM = Infinity;
+      if (ph(hi) < -Math.PI) { wpc = bisect(w => ph(w) + Math.PI, lo, hi); GM = 1 / mag(wpc); }
+      let wgc = null, PM = Infinity;
+      if (mag(lo) > 1 && mag(hi) < 1) { wgc = bisect(w => mag(w) - 1, lo, hi); PM = Math.PI + ph(wgc); }
+      const sm = minLog(w => { const L = Lw(w); return Math.hypot(1 + L.re, L.im); }, 1e-3, 1e3, 1200);
+      const smv = Math.min(sm.v, 1);
+      const stable = wpc === null || GM > 1;
+      an = { wpc, GM, wgc, PM, sm: smv, wsm: sm.v < 1 ? sm.x : Infinity, stable, dm: wgc !== null && PM > 0 ? PM / wgc : (wgc === null ? Infinity : 0) };
+      curve = [];
+      for (let i = 0; i <= 1600; i++) { const w = Math.pow(10, -3 + 6 * i / 1600), L = Lw(w); curve.push([L.re, L.im, w]); }
+      step = simulate();
+    }
+    function simulate() {
+      const h = 0.01, wc = an.wgc || 1, Tend = Math.min(60, Math.max(14, 16 / wc + 4 * st.th));
+      let Ap, Bp, Cp;
+      if (st.fam === 'A') { Ap = [[0, 1], [0, -1 / st.tau]]; Bp = [[0], [1 / st.tau]]; Cp = [1, 0]; }
+      else { const a = 1 / st.tau; Ap = [[-a, 0, 0], [a, -a, 0], [0, a, -a]]; Bp = [[a], [0], [0]]; Cp = [0, 0, 1]; }
+      const d = S.c2d(Ap, Bp, h), nd = Math.round(st.th / h), n = Ap.length;
+      const ebuf = new Array(nd + 1).fill(0); let x = new Array(n).fill(0); const pts = [[0, 0]];
+      const steps = Math.round(Tend / h);
+      for (let kk = 0; kk < steps; kk++) {
+        const y = M.dot(Cp, x), e = 1 - y; ebuf.push(e); const u = st.k * ebuf[ebuf.length - 1 - nd]; if (ebuf.length > nd + 2) ebuf.shift();
+        const nx = M.mv(d.Ad, x); for (let i = 0; i < n; i++) nx[i] += d.Bd[i][0] * u; x = nx;
+        const yn = M.dot(Cp, x); pts.push([(kk + 1) * h, yn]);
+        if (!Number.isFinite(yn) || Math.abs(yn) > 1e6) break;
+      }
+      return { pts, Tend };
+    }
+    const nyq = new Plot('#nyq-plot', { xlim: [-3, 1.6], ylim: [-2.6, 1.6], equal: true, maxH: 520, clip: true, label: 'Nyquist curve of the loop with the critical point, unit circle and stability margin circle' });
+    const pmag = new Plot('#nyq-mag', { xlim: [0.01, 100], ylim: [-60, 40], logx: true, frame: true, height: 150, label: 'Bode magnitude of the loop in decibels' });
+    const pph = new Plot('#nyq-ph', { xlim: [0.01, 100], ylim: [-360, 0], logx: true, frame: true, height: 150, label: 'Bode phase of the loop in degrees' });
+    const pst = new Plot('#nyq-step', { xlim: [0, 20], ylim: [-0.5, 2.5], frame: true, height: 150, label: 'Closed-loop step response' });
+    [nyq, pmag, pph, pst].forEach(p => p.el.insertBefore(p.canvas, p.el.firstChild));
+    const panel = ui.panel('#nyq-controls');
+    const sel = panel.select({ id: 'nyq-preset', label: 'Preset', value: 'a', options: [
+      ['a', 'Integrator and lag, θ = 0.2'], ['a0', 'Integrator and lag, no delay'], ['adm', 'Integrator and lag, near the delay margin'],
+      ['b2', 'Triple lag, k = 2'], ['b9', 'Triple lag, k = 9 (unstable)'], ['bsg', 'Small gain: triple lag, k = 0.8, θ = 1.5']],
+      onChange: v => { Object.assign(st, presets[v]); sk.set(st.k); stau.set(st.tau); sth.set(st.th); update(); } });
+    const sk = panel.slider({ id: 'nyq-k', label: 'Gain $k$', min: -1, max: 1.3, step: 0.005, value: st.k, log: true, onInput: v => { st.k = v; update(); } });
+    const stau = panel.slider({ id: 'nyq-tau', label: 'Lag $\\tau$', min: 0.2, max: 3, step: 0.01, value: st.tau, onInput: v => { st.tau = v; update(); } });
+    const sth = panel.slider({ id: 'nyq-th', label: 'Delay $\\theta$', min: 0, max: 2, step: 0.01, value: st.th, onInput: v => { st.th = v; update(); } });
+    const out = panel.readout({});
+    panel.note(ui.legend([{ color: 'c7', label: 'L(iω)' }, { color: 'c2', label: 'phase crossover, −1/GM', kind: 'dot' }, { color: 'c1', label: 'gain crossover and phase margin arc', kind: 'dot' }, { color: 'c4', label: 'stability margin circle', kind: 'dash' }]));
+    nyq.draw = g => {
+      g.circle([0, 0], 1, { color: 'muted', width: 1, dash: [3, 4] });
+      if (an.sm > 0.002) g.circle([-1, 0], an.sm, { color: 'c4', width: 1.5, dash: [6, 4] });
+      g.path(curve.map(q => [q[0], -q[1]]), { color: 'c7', width: 1.5, alpha: 0.35 });
+      g.path(curve.map(q => [q[0], q[1]]), { color: 'c7', width: 2.25 });
+      // direction arrow at a mid frequency
+      const wa = an.wgc ? an.wgc * 0.7 : 1, La = Lw(wa), Lb = Lw(wa * 1.12);
+      if (Math.hypot(La.re, La.im) < 3) g.arrow([La.re, La.im], [Lb.re, Lb.im], { color: 'c7', width: 2, head: 10 });
+      if (an.wgc) {
+        const Lg = Lw(an.wgc), a0 = Math.PI, a1 = Math.atan2(Lg.im, Lg.re);
+        let a1u = a1; if (a1u > 0) a1u -= 2 * Math.PI; // arc from -1 (angle -pi) to the crossover point
+        g.curve(t => [Math.cos(t), Math.sin(t)], -Math.PI, a1u, { color: 'c1', width: 3 }, 60);
+        g.dot([Lg.re, Lg.im], { color: 'c1', r: 5 });
+        void a0;
+      }
+      if (an.wpc) { const Lp = Lw(an.wpc); g.dot([Lp.re, 0], { color: 'c2', r: 5 }); }
+      if (an.sm < 1 && Number.isFinite(an.wsm)) { const Ls = Lw(an.wsm); g.line(-1, 0, Ls.re, Ls.im, { color: 'c4', width: 1.5 }); }
+      g.marker([-1, 0], { shape: 'x', size: 6, color: 'ink', width: 2 });
+    };
+    const Wgrid = S.logspace(-2, 2, 500);
+    pmag.draw = g => {
+      g.hline(0, { color: 'muted', width: 1, dash: [4, 4] });
+      g.path(Wgrid.map(w => [w, dB(mag(w))]), { color: 'c7', width: 2 });
+      if (an.wgc) g.vline(an.wgc, { color: 'c1', width: 1, dash: [3, 3] });
+      if (an.wpc) { g.line(an.wpc, dB(mag(an.wpc)), an.wpc, 0, { color: 'c2', width: 3 }); g.dot([an.wpc, dB(mag(an.wpc))], { color: 'c2', r: 4 }); }
+    };
+    pph.draw = g => {
+      g.hline(-180, { color: 'muted', width: 1, dash: [4, 4] });
+      g.path(Wgrid.map(w => [w, ph(w) * DEG]), { color: 'c7', width: 2 });
+      if (an.wpc) g.vline(an.wpc, { color: 'c2', width: 1, dash: [3, 3] });
+      if (an.wgc) { g.line(an.wgc, ph(an.wgc) * DEG, an.wgc, -180, { color: 'c1', width: 3 }); g.dot([an.wgc, ph(an.wgc) * DEG], { color: 'c1', r: 4 }); }
+    };
+    pst.draw = g => {
+      g.hline(1, { color: 'muted', width: 1, dash: [4, 4] });
+      g.path(step.pts, { color: an.stable ? 'c3' : 'c8', width: 2 });
+    };
+    function update() {
+      analyse();
+      pst.setLimits([0, step.Tend], null);
+      const lab = st.fam === 'A' ? 'L(s) = k e<sup>−θs</sup> / (s(τs + 1))' : 'L(s) = k e<sup>−θs</sup> / (τs + 1)<sup>3</sup>';
+      const gm = an.wpc === null ? '∞ (no phase crossover)' : `${fmt(an.GM, 3)} (${fmt(dB(an.GM), 1)} dB)`;
+      const pm = an.wgc === null ? '∞ (no gain crossover)' : `${fmt(an.PM * DEG, 1)}°`;
+      out.set(
+        `<span><i>${lab}</i></span>` +
+        `<span>GM <span class="num">${gm}</span></span>` +
+        `<span>PM <span class="num">${pm}</span>${an.wgc ? ` at <i>ω</i><sub>gc</sub> <span class="num">${fmt(an.wgc, 3)}</span>` : ''}</span>` +
+        `<span>delay margin <span class="num">${an.wgc === null ? '∞' : fmt(Math.max(0, an.dm), 3)}</span></span>` +
+        `<span><i>s</i><sub>m</sub> <span class="num">${fmt(an.sm, 3)}</span>${an.stable ? `, ‖<i>S</i>‖<sub>∞</sub> <span class="num">${fmt(1 / an.sm, 2)}</span>` : ''}</span>` +
+        (an.stable ? `<span>guaranteed by <i>s</i><sub>m</sub>: GM ≥ <span class="num">${fmtInf(1 / (1 - an.sm), 2)}</span>, PM ≥ <span class="num">${fmt(2 * Math.asin(an.sm / 2) * DEG, 1)}°</span></span>` : '<span>no guarantee from <i>s</i><sub>m</sub>: the closed loop is unstable</span>') +
+        (an.stable ? '<span class="tag good">closed loop stable</span>' : '<span class="tag bad">closed loop unstable</span>')
+      );
+      [nyq, pmag, pph, pst].forEach(p => p.redraw());
+    }
+    update();
+  })();
+
+  /* ---------------- Visual 12.2: one loop at a time versus all loops together (spinning satellite) ---------------- */
+  (function () {
+    // Closed loop A - (I + diag(d1, d2))C with K = I: characteristic polynomial s^2 + b s + c (Proposition on the stability region).
+    const st = { a: 10, d1: 0.1, d2: -0.1, view: 'near' };
+    const VIEWS = { near: [-0.3, 0.3], wide: [-1.4, 3.4] };
+    const presets = {
+      opp: { a: 10, d1: 0.1, d2: -0.1, view: 'near' },
+      one3: { a: 10, d1: 2, d2: 0, view: 'wide' },
+      both: { a: 10, d1: 0.1, d2: 0.1, view: 'near' },
+      dec: { a: 0, d1: 0.5, d2: -0.5, view: 'wide' }
+    };
+    const kOf = () => 1 + st.a * st.a;
+    const coefs = (d1, d2) => [2 + d1 + d2, 1 + d1 + d2 + kOf() * d1 * d2];
+    function quadRoots(b, c) {
+      const D = b * b / 4 - c;
+      if (D >= 0) { const r = Math.sqrt(D); return [[-b / 2 + r, 0], [-b / 2 - r, 0]]; }
+      const r = Math.sqrt(-D); return [[-b / 2, r], [-b / 2, -r]];
+    }
+    // The interval of delta_2 that keeps the loop stable for delta_1 = x (null if empty).
+    function d2Range(x) {
+      const k = kOf(), lo = -2 - x, den = 1 + k * x;
+      if (Math.abs(den) < 1e-12) return x > -1 ? [lo, Infinity] : null;
+      const h = -(1 + x) / den;
+      if (den > 0) return [Math.max(lo, h), Infinity];
+      return h > lo ? [lo, h] : null;
+    }
+    // Unstable set {c <= 0} U {b <= 0} as polygons reaching beyond the view (the plot clips them).
+    function unstableSet() {
+      const v = VIEWS[st.view], span = v[1] - v[0], X0 = v[0] - span, X1 = v[1] + span, Y0 = v[0] - span, Y1 = v[1] + span;
+      const k = kOf(), pole = -1 / k, h = x => -(1 + x) / (1 + k * x), cl = y => Math.max(Y0, Math.min(Y1, y));
+      const fills = [], curves = [], N = 360;
+      if (X1 > pole) {   // right of the asymptote delta_1 = -1/k: c <= 0 below the branch
+        const xs = []; for (let i = 0; i <= N; i++) xs.push(pole + (X1 - pole) * Math.pow(10, -8 + 8 * i / N));
+        const cur = xs.map(x => [x, cl(h(x))]);
+        curves.push(cur); fills.push(cur.concat([[X1, Y0], [xs[0], Y0]]));
+      }
+      if (X0 < pole) {   // left of the asymptote: c <= 0 above the branch
+        const xs = []; for (let i = 0; i <= N; i++) xs.push(pole - (pole - X0) * Math.pow(10, -8 + 8 * i / N));
+        const cur = xs.map(x => [x, cl(h(x))]);
+        curves.push(cur); fills.push(cur.concat([[X0, Y1], [xs[0], Y1]]));
+      }
+      const tr = [[X0, -2 - X0], [X1, -2 - X1]], yb = Math.min(Y0, -2 - X1) - 1;   // b <= 0 below this line
+      curves.push(tr);
+      return { fills, curves, trace: tr.concat([[X1, yb], [X0, yb]]), box: [[X0 - 1, Y0 - 1], [X1 + 1, Y0 - 1], [X1 + 1, Y1 + 1], [X0 - 1, Y1 + 1]] };
+    }
+    const plane = new Plot('#mr-plane', { xlim: VIEWS.near, ylim: VIEWS.near, equal: true, frame: true, maxH: 560, xlabel: 'δ₁', ylabel: 'δ₂', label: 'Plane of actuator gain errors with the unstable set, the axes tested one loop at a time, the small-gain square and a draggable perturbation' });
+    const eig = new Plot('#mr-eig', { xlim: [-4, 2], ylim: [-3, 3], equal: true, frame: true, maxH: 420, xlabel: 'Re s', ylabel: 'Im s', label: 'Closed-loop eigenvalues for the current gain errors' });
+    [plane, eig].forEach(p => p.el.insertBefore(p.canvas, p.el.firstChild));
+    plane.draw = g => {
+      const v = VIEWS[st.view], span = v[1] - v[0], r = 1 / Math.sqrt(kOf()), U = unstableSet();
+      U.fills.forEach(p => g.poly(p, { fill: 'c8', fillAlpha: 0.17, stroke: false }));
+      // shade b <= 0 only outside the c <= 0 pieces (even-odd clip), so that no point is shaded twice
+      const ctx = g.ctx, sub = pts => { pts.forEach((q, i) => { if (i) ctx.lineTo(g.X(q[0]), g.Y(q[1])); else ctx.moveTo(g.X(q[0]), g.Y(q[1])); }); ctx.closePath(); };
+      ctx.save(); ctx.beginPath(); sub(U.box); U.fills.forEach(sub); ctx.clip('evenodd');
+      g.poly(U.trace, { fill: 'c8', fillAlpha: 0.17, stroke: false });
+      ctx.restore();
+      U.curves.forEach(c => g.path(c, { color: 'c8', width: 1.5 }));
+      g.vline(0, { color: 'axis', width: 1 });
+      g.line(v[0] - span, span - v[0], v[1] + span, -v[1] - span, { color: 'muted', width: 1.25, dash: [5, 5] });
+      g.poly([[-r, -r], [r, -r], [r, r], [-r, r]], { fill: 'c3', fillAlpha: 0.15, color: 'c3', width: 2 });
+      // loop-at-a-time tests: the axes, from the loop-opening value -1 outward
+      g.line(-1, 0, v[1] + span, 0, { color: 'c1', width: 3.5, alpha: 0.85 });
+      g.line(0, -1, 0, v[1] + span, { color: 'c1', width: 3.5, alpha: 0.85 });
+      if (v[0] < -1) { g.dot([-1, 0], { color: 'c1', r: 4, hollow: true }); g.dot([0, -1], { color: 'c1', r: 4, hollow: true }); }
+      [[r, -r], [-r, r]].forEach(q => g.dot(q, { color: 'c3', r: 4 }));
+      g.line(0, 0, st.d1, st.d2, { color: 'c7', width: 1.5, dash: [4, 3] });
+      g.text([v[1] - 0.025 * span, 0], 'loop 1 alone', { size: 12, font: 'ui', color: 'ink-2', align: 'right', dy: -12 });
+      g.text([0, v[1] - 0.05 * span], 'loop 2 alone', { size: 12, font: 'ui', color: 'ink-2', dx: 9 });
+      const lab = [v[1] - 0.2 * span, v[0] + 0.1 * span], cl = coefs(lab[0], lab[1]);
+      if (cl[0] <= 0 || cl[1] <= 0) g.text(lab, 'unstable', { size: 12, font: 'ui', color: 'ink-2', align: 'center' });
+    };
+    const SCALES = [3, 6, 12, 25, 50, 100, 200, 400, 800];
+    let eigR = 3;
+    function fitEig(rts) {
+      const need = 1.12 * Math.max(...rts.map(q => Math.max(Math.abs(q[0] + 1), Math.abs(q[1]))));
+      const R = SCALES.find(s => s >= need) || SCALES[SCALES.length - 1];
+      if (R !== eigR) { eigR = R; eig.setLimits([-1 - R, -1 + R], [-R, R]); }
+    }
+    let rts = [[-1, 0], [-1, 0]];
+    eig.draw = g => {
+      const xl = eig.xlim, yl = eig.ylim;
+      g.poly([[0, yl[0]], [xl[1], yl[0]], [xl[1], yl[1]], [0, yl[1]]], { fill: 'c8', fillAlpha: 0.08, stroke: false });
+      g.vline(0, { color: 'axis', width: 1.25 });
+      rts.forEach(q => g.line(-1, 0, q[0], q[1], { color: 'c7', width: 2.5, alpha: 0.45 }));
+      g.marker([-1, 0], { shape: 'o', size: 5, color: 'ink-2', width: 1.5 });
+      rts.forEach(q => g.marker(q, { shape: 'x', size: 7, color: 'c7', width: 2.5 }));
+      g.text([-1, 0], 'nominal −1', { size: 11.5, font: 'ui', color: 'ink-2', align: 'center', dy: 18 });
+    };
+    const panel = ui.panel('#mr-controls');
+    panel.select({ id: 'mr-preset', label: 'Preset', value: 'opp', options: [['opp', 'Opposite errors, ±10%'], ['one3', 'One loop, gain ×3'], ['both', 'Both +10%'], ['dec', 'Decoupled plant, a = 0']],
+      onChange: v => { Object.assign(st, presets[v]); sa.set(st.a); vsel.set(st.view); applyView(); update(); } });
+    const vsel = panel.select({ id: 'mr-view', label: 'View', value: st.view, options: [['near', 'Near the origin: |δ| ≤ 0.3'], ['wide', 'Wide: −1.4 ≤ δ ≤ 3.4']], onChange: v => { st.view = v; applyView(); update(); } });
+    const sa = panel.slider({ id: 'mr-a', label: 'Spin parameter $a$', min: 0, max: 20, step: 0.1, value: st.a, digits: 1, onInput: v => { st.a = v; update(); } });
+    const out = panel.readout({});
+    panel.note(ui.legend([{ color: 'c8', label: 'unstable set', kind: 'area' }, { color: 'c1', label: 'axes: one loop at a time' }, { color: 'c3', label: 'small-gain square', kind: 'area' }, { color: 'muted', label: 'δ₁ = −δ₂', kind: 'dash' }, { color: 'c7', label: 'perturbation (drag) and eigenvalues', kind: 'dot' }]));
+    const handle = plane.addHandle({ get: () => [st.d1, st.d2], set: (x, y) => { st.d1 = x; st.d2 = y; update(); }, color: 'c7', r: 7, snap: 0.0005 });
+    function applyView() { const v = VIEWS[st.view]; plane.setLimits(v, v); handle.snap = st.view === 'near' ? 0.0005 : 0.005; }
+    const fr = x => (Number.isFinite(x) ? fmt(x, 4) : '∞');
+    function update() {
+      const bc = coefs(st.d1, st.d2), b = bc[0], c = bc[1], r = 1 / Math.sqrt(kOf()), tol = 1e-12;
+      rts = quadRoots(b, c);
+      const stable = b > tol && c > tol, unstable = b < -tol || c < -tol;
+      const nrm = Math.max(Math.abs(st.d1), Math.abs(st.d2)), rng = d2Range(st.d1);
+      const ev = rts.map(q => (q[1] === 0 ? fmt(q[0], 4) : `${fmt(q[0], 3)} ${q[1] > 0 ? '+' : '−'} ${fmt(Math.abs(q[1]), 3)}<i>i</i>`)).join(', ');
+      out.set(
+        `<span><i>δ</i><sub>1</sub> <span class="num">${fmt(st.d1, 4)}</span>, <i>δ</i><sub>2</sub> <span class="num">${fmt(st.d2, 4)}</span></span>` +
+        `<span>‖Δ‖<sub>∞</sub> = max |<i>δ</i><sub>j</sub>| <span class="num">${fmt(nrm, 4)}</span></span>` +
+        `<span>bound 1/‖<i>T</i><sub>I</sub>‖<sub>∞</sub> = 1/√(1 + <i>a</i>²) <span class="num">${fmt(r, 4)}</span></span>` +
+        `<span><i>b</i>(<i>δ</i>) <span class="num">${fmt(b, 4)}</span>, <i>c</i>(<i>δ</i>) <span class="num">${fmt(c, 4)}</span></span>` +
+        `<span>eigenvalues <span class="num">${ev}</span></span>` +
+        `<span>for this <i>δ</i><sub>1</sub>, stable exactly for <i>δ</i><sub>2</sub> in ${rng ? `<span class="num">(${fr(rng[0])}, ${fr(rng[1])})</span>` : '<span class="num">no interval</span>'}</span>` +
+        (stable ? '<span class="tag good">closed loop stable</span>' : unstable ? '<span class="tag bad">closed loop unstable</span>' : '<span class="tag">marginal: an eigenvalue on the imaginary axis</span>') +
+        (nrm < r ? '<span class="tag good">inside the small-gain square: guaranteed</span>' : '<span class="tag">outside the small-gain square: no guarantee</span>')
+      );
+      fitEig(rts); plane.redraw(); eig.redraw();
+    }
+    applyView(); update();
+  })();
+
+  /* ---------------- Visual 12.3: the waterbed ---------------- */
+  (function () {
+    const st = { k: 5, wb: 1, lag: false, wl: 4, unst: false, p: 0.5 };
+    const Ls = s => {
+      const a = Cx.add(ONE, Cx.scale(s, 1 / st.wb));
+      let v = Cx.div({ re: st.k, im: 0 }, Cx.mul(a, a));
+      if (st.lag) v = Cx.div(v, Cx.add(ONE, Cx.scale(s, 1 / st.wl)));
+      if (st.unst) v = Cx.mul(v, Cx.div(Cx.add(s, { re: st.p, im: 0 }), Cx.sub(s, { re: st.p, im: 0 })));
+      return v;
+    };
+    const lnS = w => { const L = Ls({ re: 0, im: w }); return -Math.log(Math.hypot(1 + L.re, L.im)); };
+    const WMAX = 10;
+    let res = null;
+    function compute() {
+      let D = [1 / (st.wb * st.wb), 2 / st.wb, 1], N = [st.k];
+      if (st.lag) D = polymul(D, [1 / st.wl, 1]);
+      if (st.unst) { D = polymul(D, [1, -st.p]); N = polymul(N, [1, st.p]); }
+      const poles = S.roots(polyadd(D, N)), stable = poles.every(z => z.re < -1e-9);
+      // integral over [0, inf) with omega = c u / (1 - u), Simpson rule, plus an analytic tail
+      const c = st.wb, f = u => { const w = c * u / (1 - u); return lnS(w) * c / ((1 - u) * (1 - u)); };
+      const n = 2000, b = 1 - 1e-5, h = b / n; let s = f(0) + f(b);
+      for (let i = 1; i < n; i++) s += (i % 2 ? 4 : 2) * f(i * h);
+      const Om = c * b / (1 - b); let total = s * h / 3 + lnS(Om) * Om;
+      // areas inside the plotted range
+      let neg = 0, pos = 0; const m = 3000, dw = WMAX / m;
+      for (let i = 0; i < m; i++) { const v = lnS((i + 0.5) * dw) * dw; if (v < 0) neg += v; else pos += v; }
+      const pk = minLog(w => lnS(w) * -1, 1e-3, 1e3, 1500);
+      res = { stable, poles, total, neg, pos, beyond: total - neg - pos, peak: Math.exp(-pk.v), wpk: pk.x, target: st.unst ? Math.PI * st.p : 0 };
+    }
+    const p = new Plot('#wb-plot', { xlim: [0, WMAX], ylim: [-3.6, 2.6], frame: true, height: 330, xlabel: 'ω', ylabel: 'ln|S|', label: 'Log sensitivity against linear frequency with shaded areas' });
+    const q = new Plot('#wb-nyq', { xlim: [-3.2, 1.6], ylim: [-2.6, 2.6], equal: true, maxH: 330, clip: true, label: 'Nyquist curve with the disk where sensitivity exceeds one' });
+    [p, q].forEach(pl => pl.el.insertBefore(pl.canvas, pl.el.firstChild));
+    const panel = ui.panel('#wb-controls');
+    panel.slider({ id: 'wb-k', label: 'Gain $k$', min: Math.log10(0.3), max: Math.log10(30), step: 0.005, value: st.k, log: true, onInput: v => { st.k = v; update(); } });
+    panel.slider({ id: 'wb-wb', label: 'Bandwidth $\\omega_b$', min: 0.5, max: 3, step: 0.01, value: st.wb, onInput: v => { st.wb = v; update(); } });
+    panel.toggle({ id: 'wb-lag', label: 'Extra lag', value: st.lag, onChange: v => { st.lag = v; update(); } });
+    panel.slider({ id: 'wb-wl', label: 'Lag pole $\\omega_\\ell$', min: 1, max: 20, step: 0.05, value: st.wl, onInput: v => { st.wl = v; if (st.lag) update(); } });
+    panel.toggle({ id: 'wb-unst', label: 'Unstable plant pole', value: st.unst, onChange: v => { st.unst = v; update(); } });
+    panel.slider({ id: 'wb-p', label: 'Pole $p$', min: 0.1, max: 2, step: 0.01, value: st.p, onInput: v => { st.p = v; if (st.unst) update(); } });
+    const out = panel.readout({});
+    p.draw = g => {
+      const N = 600, pts = [];
+      for (let i = 0; i <= N; i++) { const w = WMAX * i / N; pts.push([w, lnS(Math.max(w, 1e-9))]); }
+      const below = pts.map(t => [t[0], Math.min(0, t[1])]), above = pts.map(t => [t[0], Math.max(0, t[1])]), zero = pts.map(t => [t[0], 0]);
+      g.band(zero, below, { fill: 'c1', fillAlpha: 0.28 });
+      g.band(above, zero, { fill: 'c8', fillAlpha: 0.28 });
+      g.path(pts, { color: 'c7', width: 2 });
+    };
+    q.draw = g => {
+      const disk = []; for (let i = 0; i <= 120; i++) { const t = 2 * Math.PI * i / 120; disk.push([-1 + Math.cos(t), Math.sin(t)]); }
+      g.poly(disk, { fill: 'c8', fillAlpha: 0.12, color: 'c8', width: 1 });
+      const W = S.logspace(-3, 3, 1500), cur = W.map(w => { const L = Ls({ re: 0, im: w }); return [L.re, L.im]; });
+      g.path(cur.map(t => [t[0], -t[1]]), { color: 'c7', width: 1.5, alpha: 0.35 });
+      g.path(cur, { color: 'c7', width: 2.25 });
+      g.marker([-1, 0], { shape: 'x', size: 6, color: 'ink', width: 2 });
+    };
+    function update() {
+      compute();
+      const r = res;
+      out.set(
+        (r.stable ? '<span class="tag good">closed loop stable</span>' : '<span class="tag bad">closed loop unstable: the theorem does not apply</span>') +
+        `<span>area below zero <span class="num">${fmt(r.neg, 3)}</span></span><span>area above zero <span class="num">${fmt(r.pos, 3)}</span></span>` +
+        `<span>beyond <i>ω</i> = ${WMAX} <span class="num">${fmt(r.beyond, 3)}</span></span>` +
+        `<span>∫ ln|<i>S</i>| d<i>ω</i> <span class="num">${fmt(r.total, 4)}</span></span>` +
+        `<span>π Σ Re <i>p</i><sub>i</sub> <span class="num">${fmt(r.target, 4)}</span></span>` +
+        `<span>peak |<i>S</i>| <span class="num">${fmt(r.peak, 2)}</span> at <i>ω</i> <span class="num">${fmt(r.wpk, 2)}</span></span>`
+      );
+      p.redraw(); q.redraw();
+    }
+    update();
+  })();
+
+  /* ---------------- Visual 12.4: LQR margins versus LQG margins (Doyle's example) ---------------- */
+  (function () {
+    const A = [[1, 1], [0, 1]], B = [[0], [1]], Cm = [[1, 0]], ONES = [[1, 1], [1, 1]];
+    const st = { lq: 0, lnu: 0, ltr: false, lqr: 2 };
+    let D = null;
+    const alphaCL = (K, L, m) => {
+      const BK = M.mul(B, K), LC = M.mul(L, Cm);
+      return Math.max(...M.eigvals(M.blocks([[A, M.scale(BK, -m)], [LC, M.sub(M.sub(A, BK), LC)]])).map(z => z.re));
+    };
+    function stableRange(K, L) {
+      const st1 = alphaCL(K, L, 1) < 0; if (!st1) return null;
+      const edge = (a, b) => { const sa = alphaCL(K, L, a) < 0; for (let i = 0; i < 60; i++) { const c = Math.sqrt(a * b); if ((alphaCL(K, L, c) < 0) === sa) a = c; else b = c; } return Math.sqrt(a * b); };
+      let lo = 1; while (lo > 1e-3 && alphaCL(K, L, lo) < 0) lo /= 1.02; const mlo = lo > 1e-3 ? edge(1, lo) : 0;
+      let hi = 1; while (hi < 1e3 && alphaCL(K, L, hi) < 0) hi *= 1.02; const mhi = hi < 1e3 ? edge(1, hi) : Infinity;
+      return [mlo, mhi];
+    }
+    function design() {
+      const q = Math.pow(10, st.lq), nu = Math.pow(10, st.lnu);
+      const P = M.care(A, B, M.scale(ONES, q), [[1]]), K = M.mul(M.T(B), P);
+      let W = M.scale(ONES, nu); if (st.ltr) W = M.add(W, M.scale(M.mul(B, M.T(B)), Math.pow(10, st.lqr)));
+      const Sg = M.care(M.T(A), M.T(Cm), W, [[1]]), L = M.mul(Sg, M.T(Cm));
+      const f = 2 + Math.sqrt(4 + q), d = 2 + Math.sqrt(4 + nu);
+      const Ac = M.sub(M.sub(A, M.mul(B, K)), M.mul(L, Cm));
+      const W2 = S.logspace(-2.5, 3, 900), lqr = [], lqg = [];
+      W2.forEach(w => {
+        const a = S.freq(A, B, K, 0, w); lqr.push([a.re, a.im]);
+        const gp = S.freq(A, B, Cm, 0, w), kc = S.freq(Ac, L, K, 0, w), l = Cx.mul(gp, kc); lqg.push([l.re, l.im]);
+      });
+      const rng = stableRange(K, L);
+      D = { q, nu, K, L, f, d, lqr, lqg, rng, nec: [1 - (d + f - 4) / (2 * d * f), 1 + 1 / (d * f)], lqrLo: 2 / f };
+    }
+    const pn = new Plot('#lqg-nyq', { xlim: [-2.7, 0.9], ylim: [-1.7, 1.7], equal: true, maxH: 400, clip: true, label: 'Nyquist curves of the LQR and LQG loops near the critical point' });
+    const pg = new Plot('#lqg-int', { xlim: [0.05, 20], ylim: [0, 4.4], logx: true, frame: true, height: 300, xlabel: 'input gain m', pad: { l: 14, r: 14, t: 12, b: 40 }, yfmt: () => '', label: 'Stable ranges of the input gain for LQR and LQG' });
+    [pn, pg].forEach(p => p.el.insertBefore(p.canvas, p.el.firstChild));
+    const panel = ui.panel('#lqg-controls');
+    const sq = panel.slider({ id: 'lqg-q', label: 'State weight $q$', min: 0, max: 4, step: 0.01, value: 1, log: true, onInput: v => { st.lq = Math.log10(v); update(); } });
+    const snu = panel.slider({ id: 'lqg-nu', label: 'Noise intensity $\\nu$', min: 0, max: 4, step: 0.01, value: 1, log: true, onInput: v => { st.lnu = Math.log10(v); update(); } });
+    panel.toggle({ id: 'lqg-ltr', label: 'Loop transfer recovery', value: st.ltr, onChange: v => { st.ltr = v; update(); } });
+    panel.slider({ id: 'lqg-qr', label: 'Recovery weight $q_r$', min: 0, max: 8, step: 0.05, value: 100, log: true, onInput: v => { st.lqr = Math.log10(v); if (st.ltr) update(); } });
+    panel.buttons([
+      { label: 'q = ν = 1', onClick: () => { st.lq = 0; st.lnu = 0; sq.set(1); snu.set(1); update(); } },
+      { label: 'q = ν = 60', onClick: () => { st.lq = Math.log10(60); st.lnu = Math.log10(60); sq.set(60); snu.set(60); update(); } },
+      { label: 'q = ν = 10⁴', onClick: () => { st.lq = 4; st.lnu = 4; sq.set(1e4); snu.set(1e4); update(); } }
+    ]);
+    const out = panel.readout({});
+    panel.note(ui.legend([{ color: 'c1', label: 'LQR loop' }, { color: 'c2', label: 'LQG loop at the plant input' }, { color: 'c8', label: 'disk |1 + L| < 1', kind: 'area' }]));
+    pn.draw = g => {
+      const disk = []; for (let i = 0; i <= 120; i++) { const t = 2 * Math.PI * i / 120; disk.push([-1 + Math.cos(t), Math.sin(t)]); }
+      g.poly(disk, { fill: 'c8', fillAlpha: 0.12, color: 'c8', width: 1 });
+      g.path(D.lqr.map(t => [t[0], -t[1]]), { color: 'c1', width: 1.5, alpha: 0.35 });
+      g.path(D.lqg.map(t => [t[0], -t[1]]), { color: 'c2', width: 1.5, alpha: 0.35 });
+      g.path(D.lqr, { color: 'c1', width: 2.25 });
+      g.path(D.lqg, { color: 'c2', width: 2.25 });
+      g.marker([-1, 0], { shape: 'x', size: 6, color: 'ink', width: 2 });
+    };
+    const row = (g, y, a, b, col, label, dashed) => {
+      const lo = Math.max(a, 0.05), hi = Math.min(b, 20);
+      if (hi > lo) {
+        if (dashed) g.poly([[lo, y - 0.22], [hi, y - 0.22], [hi, y + 0.22], [lo, y + 0.22]], { fill: col, fillAlpha: 0.08, color: col, width: 1.25, dash: [5, 4] });
+        else g.poly([[lo, y - 0.22], [hi, y - 0.22], [hi, y + 0.22], [lo, y + 0.22]], { fill: col, fillAlpha: 0.55, color: col, width: 1 });
+      }
+      g.text([0.055, y + 0.42], label, { size: 12, font: 'ui', italic: false, color: 'ink-2' });
+    };
+    pg.draw = g => {
+      g.vline(1, { color: 'muted', width: 1.25, dash: [3, 3] });
+      row(g, 3.6, 0.5, Infinity, 'c1', 'LQR, guaranteed: [1/2, ∞)', true);
+      row(g, 2.7, D.lqrLo, Infinity, 'c1', 'LQR, actual', false);
+      if (D.rng) row(g, 1.8, D.rng[0], D.rng[1], 'c2', 'LQG, actual', false);
+      if (!st.ltr) row(g, 0.9, D.nec[0], D.nec[1], 'c2', 'LQG, necessary: p₀ > 0, p₁ > 0', true);
+    };
+    function update() {
+      design();
+      const r = D.rng;
+      out.set(
+        `<span><i>f</i> <span class="num">${fmt(D.f, 2)}</span>, <i>d</i> <span class="num">${st.ltr ? '(recovery on)' : fmt(D.d, 2)}</span></span>` +
+        `<span>LQR stable for <i>m</i> &gt; <span class="num">${fmt(D.lqrLo, 3)}</span></span>` +
+        (r ? `<span>LQG stable for <span class="num">${fmt(r[0], 4)}</span> &lt; <i>m</i> &lt; <span class="num">${fmtInf(r[1], 4)}</span> (<span class="num">${fmt(dB(r[0]), 2)}</span> to <span class="num">${Number.isFinite(r[1]) ? fmt(dB(r[1]), 2) : '∞'}</span> dB)</span>` : '<span class="tag bad">LQG loop unstable</span>') +
+        (st.ltr ? '' : `<span>necessary bound <span class="num">${fmt(D.nec[0], 4)}</span> &lt; <i>m</i> &lt; <span class="num">${fmt(D.nec[1], 4)}</span></span>`)
+      );
+      pn.redraw(); pg.redraw();
+    }
+    update();
+  })();
+
+  /* ---------------- Visual 12.5: balanced truncation ---------------- */
+  (function () {
+    const st = { sys: 'rand', seed: 3, r: 4 };
+    function sqrtFactor(W) { const e = M.eigSym(W), n = W.length, L = M.zeros(n, n); for (let j = 0; j < n; j++) { const s = Math.sqrt(Math.max(e.values[j], 0)); for (let i = 0; i < n; i++) L[i][j] = e.vectors[i][j] * s; } return L; }
+    function randSys(n, seed) {
+      const u = M.rng(seed + 7), Dm = M.zeros(n, n); let i = 0;
+      while (i < n) {
+        if (i < n - 1 && u() < 0.6) { const sg = -Math.pow(10, -1 + 1.4 * u()), om = Math.pow(10, -0.5 + 1.2 * u()); Dm[i][i] = sg; Dm[i + 1][i + 1] = sg; Dm[i][i + 1] = om; Dm[i + 1][i] = -om; i += 2; }
+        else { Dm[i][i] = -Math.pow(10, -1 + 1.6 * u()); i++; }
+      }
+      const Q = M.qr(M.randMat(n, n, seed + 11)).Q, Sm = M.add(M.eye(n), M.scale(M.randMat(n, n, seed + 13), 0.3));
+      const A = M.mul(M.mul(Sm, M.mul(M.mul(Q, Dm), M.T(Q))), M.inv(Sm));
+      return { A, B: M.randMat(n, 1, seed + 17), C: M.randMat(1, n, seed + 19) };
+    }
+    function ladder(n, far) {
+      const A = M.zeros(n, n); for (let i = 0; i < n; i++) { A[i][i] = -2; if (i > 0) A[i][i - 1] = 1; if (i < n - 1) A[i][i + 1] = 1; }
+      const B = M.zeros(n, 1); B[0][0] = 1; const C = M.zeros(1, n); C[0][far ? n - 1 : 0] = 1; return { A, B, C };
+    }
+    const W = S.logspace(-3, 3, 420);
+    let sysd = null;
+    function build() {
+      let s = st.sys === 'rand' ? randSys(12, st.seed) : ladder(10, st.sys === 'far');
+      // normalize the random system so that its peak gain is about 1
+      if (st.sys === 'rand') { let pk = 0; W.forEach(w => { const g = S.freq(s.A, s.B, s.C, 0, w); pk = Math.max(pk, Math.hypot(g.re, g.im)); }); s.C = M.scale(s.C, 1 / pk); }
+      const { A, B, C } = s, n = A.length;
+      const Wc = S.gramC(A, B), Wo = S.gramO(A, C), Lc = sqrtFactor(Wc), Lo = sqrtFactor(Wo);
+      const sv = M.svd(M.mul(M.T(Lo), Lc));
+      const sig = sv.S;
+      const rmax = Math.max(1, sig.filter(x => x > 1e-8 * sig[0]).length - 1);
+      const G = W.map(w => S.freq(A, B, C, 0, w)), G0 = S.freq(A, B, C, 0, 0);
+      const LoT = M.T(Lo);
+      const trunc = r => {
+        if (r === 0) return { Ar: [], Br: [], Cr: [] };
+        const T1 = M.zeros(r, n), Ti = M.zeros(n, r);
+        for (let i = 0; i < r; i++) { const sc = 1 / Math.sqrt(sig[i]); for (let j = 0; j < n; j++) { let a = 0; for (let k = 0; k < n; k++) a += sv.U[k][i] * LoT[k][j]; T1[i][j] = a * sc; } }
+        for (let j = 0; j < r; j++) { const sc = 1 / Math.sqrt(sig[j]); for (let i = 0; i < n; i++) { let a = 0; for (let k = 0; k < n; k++) a += Lc[i][k] * sv.V[k][j]; Ti[i][j] = a * sc; } }
+        return { Ar: M.mul(M.mul(T1, A), Ti), Br: M.mul(T1, B), Cr: M.mul(C, Ti) };
+      };
+      const errOf = (tr, w) => { const g = S.freq(A, B, C, 0, w), gr = tr.Ar.length ? S.freq(tr.Ar, tr.Br, tr.Cr, 0, w) : { re: 0, im: 0 }; return Math.hypot(g.re - gr.re, g.im - gr.im); };
+      const models = [];
+      for (let r = 0; r <= rmax; r++) {
+        const tr = trunc(r), Gr = tr.Ar.length ? W.map(w => S.freq(tr.Ar, tr.Br, tr.Cr, 0, w)) : W.map(() => ({ re: 0, im: 0 }));
+        const E = G.map((g, i) => Math.hypot(g.re - Gr[i].re, g.im - Gr[i].im));
+        let bi = 0; E.forEach((e, i) => { if (e > E[bi]) bi = i; });
+        // refine the peak, and include zero frequency
+        let a = W[Math.max(0, bi - 1)], b = W[Math.min(W.length - 1, bi + 1)];
+        for (let it = 0; it < 50; it++) { const m1 = a + 0.381966 * (b - a), m2 = a + 0.618034 * (b - a); if (errOf(tr, m1) > errOf(tr, m2)) b = m2; else a = m1; }
+        const e0 = errOf(tr, 0), hinf = Math.max(E[bi], errOf(tr, 0.5 * (a + b)), e0);
+        let tail = 0; for (let j = r; j < n; j++) if (j === r || Math.abs(sig[j] - sig[j - 1]) > 1e-12 * sig[0]) tail += sig[j];
+        const ev = tr.Ar.length ? M.eigvals(tr.Ar) : [];
+        models.push({ r, Gr, E, hinf, bound: 2 * tail, lower: sig[r], stable: ev.every(z => z.re < 0), alpha: ev.length ? Math.max(...ev.map(z => z.re)) : -Infinity });
+      }
+      void G0;
+      sysd = { n, sig, rmax, G, models };
+      if (st.r > rmax) st.r = rmax;
+      rs.input.max = rmax; rs.set(st.r);
+      const lo = Math.pow(10, Math.floor(Math.log10(sig[rmax] / 4))), hiG = Math.max(...G.map(g => Math.hypot(g.re, g.im)));
+      pb.setLimits(null, [Math.max(lo, 1e-12), Math.pow(10, Math.ceil(Math.log10(Math.max(hiG, models[0].bound) * 2)))]);
+      ph.setLimits([0.3, n + 0.7], [Math.max(lo, 1e-12), Math.pow(10, Math.ceil(Math.log10(sig[0] * 3)))]);
+      pe.setLimits([-0.4, rmax + 0.4], [Math.max(lo, 1e-12), Math.pow(10, Math.ceil(Math.log10(models[0].bound * 2)))]);
+    }
+    const pb = new Plot('#bt-bode', { xlim: [1e-3, 1e3], ylim: [1e-6, 10], logx: true, logy: true, frame: true, height: 380, xlabel: 'ω', label: 'Bode magnitudes of the full model, the reduced model and the error' });
+    const ph = new Plot('#bt-hsv', { xlim: [0.3, 12.7], ylim: [1e-6, 10], logy: true, frame: true, height: 200, label: 'Hankel singular values on a logarithmic axis' });
+    const pe = new Plot('#bt-err', { xlim: [-0.4, 11.4], ylim: [1e-6, 10], logy: true, frame: true, height: 200, xlabel: 'order r', label: 'Truncation error against order with upper and lower bounds' });
+    [pb, ph, pe].forEach(p => p.el.insertBefore(p.canvas, p.el.firstChild));
+    const panel = ui.panel('#bt-controls');
+    panel.select({ id: 'bt-sys', label: 'System', value: st.sys, options: [['rand', 'Random stable, order 12'], ['ladder', 'Collocated ladder, order 10'], ['far', 'Ladder, output at the far end']],
+      onChange: v => { st.sys = v; build(); update(); } });
+    const rs = panel.slider({ id: 'bt-r', label: 'Order $r$', min: 0, max: 11, step: 1, value: st.r, digits: 0, onInput: v => { st.r = Math.round(v); update(); } });
+    panel.buttons([{ label: 'New random system', onClick: () => { st.seed += 1; st.sys = 'rand'; document.getElementById('bt-sys').value = 'rand'; build(); update(); } }]);
+    const out = panel.readout({});
+    panel.note(ui.legend([{ color: 'c1', label: '|G|' }, { color: 'c2', label: '|Gᵣ|', kind: 'dash' }, { color: 'c8', label: '|G − Gᵣ|' }, { color: 'c4', label: 'upper bound 2Σσ', kind: 'dash' }, { color: 'muted', label: 'lower bound σᵣ₊₁', kind: 'dash' }]));
+    pb.draw = g => {
+      const md = sysd.models[st.r];
+      g.hline(md.bound, { color: 'c4', width: 1.5, dash: [7, 5] });
+      g.hline(md.lower, { color: 'muted', width: 1.5, dash: [4, 4] });
+      g.path(W.map((w, i) => [w, Math.hypot(sysd.G[i].re, sysd.G[i].im)]), { color: 'c1', width: 2.25 });
+      if (st.r > 0) g.path(W.map((w, i) => [w, Math.max(1e-300, Math.hypot(md.Gr[i].re, md.Gr[i].im))]), { color: 'c2', width: 2, dash: [6, 4] });
+      g.path(W.map((w, i) => [w, Math.max(1e-300, md.E[i])]), { color: 'c8', width: 2 });
+    };
+    ph.draw = g => {
+      const lo = ph.ylim[0];
+      sysd.sig.forEach((s, i) => {
+        if (s <= 0) return; const x = i + 1, kept = i < st.r;
+        g.poly([[x - 0.32, lo], [x + 0.32, lo], [x + 0.32, s], [x - 0.32, s]], { fill: kept ? 'c1' : 'muted', fillAlpha: kept ? 0.8 : 0.4, color: kept ? 'c1' : 'muted', width: 1 });
+      });
+    };
+    pe.draw = g => {
+      const ms = sysd.models;
+      g.vline(st.r, { color: 'muted', width: 1, dash: [3, 3] });
+      g.path(ms.map(m => [m.r, m.bound]), { color: 'c4', width: 1.75, dash: [6, 4] });
+      g.path(ms.map(m => [m.r, m.lower]), { color: 'muted', width: 1.75, dash: [4, 4] });
+      g.path(ms.map(m => [m.r, m.hinf]), { color: 'c8', width: 2 });
+      ms.forEach(m => g.dot([m.r, m.hinf], { color: 'c8', r: m.r === st.r ? 5 : 3 }));
+    };
+    function update() {
+      const md = sysd.models[st.r];
+      const ok = md.hinf >= md.lower * (1 - 1e-6) && md.hinf <= md.bound * (1 + 1e-6);
+      out.set(
+        `<span><i>r</i> <span class="num">${st.r}</span> of <i>n</i> <span class="num">${sysd.n}</span></span>` +
+        `<span><i>σ</i><sub>r+1</sub> <span class="num">${fmtSig(md.lower, 3)}</span></span>` +
+        `<span>‖<i>G</i> − <i>G</i><sub>r</sub>‖<sub>∞</sub> <span class="num">${fmtSig(md.hinf, 3)}</span></span>` +
+        `<span>2 Σ<sub>j&gt;r</sub> <i>σ</i><sub>j</sub> <span class="num">${fmtSig(md.bound, 3)}</span></span>` +
+        (ok ? '<span class="tag good">between the bounds</span>' : '<span class="tag bad">outside the bounds (rounding)</span>') +
+        (st.r > 0 ? (md.stable ? `<span class="tag good">reduced model stable</span><span>max Re <i>λ</i>(<i>A</i><sub>11</sub>) <span class="num">${fmtSig(md.alpha, 3)}</span></span>` : '<span class="tag bad">reduced model unstable</span>') : '<span>(<i>r</i> = 0: the error is <i>G</i> itself)</span>')
+      );
+      pb.redraw(); ph.redraw(); pe.redraw();
+    }
+    build(); update();
+  })();
+})();
+</script>
+</body>
+</html>

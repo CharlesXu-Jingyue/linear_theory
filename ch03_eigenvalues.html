@@ -1,0 +1,1047 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>3 Eigenvalues and Jordan form · Linear Theory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap">
+<link rel="stylesheet" href="assets/lt.css">
+<script src="assets/toc.js"></script>
+<script src="assets/lt.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+<style>
+  /* chapter 3: two stacked plots in the side column of Visual 3.3 */
+  #viz-iter .iter-side { display: grid; gap: 14px; min-width: 0; align-content: start; }
+  /* keep the Jordan diagram legible on phones by scrolling it sideways instead of shrinking it */
+  #fig-jordan { overflow-x: auto; }
+  #fig-jordan svg { min-width: 600px; }
+</style>
+</head>
+<body>
+<div class="topbar"><button class="btn" id="lt-menu" type="button" aria-controls="lt-side" aria-expanded="false">Contents</button><span class="topbar-title">3 · Eigenvalues, diagonalization and Jordan form</span></div>
+<div class="shell">
+<nav class="side" id="lt-side" aria-label="Chapters"></nav>
+<main class="page" id="main" data-chapter="3">
+<div class="content">
+
+<header class="ch-head">
+<div class="eyebrow">Part I · Refresher · Chapter 3</div>
+<h1 class="ch-title">Eigenvalues, diagonalization and Jordan form</h1>
+<p class="ch-lead">An eigenvector is a direction that a matrix only stretches. With enough of them the matrix splits into independent scalar modes and its powers can be read off the eigenvalues; without enough, Jordan blocks take over and polynomial factors appear beside the geometric ones. In both cases the spectral radius decides whether $A^k$ decays.</p>
+<p class="ch-meta"><span><b>Prerequisites</b> chapters 1 and 2</span><span><b>Leads to</b> chapters 4, 6, 7, 9 and 13</span><span><b>Visuals</b> 3</span></p>
+<ol class="core-q">
+<li>Which directions does a square matrix map into themselves, and by what factors?</li>
+<li>When does a matrix decouple into independent scalar modes, and what replaces them when it does not?</li>
+<li>What does $A^k$ do as $k \to \infty$, and how fast?</li>
+</ol>
+<details class="notation">
+<summary>Notation introduced in this chapter</summary>
+<div class="tbl-wrap"><table class="tbl">
+<thead><tr><th>Symbol</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>$\lambda$, $v$</td><td>eigenvalue and eigenvector: $Av = \lambda v$ with $v \ne 0$</td></tr>
+<tr><td>$\Lambda(A)$</td><td>spectrum: the set of eigenvalues of $A$</td></tr>
+<tr><td>$p_A(\lambda)$</td><td>characteristic polynomial $\det(\lambda I - A)$</td></tr>
+<tr><td>$E_\lambda$, $G_\lambda$</td><td>eigenspace $\Null(A - \lambda I)$; generalized eigenspace $\Null\big((A - \lambda I)^n\big)$ for $A \in \C^{n\times n}$</td></tr>
+<tr><td>$m_a(\lambda)$, $m_g(\lambda)$</td><td>algebraic multiplicity (as a root of $p_A$); geometric multiplicity $\dim E_\lambda$</td></tr>
+<tr><td>$\tau$, $\Delta$, $D$</td><td>trace, determinant and discriminant $\tau^2/4 - \Delta$ of a $2\times 2$ matrix</td></tr>
+<tr><td>$V$, $\Lambda$</td><td>eigenvector matrix and diagonal eigenvalue matrix in $A = V\Lambda V^{-1}$ ($\Lambda$ without an argument)</td></tr>
+<tr><td>$w_i^*$</td><td>left eigenvectors: the rows of $V^{-1}$, with $w_i^* A = \lambda_i w_i^*$</td></tr>
+<tr><td>$J_k(\lambda)$, $N_k$</td><td>Jordan block $\lambda I_k + N_k$; $N_k$ has ones on the first superdiagonal</td></tr>
+<tr><td>$q_A$</td><td>minimal polynomial of $A$</td></tr>
+<tr><td>$UTU^*$</td><td>Schur form: $U$ unitary, $T$ upper triangular</td></tr>
+<tr><td>$\norm{A}_F$</td><td>Frobenius norm $\big(\sum_{ij}\abs{a_{ij}}^2\big)^{1/2}$</td></tr>
+<tr><td>$\rho(A)$</td><td>spectral radius $\max\{\abs{\lambda} : \lambda \in \Lambda(A)\}$</td></tr>
+<tr><td>$\kappa(V)$</td><td>condition number $\norm{V}\norm{V^{-1}}$ of an eigenvector matrix, in the induced 2-norm $\norm{M} = \max_{x \ne 0}\norm{Mx}/\norm{x}$</td></tr>
+</tbody>
+</table></div>
+</details>
+</header>
+
+<section class="sec" id="s-eig">
+<h2>Eigenvalues and eigenvectors</h2>
+
+<div class="blk prob"><p>Find the directions that a square matrix maps into themselves, and the factor by which it stretches each one.</p></div>
+
+<div class="blk def" id="def-eig" data-name="Eigenvalue, eigenvector, spectrum">
+<p>Let $A \in \C^{n\times n}$, where $\C$ is the complex numbers. A scalar $\lambda \in \C$ is an <dfn>eigenvalue</dfn> of $A$ if $Av = \lambda v$ for some nonzero $v \in \C^n$, called an <dfn>eigenvector</dfn> for $\lambda$. The <dfn>eigenspace</dfn> $E_\lambda = \Null(A - \lambda I)$, with $\Null$ the null space and $I$ the identity, consists of the eigenvectors for $\lambda$ together with $0$. The <dfn>spectrum</dfn> $\Lambda(A)$ is the set of eigenvalues. A real matrix is treated as a complex one, so its eigenvalues may be nonreal.</p>
+</div>
+
+<div class="blk thm" id="thm-charpoly" data-name="Characteristic polynomial">
+<p>$\lambda$ is an eigenvalue of $A$ if and only if $\det(\lambda I - A) = 0$, where $\det$ is the determinant. The <dfn>characteristic polynomial</dfn> $p_A(\lambda) = \det(\lambda I - A)$ is monic of degree $n$, so by the fundamental theorem of algebra</p>
+<div class="eq">$$p_A(\lambda) = \prod_{i=1}^n (\lambda - \lambda_i)$$</div>
+<p>for complex numbers $\lambda_1, \dots, \lambda_n$, the eigenvalues listed with multiplicity. If $A$ is real, its nonreal eigenvalues come in conjugate pairs $\lambda$, $\bar\lambda$ with conjugate eigenvectors $v$, $\bar v$, where the bar is complex conjugation.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> $Av = \lambda v$ with $v \ne 0$ says $\Null(\lambda I - A) \ne \{0\}$, which holds exactly when $\lambda I - A$ is singular, that is, when its determinant vanishes (<a href="ch01_linear_maps.html#thm-det">the determinant theorem</a>, chapter 1). In the permutation expansion of $\det(\lambda I - A)$, every term is a product of $n$ entries, one from each column, and only the product of the diagonal entries $\prod_i(\lambda - a_{ii})$ has degree $n$ in $\lambda$, with leading term $\lambda^n$. For real $A$, conjugating $Av = \lambda v$ gives $A\bar v = \bar\lambda\bar v$; moreover $p_A$ has real coefficients, so conjugating its factorization gives $p_A(\lambda) = \prod_i(\lambda - \bar\lambda_i)$, and by uniqueness of the factorization the list $\lambda_1, \dots, \lambda_n$ is closed under conjugation, multiplicities included.</p>
+</div>
+
+<div class="blk prop" id="prop-trdet" data-name="Trace and determinant">
+<p>$\tr A = \sum_i \lambda_i$ and $\det A = \prod_i \lambda_i$, where $\tr A = \sum_i a_{ii}$ is the trace.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Expanding the product, and evaluating at $\lambda = 0$,</p>
+<div class="eq">$$p_A(\lambda) = \lambda^n - \Big(\sum_i \lambda_i\Big)\lambda^{n-1} + \dots + (-1)^n\prod_i \lambda_i, \qquad p_A(0) = \det(-A) = (-1)^n\det A.$$</div>
+<p>This gives the determinant. A permutation other than the identity moves at least two indices, so its term in the expansion misses at least two diagonal factors and has degree at most $n - 2$; hence the coefficient of $\lambda^{n-1}$ comes from $\prod_i(\lambda - a_{ii})$ alone and equals $-\tr A$.</p>
+</div>
+
+<div class="blk probe">
+<p>The gallery of plane maps from chapter 1, with $0 &lt; \theta &lt; \pi$ an angle, $s \ne 0$ a shear factor and $u, v \in \R^n$ nonzero ($\R$ the real numbers). The rotation $R_\theta$ has $p(\lambda) = \lambda^2 - 2\cos\theta\,\lambda + 1$, with roots $\cos\theta \pm i\sin\theta = e^{\pm i\theta}$, where $i$ is the imaginary unit (engineering texts write $j$); indeed $R_\theta(1, -i)^\T = e^{i\theta}(1, -i)^\T$.</p>
+</div>
+<div class="tbl-wrap"><table class="tbl">
+<thead><tr><th>Map</th><th>Matrix</th><th>Eigenvalues</th><th>Eigenvectors</th><th>Comment</th></tr></thead>
+<tbody>
+<tr><td>Rotation</td><td>$R_\theta = \begin{bmatrix}\cos\theta & -\sin\theta\\ \sin\theta & \cos\theta\end{bmatrix}$</td><td>$e^{\pm i\theta}$</td><td>$(1, \mp i)^\T$</td><td>no real eigendirection</td></tr>
+<tr><td>Shear</td><td>$\begin{bmatrix}1 & s\\ 0 & 1\end{bmatrix}$</td><td>$1, 1$</td><td>only multiples of $e_1$</td><td>fewer than $n$ independent eigenvectors</td></tr>
+<tr><td>Scaling</td><td>$\diag(\lambda_1, \lambda_2)$</td><td>$\lambda_1, \lambda_2$</td><td>$e_1$, $e_2$</td><td>every vector if $\lambda_1 = \lambda_2$</td></tr>
+<tr><td>Reflection</td><td>$\begin{bmatrix}0 & 1\\ 1 & 0\end{bmatrix}$</td><td>$1, -1$</td><td>$(1, 1)^\T$, $(1, -1)^\T$</td><td>mirror line and its normal</td></tr>
+<tr><td>Projector</td><td>$P^2 = P$</td><td>$1$ ($r = \rank P$ times), $0$ ($n - r$ times)</td><td>nonzero vectors of $\Range(P)$ and of $\Null(P)$</td><td>any idempotent: $P = S\begin{bmatrix}I_r & 0\\ 0 & 0\end{bmatrix}S^{-1}$ with $S$ invertible (<a href="ch02_least_squares.html#prop-idempotent">chapter 2</a>)</td></tr>
+<tr><td>Rank one</td><td>$uv^\T$</td><td>$v^\T u$; $0$ ($n - 1$ times) (<a class="xref" href="#cor-abba"></a>)</td><td>$u$; every nonzero vector of $v^\perp$</td><td>for $n \ge 2$: diagonalizable if and only if $v^\T u \ne 0$ (<a class="xref" href="#prop-rankone"></a>)</td></tr>
+</tbody>
+</table></div>
+<p>Here $e_k$ is the $k$-th standard basis vector, $\Range$ the range, $\rank$ the rank (the dimension of the range), $I_r$ the $r\times r$ identity and $v^\perp$ the orthogonal complement of $v$. Two lessons, from the rotation and the shear: a real matrix may have no real eigenvalue, and an $n\times n$ matrix can have fewer than $n$ independent eigenvectors.</p>
+
+<div class="blk prop" id="prop-similar" data-name="Similarity invariants">
+<p>If $B = S^{-1}AS$ with $S$ invertible, then $p_B = p_A$. Hence similar matrices have the same eigenvalues with the same multiplicities, the same trace and the same determinant, and $v$ is an eigenvector of $A$ exactly when $S^{-1}v$ is an eigenvector of $B$ for the same eigenvalue. Also $\rank(B - \lambda I)^k = \rank(A - \lambda I)^k$ for every $\lambda \in \C$ and every $k \ge 1$; in particular, the eigenspaces of $A$ and $B$ for each eigenvalue have the same dimension. Moreover, if $Av = \lambda v$ then $f(A)v = f(\lambda)v$ for every polynomial $f$, and $A^{-1}v = \lambda^{-1}v$ when $A$ is invertible.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> By multiplicativity of the determinant,</p>
+<div class="eq">$$\det(\lambda I - S^{-1}AS) = \det\big(S^{-1}(\lambda I - A)S\big) = \det(\lambda I - A),$$</div>
+<p>and $B(S^{-1}v) = S^{-1}Av$. Next, $(B - \lambda I)^k = S^{-1}(A - \lambda I)^kS$, and for every square matrix $M$, $\Range(S^{-1}MS) = S^{-1}\Range(M)$ because $S$ is onto, while $S^{-1}$ is injective; so $S^{-1}MS$ and $M$ have the same rank, and the eigenspace dimensions $n - \rank(A - \lambda I)$ agree by <a href="ch01_linear_maps.html#thm-rank-nullity">rank–nullity</a> (chapter 1). From $Av = \lambda v$, induction gives $A^kv = \lambda^kv$, and linear combinations give $f(A)v = f(\lambda)v$; if $A$ is invertible then $\lambda \ne 0$ and applying $A^{-1}$ to $Av = \lambda v$ gives the last claim.</p>
+</div>
+
+<div class="blk cex" id="cex-sum">
+<p>Eigenvalues neither add nor multiply. $A = \begin{bmatrix}0 & 1\\ 0 & 0\end{bmatrix}$ and $B = \begin{bmatrix}0 & 0\\ 1 & 0\end{bmatrix}$ both have spectrum $\{0\}$, yet $A + B = \begin{bmatrix}0 & 1\\ 1 & 0\end{bmatrix}$ has spectrum $\{1, -1\}$ and $AB = \begin{bmatrix}1 & 0\\ 0 & 0\end{bmatrix}$ has spectrum $\{1, 0\}$. For commuting matrices, in contrast, the eigenvalues of $A + B$ and of $AB$ are sums and products of eigenvalues of $A$ and of $B$ under a suitable pairing (<a class="xref" href="#prop-commute"></a>).</p>
+</div>
+
+<div class="blk lem" id="lem-blocktri" data-name="Block triangular matrices">
+<p>Let $M = \begin{bmatrix}M_{11} & M_{12}\\ 0 & M_{22}\end{bmatrix}$ with square diagonal blocks $M_{11}$ and $M_{22}$. Then $\det M = \det M_{11}\,\det M_{22}$ and $p_M = p_{M_{11}}\,p_{M_{22}}$, and the same holds for block lower triangular $M$. In particular, the eigenvalues of a triangular matrix, listed with multiplicity, are its diagonal entries.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Factor $M = \begin{bmatrix}I & 0\\ 0 & M_{22}\end{bmatrix}\begin{bmatrix}M_{11} & M_{12}\\ 0 & I\end{bmatrix}$ and use multiplicativity of the determinant (<a href="ch01_linear_maps.html#thm-det">chapter 1</a>). In the permutation expansion of the first factor, a nonzero term must fix every index of the identity block, because those rows have a single nonzero entry, on the diagonal; so the expansion reduces to that of $\det M_{22}$. Likewise the second factor has determinant $\det M_{11}$. Applied to $\lambda I - M = \begin{bmatrix}\lambda I - M_{11} & -M_{12}\\ 0 & \lambda I - M_{22}\end{bmatrix}$ this gives $p_M = p_{M_{11}}p_{M_{22}}$; transposition, which leaves determinants unchanged, handles the lower triangular case; and splitting off one diagonal entry at a time gives $p_T(\lambda) = \prod_i(\lambda - t_{ii})$ for a triangular $T$.</p>
+</div>
+
+<div class="blk thm" id="thm-abba" data-name="AB and BA">
+<p>For $A \in \C^{m\times n}$ and $B \in \C^{n\times m}$,</p>
+<div class="eq">$$\lambda^n\,p_{AB}(\lambda) = \lambda^m\,p_{BA}(\lambda).$$</div>
+<p>So $AB$ and $BA$ have the same nonzero eigenvalues with the same algebraic multiplicities, and $p_{AB} = p_{BA}$ when $m = n$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> With $S = \begin{bmatrix}I_m & A\\ 0 & I_n\end{bmatrix}$, whose inverse is $\begin{bmatrix}I_m & -A\\ 0 & I_n\end{bmatrix}$, block multiplication gives</p>
+<div class="eq">$$S^{-1}\begin{bmatrix}AB & 0\\ B & 0\end{bmatrix}S = \begin{bmatrix}0 & 0\\ B & BA\end{bmatrix}.$$</div>
+<p>Both block matrices are block lower triangular, so by <a class="xref" href="#prop-similar"></a> and <a class="xref" href="#lem-blocktri"></a> their common characteristic polynomial is $p_{AB}(\lambda)\,\lambda^n = \lambda^m\,p_{BA}(\lambda)$.</p>
+</div>
+
+<div class="blk cor" id="cor-abba" data-name="Gram products and rank-one matrices">
+<p>(i) For $A \in \C^{m\times n}$, with $A^*$ its conjugate transpose, $A^*A$ and $AA^*$ have the same nonzero eigenvalues with the same algebraic multiplicities; for real $A$ these are $A^\T A$ and $AA^\T$. (ii) For $u, v \in \C^n$, $p_{uv^\T}(\lambda) = \lambda^{n-1}(\lambda - v^\T u)$: the eigenvalues of $uv^\T$ are $v^\T u$ and $0$, the latter repeated $n - 1$ times.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Apply <a class="xref" href="#thm-abba"></a> to the pair $A$, $A^*$, and to the pair $u \in \C^{n\times 1}$, $v^\T \in \C^{1\times n}$, for which it gives $\lambda\,p_{uv^\T}(\lambda) = \lambda^n\,p_{v^\T u}(\lambda) = \lambda^n(\lambda - v^\T u)$.</p>
+</div>
+<p>In <a href="ch04_svd.html#thm-svd">chapter 4</a> the square roots of the eigenvalues of $A^*A$ are the singular values of $A$, so the nonzero eigenvalues in (i) are the squared nonzero singular values.</p>
+
+<div class="blk cex" id="cex-abba">
+<p>$AB$ and $BA$ need not be similar. With $A = \begin{bmatrix}1 & 0\\ 0 & 0\end{bmatrix}$ and $B = \begin{bmatrix}0 & 1\\ 0 & 0\end{bmatrix}$, $AB = \begin{bmatrix}0 & 1\\ 0 & 0\end{bmatrix} \ne 0$ while $BA = 0$. Both have characteristic polynomial $\lambda^2$, but only the zero matrix is similar to the zero matrix. The difference sits in the eigenvalue $0$: $\Null(AB) = \spn(e_1)$ is one-dimensional, while $\Null(BA) = \C^2$.</p>
+</div>
+</section>
+
+<section class="sec" id="s-2x2">
+<h2>The $2\times 2$ anatomy</h2>
+
+<div class="blk prob"><p>Read the whole eigenstructure of a real $2\times 2$ matrix from two numbers.</p></div>
+
+<div class="blk thm" id="thm-2x2" data-name="Eigenvalues of a $2\times 2$ matrix">
+<p>Let $A = \begin{bmatrix}a & b\\ c & d\end{bmatrix}$ be real, with trace $\tau = a + d$ and determinant $\Delta = ad - bc$. Then $p_A(\lambda) = \lambda^2 - \tau\lambda + \Delta$, and</p>
+<div class="eq">$$\lambda_\pm = \frac{\tau}{2} \pm \sqrt{D},\qquad D = \frac{\tau^2}{4} - \Delta = \frac{(a - d)^2}{4} + bc.$$</div>
+<p>If $D &gt; 0$ the eigenvalues are real and distinct; if $D = 0$ there is one real eigenvalue $\tau/2$ of algebraic multiplicity two; if $D &lt; 0$ they are the conjugate pair $\tau/2 \pm i\sqrt{-D}$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Expand the determinant and simplify the discriminant:</p>
+<div class="eq">$$\det(\lambda I - A) = (\lambda - a)(\lambda - d) - bc = \lambda^2 - \tau\lambda + \Delta,\qquad \frac{\tau^2}{4} - \Delta = \frac{(a + d)^2}{4} - ad + bc = \frac{(a - d)^2}{4} + bc.$$</div>
+<p>The quadratic formula gives the roots.</p>
+</div>
+
+<div class="blk cor" id="cor-signs" data-name="Signs of the eigenvalues">
+<p>Let $A \in \R^{2\times 2}$ have trace $\tau$, determinant $\Delta$, discriminant $D = \tau^2/4 - \Delta$ and eigenvalues $\lambda_\pm = \tau/2 \pm \sqrt D$. (i) If $\Delta &lt; 0$, then $D &gt; 0$ and $\lambda_- &lt; 0 &lt; \lambda_+$. (ii) If $\Delta &gt; 0$ and $D \ge 0$, both eigenvalues are real, nonzero and of the sign of $\tau$. (iii) If $\Delta = 0$, the eigenvalues are $0$ and $\tau$. (iv) Both eigenvalues have negative real part if and only if $\tau &lt; 0$ and $\Delta &gt; 0$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> By <a class="xref" href="#prop-trdet"></a>, $\lambda_+ + \lambda_- = \tau$ and $\lambda_+\lambda_- = \Delta$. (i) $D = \tau^2/4 - \Delta &gt; 0$, so the eigenvalues are real, and their product is negative. (ii) They are real because $D \ge 0$, nonzero and of one sign because their product is positive, and their sum is $\tau$. (iii) $p_A(\lambda) = \lambda(\lambda - \tau)$. (iv) If $D &lt; 0$, both eigenvalues have real part $\tau/2$, and $\Delta = \lambda_+\bar\lambda_+ = \abs{\lambda_+}^2 &gt; 0$ holds automatically. If $D \ge 0$, two real numbers are both negative exactly when their sum is negative and their product positive.</p>
+</div>
+
+<div class="blk prop" id="prop-crossform" data-name="Eigendirections as zeros of a quadratic form">
+<p>For $x = (x_1, x_2)^\T \in \R^2$,</p>
+<div class="eq">$$\det\begin{bmatrix}x & Ax\end{bmatrix} = c\,x_1^2 + (d - a)\,x_1x_2 - b\,x_2^2,$$</div>
+<p>which vanishes for $x \ne 0$ exactly when $Ax$ is parallel to $x$, that is, when $x$ spans a real eigendirection. Unless $A$ is a multiple of $I$ (when the form vanishes identically), there are two real eigendirections if $D &gt; 0$, and the form changes sign across each of them; exactly one if $D = 0$, and the form has the same sign on both sides of it; and none if $D &lt; 0$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Expand: $x_1(cx_1 + dx_2) - x_2(ax_1 + bx_2)$. The determinant of two vectors vanishes exactly when they are dependent, and $x \ne 0$. A nonzero binary quadratic form $\alpha x_1^2 + \beta x_1x_2 + \gamma x_2^2$ with $\beta^2 - 4\alpha\gamma &gt; 0$ is a product of two non-proportional real linear forms, so it vanishes on two lines and changes sign across each; with $\beta^2 - 4\alpha\gamma = 0$ it is a nonzero multiple of the square of one linear form, so it vanishes on one line without changing sign; with $\beta^2 - 4\alpha\gamma &lt; 0$ it vanishes only at the origin. Here $\beta^2 - 4\alpha\gamma = (d - a)^2 + 4bc = 4D$. The form vanishes identically exactly when $b = c = 0$ and $a = d$.</p>
+</div>
+
+<div class="blk pattern">
+<p>The taxonomy of real $2\times 2$ matrices by the two invariants $\tau$ and $\Delta$; each row combines <a class="xref" href="#thm-2x2"></a>, <a class="xref" href="#cor-signs"></a> and <a class="xref" href="#prop-crossform"></a>:</p>
+</div>
+<div class="tbl-wrap"><table class="tbl">
+<thead><tr><th>Case</th><th>Condition</th><th>Eigenvalues</th><th>Real eigendirections</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td>Real, same sign</td><td>$D &gt; 0$, $\Delta &gt; 0$</td><td>distinct, sign of $\tau$</td><td>two</td><td>$\begin{bmatrix}1.5 & 0.5\\ 0.5 & 1.5\end{bmatrix}$: $2$, $1$</td></tr>
+<tr><td>Real, opposite signs</td><td>$\Delta &lt; 0$ (forces $D &gt; 0$)</td><td>$\lambda_- &lt; 0 &lt; \lambda_+$</td><td>two</td><td>reflection: $1$, $-1$</td></tr>
+<tr><td>One zero eigenvalue</td><td>$\Delta = 0$, $\tau \ne 0$</td><td>$0$ and $\tau$</td><td>two</td><td>projector: $1$, $0$</td></tr>
+<tr><td>Repeated, scalar</td><td>$A = (\tau/2) I$</td><td>$\tau/2$ twice</td><td>every direction</td><td>$I$</td></tr>
+<tr><td>Repeated, defective</td><td>$D = 0$, $A \ne (\tau/2)I$</td><td>$\tau/2$ twice</td><td>one</td><td>shear; $\begin{bmatrix}2 & 1\\ -1 & 0\end{bmatrix}$: $1$, $1$</td></tr>
+<tr><td>Complex pair</td><td>$D &lt; 0$</td><td>$\tau/2 \pm i\sqrt{-D}$</td><td>none</td><td>rotation: $e^{\pm i\theta}$</td></tr>
+</tbody>
+</table></div>
+
+<div class="blk prop" id="prop-realform" data-name="Real form of a complex pair">
+<p>Let $A \in \R^{n\times n}$ have an eigenvalue $\lambda = \alpha + i\beta$ with $\beta \ne 0$, and let $v = u + iw$ with $u, w \in \R^n$ be an eigenvector for $\lambda$. Then $u$ and $w$ are linearly independent, and $Aw = \alpha w + \beta u$, $Au = -\beta w + \alpha u$, so $A$ maps the real plane $\spn(w, u)$ into itself. For $n = 2$, with $S = \begin{bmatrix}w & u\end{bmatrix}$,</p>
+<div class="eq">$$S^{-1}AS = \begin{bmatrix}\alpha & -\beta\\ \beta & \alpha\end{bmatrix} = r\,R_\phi,$$</div>
+<p>where $r = \sqrt{\alpha^2 + \beta^2} = \abs{\lambda}$ and $\phi$ is the argument of $\lambda$. So a real $2\times 2$ matrix with nonreal eigenvalues is a rotation by $\phi$ combined with a scaling by $r$, seen in a skewed basis.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Separating real and imaginary parts of $A(u + iw) = (\alpha + i\beta)(u + iw)$ gives $Aw = \alpha w + \beta u$ and $Au = -\beta w + \alpha u$, which for $n = 2$ are the two columns of the displayed matrix in the basis $(w, u)$. If $u$ and $w$ were dependent, $v$ would be a complex multiple of a real vector $y \ne 0$, and $Ay = \lambda y$ would have a real left side and a nonreal right side.</p>
+</div>
+
+<div class="blk rem">
+<p>In <a href="ch07_autonomous_systems.html#s-planar">chapter 7</a> the same two numbers organize the flow of $\dot x = Ax$, where $\dot x$ is the time derivative of the state $x(t)$: the parabola $\Delta = \tau^2/4$, where $D = 0$, separates real from complex eigenvalues in the trace–determinant plane (<a class="xref" href="#thm-2x2"></a>), and the quadrant $\tau &lt; 0 &lt; \Delta$ is exactly where both eigenvalues have negative real part (<a class="xref" href="#cor-signs"></a>). For iteration $x_{k+1} = Ax_k$ the corresponding region is a triangle (<a class="xref" href="#prop-triangle"></a>).</p>
+</div>
+
+<figure class="viz" id="viz-hunt">
+<figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">Hunting for eigenvectors</span><span class="viz-sub">Left: a unit vector $x$ (drag it around the dashed unit circle), its image $Ax$, and the image of the whole circle, an ellipse (a segment or a point when $A$ is singular, as for the projection; <a href="ch04_svd.html#prop-ellipsoid">chapter 4</a>). The grey handles are the columns $Ae_1$ and $Ae_2$ and can be dragged. Right: the signed angle from $x$ to $Ax$ as $x$ goes once around; green lines mark eigendirections.</span></figcaption>
+<div class="viz-plots cols-2">
+<div class="plot" id="hunt-plane"><div class="plot-cap">The plane: $x$, $Ax$ and the image of the unit circle</div></div>
+<div class="plot" id="hunt-angle"><div class="plot-cap">Signed angle from $x$ to $Ax$ versus the angle $\theta$ of $x$</div></div>
+</div>
+<div class="viz-controls" id="hunt-controls"></div>
+<div class="viz-notes">
+<div><h5>Try this</h5><ol>
+<li>Choose <i>Symmetric</i> and press <i>Play</i>. The curve crosses zero four times, at two perpendicular eigendirections and their opposites, and $Ax$ is then a multiple of $x$ (by $2$ and by $1$).</li>
+<li>Choose <i>Rotation</i>: the curve is flat at $\pi/3$ and never reaches zero. Choose <i>Shear</i>: it touches zero without crossing, at the single eigendirection.</li>
+<li>Choose <i>Negative eigenvalue</i> or <i>Reflection</i>: one eigendirection appears as a crossing of zero, the other as a jump through $\pm\pi$, where $Ax$ points opposite to $x$.</li>
+<li>From <i>Symmetric</i>, drag $Ae_2$ slowly to the left. The two crossings approach, merge into a touch when $D = 0$, and vanish when $D &lt; 0$.</li>
+</ol></div>
+<div><h5>What to notice</h5><p>The sine of the plotted angle has the sign of the quadratic form $\det\begin{bmatrix}x & Ax\end{bmatrix}$ of <a class="xref" href="#prop-crossform"></a>, so real eigendirections are the zeros of the curve (for a negative eigenvalue, its jumps through $\pm\pi$; for the eigenvalue $0$, the gap where $Ax = 0$), and the proposition decides their number and shape by the sign of $D$: crossings for $D &gt; 0$, a touch without crossing for the defective case $D = 0$, nothing for $D &lt; 0$. The eigendirections are also where the ellipse's radius vector $Ax$ lines up with $x$. For symmetric $A$ they lie along the ellipse's axes (<a href="ch04_svd.html#thm-spectral">the spectral theorem</a>, chapter 4); in general they do not, as the preset <i>Non-orthogonal eigenvectors</i> shows.</p></div>
+</div>
+</figure>
+</section>
+
+<section class="sec" id="s-diag">
+<h2>Diagonalization and modes</h2>
+
+<div class="blk prob"><p>When does $A \in \C^{n\times n}$ decouple into $n$ independent scalar modes, that is, when does $\C^n$ have a basis of eigenvectors of $A$?</p></div>
+
+<div class="blk thm" id="thm-indep" data-name="Distinct eigenvalues give independent eigenvectors">
+<p>Eigenvectors $v_1, \dots, v_k$ for distinct eigenvalues $\lambda_1, \dots, \lambda_k$ are linearly independent.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Suppose not, and let $j$ be the smallest index with $v_j \in \spn(v_1, \dots, v_{j-1})$, say $v_j = \sum_{i&lt;j} c_iv_i$; then $v_1, \dots, v_{j-1}$ are independent. Applying $A$ gives $\lambda_jv_j = \sum_{i&lt;j} c_i\lambda_iv_i$, and subtracting $\lambda_j$ times the first relation gives $0 = \sum_{i&lt;j} c_i(\lambda_i - \lambda_j)v_i$. Independence forces $c_i(\lambda_i - \lambda_j) = 0$, so every $c_i = 0$ because the eigenvalues are distinct. Then $v_j = 0$, which is impossible for an eigenvector.</p>
+</div>
+
+<div class="blk def" id="def-mult" data-name="Multiplicities">
+<p>The <dfn>algebraic multiplicity</dfn> $m_a(\lambda)$ of an eigenvalue is its multiplicity as a root of $p_A$; the <dfn>geometric multiplicity</dfn> is $m_g(\lambda) = \dim E_\lambda$. The matrix $A$ is <dfn>diagonalizable</dfn> if $A = V\Lambda V^{-1}$ with $V$ invertible and $\Lambda = \diag(\lambda_1, \dots, \lambda_n)$ diagonal. Without an argument, $\Lambda$ denotes this diagonal matrix; $\Lambda(A)$ is the spectrum.</p>
+</div>
+
+<div class="blk prop" id="prop-mgma" data-name="Geometric multiplicity never exceeds algebraic">
+<p>For every eigenvalue, $1 \le m_g(\lambda) \le m_a(\lambda)$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Let $g = m_g(\lambda) \ge 1$. Take a basis $v_1, \dots, v_g$ of $E_\lambda$, extend it to a basis of $\C^n$, and let $S$ have these vectors as columns. Then $S^{-1}AS = \begin{bmatrix}\lambda I_g & X\\ 0 & Y\end{bmatrix}$ for some blocks $X$, $Y$, so by <a class="xref" href="#prop-similar"></a> and <a class="xref" href="#lem-blocktri"></a> $p_A(z) = (z - \lambda)^g\,p_Y(z)$, and $(z - \lambda)^g$ divides $p_A$.</p>
+</div>
+
+<div class="blk thm" id="thm-diag" data-name="Criteria for diagonalizability">
+<p>For $A \in \C^{n\times n}$ the following are equivalent: (i) $A$ is diagonalizable; (ii) $\C^n$ has a basis of eigenvectors of $A$; (iii) $m_g(\lambda) = m_a(\lambda)$ for every eigenvalue. In particular, $n$ distinct eigenvalues suffice.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (i) $\Leftrightarrow$ (ii): $AV = V\Lambda$ says that column $j$ of $V$ is an eigenvector for $\Lambda_{jj}$, and $V$ is invertible exactly when its columns form a basis. (ii) $\Leftrightarrow$ (iii): by <a class="xref" href="#thm-indep"></a>, a sum of vectors from eigenspaces of distinct eigenvalues vanishes only if each term does, so bases of the eigenspaces together form an independent list of length $\sum_\lambda m_g(\lambda)$, and eigenvectors span $\C^n$ exactly when this length is $n$. Since $\sum_\lambda m_a(\lambda) = n$ and $m_g \le m_a$ termwise (<a class="xref" href="#prop-mgma"></a>), the length is $n$ exactly when $m_g = m_a$ for every eigenvalue.</p>
+</div>
+
+<div class="blk prop" id="prop-rankone" data-name="Rank-one matrices">
+<p>Let $u, v \in \R^n$ be nonzero, with $n \ge 2$. The eigenvectors of $uv^\T$ for the eigenvalue $0$ are the nonzero vectors of $v^\perp$, so $m_g(0) = n - 1$, and $uv^\T$ is diagonalizable if and only if $v^\T u \ne 0$. If $v^\T u = 0$, then $(uv^\T)^2 = 0$: the matrix is <dfn>nilpotent</dfn>, that is, some power of it vanishes.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> $uv^\T x = (v^\T x)\,u$ vanishes exactly when $v^\T x = 0$, because $u \ne 0$, and this null space of the rank-one row $v^\T$ has dimension $n - 1$ by rank–nullity. By <a class="xref" href="#cor-abba"></a>, if $v^\T u \ne 0$ the eigenvalues are $v^\T u$ with $m_a = 1$ and $0$ with $m_a = n - 1$, so $m_g = m_a$ for both and <a class="xref" href="#thm-diag"></a> applies; if $v^\T u = 0$, then $m_a(0) = n &gt; m_g(0)$. Finally $(uv^\T)^2 = u\,(v^\T u)\,v^\T$.</p>
+</div>
+
+<div class="blk deduce">
+<p>Modes. A nonzero row vector $w^*$ with $w^*A = \lambda w^*$ is a <dfn>left eigenvector</dfn> of $A$ for $\lambda$. In a basis of eigenvectors the recursion $x_{k+1} = Ax_k$ splits into scalar recursions, and the left eigenvectors read off the coordinates.</p>
+</div>
+
+<div class="blk prop" id="prop-modes" data-name="Modal expansion">
+<p>Let $A = V\Lambda V^{-1}$ be diagonalizable, with $V = \begin{bmatrix}v_1 & \cdots & v_n\end{bmatrix}$, and let $w_1^*, \dots, w_n^*$ be the rows of $V^{-1}$. Then (i) $w_i^*v_j = \delta_{ij}$, the Kronecker delta ($1$ if $i = j$ and $0$ otherwise), and $w_i^*A = \lambda_iw_i^*$, so $w_i^*$ is a left eigenvector for $\lambda_i$; (ii) for every $k \ge 0$,</p>
+<div class="eq">$$A^k = V\Lambda^kV^{-1} = \sum_{i=1}^n \lambda_i^k\,v_iw_i^*,\qquad x_k = A^kx_0 = \sum_{i=1}^n (w_i^*x_0)\,\lambda_i^k\,v_i;$$</div>
+<p>(iii) in the coordinates $y = V^{-1}x$ the recursion $x_{k+1} = Ax_k$ becomes the $n$ uncoupled scalar recursions $y_{i,k+1} = \lambda_i\,y_{i,k}$; (iv) $v_iw_i^*$ is the projector onto $\spn(v_i)$ along $\spn\{v_j : j \ne i\}$, in general an oblique one.</p>
+</div>
+<dl class="where">
+<dt>$x_0$, $x_k$</dt><dd>initial state and the state after $k$ steps of $x_{k+1} = Ax_k$</dd>
+<dt>$w_i^*x_0$</dt><dd>the coordinate of $x_0$ along mode $i$, the $i$-th entry of $y_0 = V^{-1}x_0$</dd>
+</dl>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (i) $V^{-1}V = I$ gives $w_i^*v_j = \delta_{ij}$, and $V^{-1}A = \Lambda V^{-1}$, read row by row, gives $w_i^*A = \lambda_iw_i^*$. (ii) In $(V\Lambda V^{-1})^k$ the inner factors $V^{-1}V$ cancel; expanding $V\Lambda^kV^{-1}$ column by row gives the sum, and applying it to $x_0$ gives $x_k$. (iii) $y_{k+1} = V^{-1}Ax_k = \Lambda V^{-1}x_k = \Lambda y_k$. (iv) $(v_iw_i^*)^2 = v_i(w_i^*v_i)w_i^* = v_iw_i^*$, and its range is $\spn(v_i)$. By (i) it annihilates the $n - 1$ independent vectors $v_j$, $j \ne i$, which therefore span its null space, so it projects onto $\spn(v_i)$ along their span (<a href="ch02_least_squares.html#prop-idempotent">chapter 2</a>).</p>
+</div>
+
+<div class="blk prop" id="prop-funcalc" data-name="Functions of a diagonalizable matrix">
+<p>Let $A = V\Lambda V^{-1}$ be diagonalizable, let $f$ be a complex function defined on $\Lambda(A)$, and put $f(\Lambda) = \diag\big(f(\lambda_1), \dots, f(\lambda_n)\big)$. Then $Vf(\Lambda)V^{-1} = p(A)$ for every polynomial $p$ with $p(\lambda) = f(\lambda)$ for all $\lambda \in \Lambda(A)$, and such polynomials exist. Hence $f(A) = Vf(\Lambda)V^{-1}$ depends only on $A$ and on the values of $f$ on $\Lambda(A)$, not on the choice of $V$, and for a polynomial $f$ it is the usual $f(A)$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> The Lagrange polynomial interpolating $f$ at the distinct eigenvalues is such a $p$. Since every $\lambda_i$ lies in $\Lambda(A)$, $f(\Lambda) = p(\Lambda)$, and $Vp(\Lambda)V^{-1} = p(A)$ because $V\Lambda^kV^{-1} = A^k$ for every $k$ (<a class="xref" href="#prop-modes"></a>) and both sides are linear in $p$. The matrix $p(A)$ involves only $A$ and $p$.</p>
+</div>
+<p>Chapter 7 takes $f(\lambda) = e^{\lambda t}$ (<a href="ch07_autonomous_systems.html#thm-modal">the modal expansion of $e^{tA}$</a>).</p>
+
+<div class="blk ex" id="ex-fib" data-name="Fibonacci numbers">
+<p>The recursion $F_{k+1} = F_k + F_{k-1}$, $F_0 = 0$, $F_1 = 1$, is $\begin{bmatrix}F_{k+1}\\ F_k\end{bmatrix} = A^k\begin{bmatrix}1\\ 0\end{bmatrix}$ with $A = \begin{bmatrix}1 & 1\\ 1 & 0\end{bmatrix}$. Its eigenvalues are the roots $\varphi = (1 + \sqrt5)/2$ and $\psi = (1 - \sqrt5)/2$ of $\lambda^2 = \lambda + 1$, with eigenvectors $(\lambda, 1)^\T$. Expanding $(1, 0)^\T = \big((\varphi, 1)^\T - (\psi, 1)^\T\big)/\sqrt5$ gives Binet's formula $F_k = (\varphi^k - \psi^k)/\sqrt5$. Because $\abs{\psi} &lt; 1$, $F_k$ is the integer nearest to $\varphi^k/\sqrt5$, and the ratio $F_{k+1}/F_k$ approaches the dominant eigenvalue $\varphi$ with error shrinking like $\abs{\psi/\varphi}^k \approx 0.38^k$, a first instance of power iteration (<a class="xref" href="#s-powers"></a>).</p>
+</div>
+
+<div class="blk cex" id="cex-notsimilar">
+<p>Equal characteristic polynomials do not imply similarity. $I$ and $\begin{bmatrix}1 & 1\\ 0 & 1\end{bmatrix}$ both have $p(\lambda) = (\lambda - 1)^2$, but $S^{-1}IS = I$ for every invertible $S$, so the only matrix similar to $I$ is $I$ itself. The shear has $m_g(1) = 1 &lt; 2 = m_a(1)$, which no change of basis can repair, since $m_g$ is a similarity invariant (<a class="xref" href="#prop-similar"></a>).</p>
+</div>
+
+<div class="blk pattern">
+<p>What survives a change of basis $A \mapsto S^{-1}AS$, and what does not:</p>
+</div>
+<div class="tbl-wrap"><table class="tbl">
+<thead><tr><th>Quantity</th><th>Similarity invariant?</th><th>Reason or comment</th></tr></thead>
+<tbody>
+<tr><td>$p_A$, eigenvalues with $m_a$, $\tr A$, $\det A$</td><td>yes</td><td><a class="xref" href="#prop-similar"></a>; trace and determinant are coefficients of $p_A$</td></tr>
+<tr><td>$m_g(\lambda)$, $\rank(A - \lambda I)^k$</td><td>yes</td><td><a class="xref" href="#prop-similar"></a>: $(S^{-1}AS - \lambda I)^k = S^{-1}(A - \lambda I)^kS$, and invertible factors preserve rank</td></tr>
+<tr><td>sizes of the Jordan blocks</td><td>yes, and together with the eigenvalues complete</td><td><a class="xref" href="#thm-jordan"></a>, <a class="xref" href="#cor-similar"></a></td></tr>
+<tr><td>eigenvectors</td><td>no</td><td>they move: $v \mapsto S^{-1}v$ (<a class="xref" href="#prop-similar"></a>)</td></tr>
+<tr><td>angles between eigenvectors, the induced 2-norm $\norm{A}$ and the condition number $\kappa(V) = \norm{V}\norm{V^{-1}}$ of an eigenvector matrix, singular values, normality ($A^*A = AA^*$)</td><td>no</td><td>unchanged by unitary similarity $A \mapsto U^*AU$, where $U$ is unitary, $U^*U = I$ (<a class="xref" href="#prop-unitary-inv"></a>), but not by similarity in general: $\diag(1, 2)$ and $\begin{bmatrix}1 & 1\\ 0 & 2\end{bmatrix}$ are similar (<a class="xref" href="#thm-diag"></a>), with orthogonal eigenvectors and with the eigenvectors $e_1$, $(1, 1)^\T$ at $45^\circ$</td></tr>
+</tbody>
+</table></div>
+</section>
+
+<section class="sec" id="s-schur">
+<h2>Schur triangularization</h2>
+
+<div class="blk prob"><p>If $A$ has no eigenvector basis, or only a badly conditioned one, what is the simplest form reachable by a change of basis that preserves lengths and angles?</p></div>
+
+<div class="blk prop" id="prop-unitary-inv" data-name="Unitary similarity invariants">
+<p>Let $A \in \C^{n\times n}$, let $U$ be unitary ($U^*U = I$, where $U^*$ is the conjugate transpose) and $B = U^*AU$. Then (i) $\norm{B} = \norm{A}$ in the induced 2-norm $\norm{M} = \max_{x \ne 0}\norm{Mx}/\norm{x}$; (ii) $B^*B = BB^*$ if and only if $A^*A = AA^*$; (iii) $v \mapsto U^*v$ maps the eigenvectors of $A$ onto those of $B$, for the same eigenvalues, and preserves the inner product $\inner{x}{y} = y^*x$, hence angles between eigenvectors; if $A = V\Lambda V^{-1}$, then $B = (U^*V)\Lambda(U^*V)^{-1}$ and $\kappa(U^*V) = \kappa(V)$; (iv) $A$ and $B$ have the same singular values.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Unitary matrices preserve inner products and lengths (<a href="ch02_least_squares.html#prop-unitary">chapter 2</a>). (i) $\norm{Bx} = \norm{AUx}$, $\norm{Ux} = \norm{x}$, and $Ux$ runs over all unit vectors as $x$ does. (ii) $B^*B - BB^* = U^*(A^*A - AA^*)U$. (iii) $B(U^*v) = U^*Av = \lambda\,U^*v$, every eigenvector $w$ of $B$ is $U^*(Uw)$ with $Uw$ an eigenvector of $A$, and $\inner{U^*x}{U^*y} = \inner{x}{y}$ for all $x, y$. As in (i), $\norm{U^*V} = \norm{V}$ and $\norm{(U^*V)^{-1}} = \norm{V^{-1}U} = \norm{V^{-1}}$. (iv) $B^*B = U^*(A^*A)U$ has the same eigenvalues as $A^*A$ (<a class="xref" href="#prop-similar"></a>), and the singular values are their square roots.</p>
+</div>
+
+<div class="blk thm" id="thm-schur" data-name="Schur triangularization">
+<p>Every $A \in \C^{n\times n}$ can be written $A = UTU^*$ with $U$ unitary and $T$ upper triangular. The diagonal of $T$ holds the eigenvalues of $A$, in any prescribed order.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Induction on $n$; $n = 1$ is trivial. Pick an eigenvalue $\lambda_1$ and a unit eigenvector $u_1$, which exist over $\C$ by <a class="xref" href="#thm-charpoly"></a>, and complete it to a unitary matrix $U_1 = \begin{bmatrix}u_1 & \hat U\end{bmatrix}$ (extend $u_1$ to a basis and apply <a href="ch02_least_squares.html#thm-gs">Gram–Schmidt</a>, chapter 2). Since $Au_1 = \lambda_1u_1$ and $\hat U^*u_1 = 0$,</p>
+<div class="eq">$$U_1^*AU_1 = \begin{bmatrix}\lambda_1 & u_1^*A\hat U\\ 0 & \hat U^*A\hat U\end{bmatrix}.$$</div>
+<p>By induction $\hat U^*A\hat U = U_2T_2U_2^*$ with $U_2$ unitary and $T_2$ upper triangular, and $U = U_1\begin{bmatrix}1 & 0\\ 0 & U_2\end{bmatrix}$ works. The diagonal entries of $T$ are its eigenvalues because $p_T(\lambda) = \prod_i(\lambda - t_{ii})$ (<a class="xref" href="#lem-blocktri"></a>), and $p_T = p_A$ by <a class="xref" href="#prop-similar"></a>; the order is free because $\lambda_1$ was any eigenvalue at each step.</p>
+</div>
+
+<div class="blk cor" id="cor-specmap" data-name="Spectral mapping for polynomials">
+<p>For every polynomial $f$, the eigenvalues of $f(A)$, with algebraic multiplicities, are $f(\lambda_1), \dots, f(\lambda_n)$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> $f(A) = Uf(T)U^*$, and $f(T)$ is upper triangular with diagonal entries $f(t_{ii})$, because sums and products of upper triangular matrices are upper triangular, with the diagonal entries added and multiplied. Apply <a class="xref" href="#prop-similar"></a> and <a class="xref" href="#lem-blocktri"></a>.</p>
+</div>
+
+<div class="blk prop" id="prop-commute" data-name="Commuting matrices">
+<p>If $A, B \in \C^{n\times n}$ commute, $AB = BA$, then there is a unitary $U$ for which $U^*AU$ and $U^*BU$ are both upper triangular. Consequently the eigenvalues $\lambda_i$ of $A$ and $\mu_i$ of $B$, listed with multiplicity, can be numbered so that $A + B$ has the eigenvalues $\lambda_i + \mu_i$ and $AB$ the eigenvalues $\lambda_i\mu_i$, $i = 1, \dots, n$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> If $Ax = \lambda x$, then $A(Bx) = BAx = \lambda Bx$, so $B$ maps the eigenspace $E_\lambda$ of $A$ into itself; in a basis of $E_\lambda$ its restriction is a square matrix, which has an eigenvector by <a class="xref" href="#thm-charpoly"></a>. So $A$ and $B$ have a common unit eigenvector $u_1$, with $Au_1 = \lambda_1u_1$ and $Bu_1 = \mu_1u_1$. Completing it to a unitary $U_1$ as in the proof of <a class="xref" href="#thm-schur"></a> makes $U_1^*AU_1$ and $U_1^*BU_1$ block upper triangular with first columns $\lambda_1e_1$ and $\mu_1e_1$. Their lower right blocks commute, because the two products of these block triangular matrices are equal and have the products of the lower right blocks in that position. Induction on $n$ gives $U$. The diagonals of $U^*(A + B)U$ and of $U^*ABU = (U^*AU)(U^*BU)$ are the sums and the products of the diagonals of $U^*AU$ and $U^*BU$, and <a class="xref" href="#lem-blocktri"></a> reads off the eigenvalues.</p>
+</div>
+<p class="src">For commuting families of any size: Horn and Johnson, <i>Matrix Analysis</i>, 2nd ed., ch. 2.</p>
+
+<div class="blk cor" id="cor-normal" data-name="Normal matrices (preview of chapter 4)">
+<p>$A$ is unitarily diagonalizable, $A = U\Lambda U^*$, if and only if it is <dfn>normal</dfn>: $A^*A = AA^*$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> If $A = U\Lambda U^*$ then $A^*A = U\bar\Lambda\Lambda U^* = AA^*$. Conversely, if $A$ is normal, so is its Schur factor $T = U^*AU$ (<a class="xref" href="#prop-unitary-inv"></a>). Comparing the $(1, 1)$ entries of $T^*T$ and $TT^*$ gives $\abs{t_{11}}^2 = \sum_j \abs{t_{1j}}^2$, so the first row of $T$ vanishes off the diagonal; the remaining block is again triangular and normal, and induction makes $T$ diagonal.</p>
+</div>
+
+<div class="blk prop" id="prop-henrici" data-name="Departure from normality">
+<p>For any Schur form $A = UTU^*$, write $T = \diag(\lambda_1, \dots, \lambda_n) + N$ with $N$ strictly upper triangular. Then</p>
+<div class="eq">$$\norm{N}_F^2 = \norm{A}_F^2 - \sum_{i=1}^n \abs{\lambda_i}^2,$$</div>
+<p>where $\norm{A}_F = \big(\sum_{ij}\abs{a_{ij}}^2\big)^{1/2} = \sqrt{\tr(A^*A)}$ is the Frobenius norm. So $\norm{N}_F$ is the same for all Schur forms of $A$, and it vanishes exactly when $A$ is normal; $N$ itself is not unique unless $A$ is normal.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> The trace is invariant under cyclic permutations of a product, so</p>
+<div class="eq">$$\norm{UTU^*}_F^2 = \tr(UT^*TU^*) = \tr(T^*T) = \norm{T}_F^2,$$</div>
+<p>and $\norm{T}_F^2 = \sum_i\abs{\lambda_i}^2 + \norm{N}_F^2$. If $N = 0$, then $A = U\Lambda U^*$ is normal. Conversely, if $A$ is normal, every Schur factor $T = U^*AU$ is normal (<a class="xref" href="#prop-unitary-inv"></a>), and a normal upper triangular matrix is diagonal, as in the proof of <a class="xref" href="#cor-normal"></a>; so $N = 0$. If $N \ne 0$, pick an entry $n_{ij} \ne 0$ with $i &lt; j$ and let $Q$ be the diagonal matrix with $q_{jj} = -1$ and all other diagonal entries $1$; then $A = (UQ)(QTQ)(UQ)^*$ is another Schur form, and its strictly upper triangular part $QNQ$ has the entry $-n_{ij}$ in place of $n_{ij}$.</p>
+</div>
+<p class="src">The quantity is P. Henrici's departure from normality (<i>Numer. Math.</i> 4, 1962); it reappears in <a href="ch06_nonnormality.html#prop-dep">chapter 6</a> as a measure of how misleading eigenvalues can be.</p>
+
+<div class="blk ex" id="ex-schur2" data-name="The Schur coupling of a $2\times 2$ matrix">
+<p>Let $A \in \R^{2\times 2}$ have real eigenvalues $\lambda_1 \ne \lambda_2$ with unit eigenvectors $v_1$, $v_2$ whose lines meet at the angle $\gamma \in (0, \pi/2]$. Take $u_1 = v_1$ and $u_2$ the unit vector perpendicular to $u_1$ with $v_2 = \cos\gamma\,u_1 + \sin\gamma\,u_2$ (after a sign change of $v_2$ if needed). Since $u_2 = (v_2 - \cos\gamma\,u_1)/\sin\gamma$,</p>
+<div class="eq">$$Au_2 = \frac{\lambda_2v_2 - \lambda_1\cos\gamma\,u_1}{\sin\gamma} = (\lambda_2 - \lambda_1)\cot\gamma\;u_1 + \lambda_2u_2,$$</div>
+<p>so with $U = \begin{bmatrix}u_1 & u_2\end{bmatrix}$</p>
+<div class="eq">$$U^\T AU = \begin{bmatrix}\lambda_1 & t\\ 0 & \lambda_2\end{bmatrix},\qquad \abs{t} = \abs{\lambda_1 - \lambda_2}\cot\gamma.$$</div>
+<p>Fixed eigenvalues with nearly parallel eigenvectors force a large off-diagonal coupling $t$, the departure from normality of <a class="xref" href="#prop-henrici"></a>. Chapters <a href="ch06_nonnormality.html#s-transient">6</a> and <a href="ch13_neural_bridges.html#s-amplify">13</a> show how this feedforward term produces transient growth.</p>
+</div>
+
+<div class="blk thm" id="thm-realschur" data-name="Real Schur form">
+<p>Every $A \in \R^{n\times n}$ can be written $A = QTQ^\T$ with $Q$ real orthogonal and $T$ real block upper triangular, with diagonal blocks of size $1$ (the real eigenvalues) and $2$ (each carrying a complex conjugate pair).</p>
+</div>
+<p class="src">Proof: the same induction, deflating a real two-dimensional invariant subspace (<a class="xref" href="#prop-realform"></a>) for each conjugate pair. Golub and Van Loan, <i>Matrix Computations</i>, 4th ed., ch. 7; Horn and Johnson, ch. 2.</p>
+
+<div class="blk rem">
+<p>Schur forms are what eigenvalue software computes. The QR algorithm applies a sequence of unitary similarities to drive $A$ toward triangular form (Trefethen and Bau, <i>Numerical Linear Algebra</i>, Lectures 24–29), and it is backward stable: the computed triangular factor is an exact Schur factor of a matrix $A + E$ with $\norm{E}$ of the order of the unit roundoff (the relative precision of the floating-point arithmetic) times $\norm{A}$ (Golub and Van Loan, <i>Matrix Computations</i>, 4th ed., ch. 7). Heuristically, unitary changes of basis are safe because they do not amplify perturbations: $\norm{UEU^*} = \norm{E}$ by <a class="xref" href="#prop-unitary-inv"></a>. A perturbation $E$ in the coordinates of a diagonalization $A = V\Lambda V^{-1}$ becomes $VEV^{-1}$ instead, and $\norm{VEV^{-1}} \le \kappa(V)\norm{E}$, where $\kappa(V)$ can be huge (<a class="xref" href="#cex-continuity"></a>).</p>
+</div>
+</section>
+
+<section class="sec" id="s-jordan">
+<h2>When diagonalization fails: Jordan form</h2>
+
+<div class="blk prob"><p>What replaces the eigenvector basis when $m_g(\lambda) &lt; m_a(\lambda)$ for some eigenvalue?</p></div>
+
+<div class="blk probe">
+<p>The smallest defective matrix is $J_2(\lambda) = \begin{bmatrix}\lambda & 1\\ 0 & \lambda\end{bmatrix} = \lambda I + N$ with $N = \begin{bmatrix}0 & 1\\ 0 & 0\end{bmatrix}$. Here $(J_2 - \lambda I)e_1 = 0$ but $(J_2 - \lambda I)e_2 = e_1$: $e_2$ is not an eigenvector, yet $(J_2 - \lambda I)^2e_2 = 0$. Because $\lambda I$ and $N$ commute and $N^2 = 0$, the binomial theorem gives $J_2(\lambda)^k = \lambda^kI + k\lambda^{k-1}N$: beside the geometric term $\lambda^k$ stands $k\lambda^{k-1}$, a polynomial times a geometric factor.</p>
+</div>
+
+<div class="blk def" id="def-jordan" data-name="Generalized eigenvectors, Jordan blocks and chains">
+<p>A nonzero $v$ with $(A - \lambda I)^jv = 0$ for some $j \ge 1$ is a <dfn>generalized eigenvector</dfn> for $\lambda$, and $G_\lambda = \Null\big((A - \lambda I)^n\big)$ is the <dfn>generalized eigenspace</dfn>. The <dfn>Jordan block</dfn> of size $k$ is $J_k(\lambda) = \lambda I_k + N_k$, where $N_k$ has ones on the first superdiagonal and zeros elsewhere. A <dfn>Jordan chain</dfn> of length $k$ is a list $s_1, \dots, s_k$ with $s_1 \ne 0$, $(A - \lambda I)s_1 = 0$ and $(A - \lambda I)s_j = s_{j-1}$ for $j = 2, \dots, k$.</p>
+</div>
+
+<div class="blk lem" id="lem-chain" data-name="Jordan chains">
+<p>Let $A \in \C^{n\times n}$ and $\lambda \in \C$. (i) The vectors $s_1, \dots, s_k$ of a Jordan chain for $\lambda$ are linearly independent and lie in $G_\lambda$; $A$ maps their span into itself and acts there, in the basis $s_1, \dots, s_k$, as $J_k(\lambda)$. (ii) Every generalized eigenvector for $\lambda$ lies in $G_\lambda$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (i) By induction, $(A - \lambda I)^{j-1}s_j = s_1$ and $(A - \lambda I)^js_j = 0$. If $\sum_j c_js_j = 0$ with some $c_j \ne 0$, let $j_0$ be the largest such index; applying $(A - \lambda I)^{j_0 - 1}$ leaves $c_{j_0}s_1 = 0$, which is impossible. Hence $k \le n$ and $(A - \lambda I)^ns_j = 0$ for every $j$. The relations $As_1 = \lambda s_1$ and $As_j = \lambda s_j + s_{j-1}$ are the columns of $J_k(\lambda)$. (ii) The null spaces $\mathcal N_j = \Null\big((A - \lambda I)^j\big)$ increase with $j$, and once $\mathcal N_j = \mathcal N_{j+1}$ they stay constant: if $(A - \lambda I)^{j+2}x = 0$, then $(A - \lambda I)x \in \mathcal N_{j+1} = \mathcal N_j$, so $x \in \mathcal N_{j+1}$. Each strict inclusion raises the dimension, which is at most $n$, so $\mathcal N_j = \mathcal N_n = G_\lambda$ for every $j \ge n$.</p>
+</div>
+
+<div class="blk thm" id="thm-jordan" data-name="Jordan normal form">
+<p>Every $A \in \C^{n\times n}$ is similar to a block-diagonal matrix</p>
+<div class="eq">$$J = S^{-1}AS = \diag\big(J_{k_1}(\mu_1), \dots, J_{k_r}(\mu_r)\big),$$</div>
+<p>where each $\mu_j$ is an eigenvalue of $A$ (repetitions allowed), and $J$ is unique up to the order of the blocks. For each eigenvalue $\lambda$: the number of blocks with $\mu_j = \lambda$ is $m_g(\lambda)$, their sizes add up to $m_a(\lambda) = \dim G_\lambda$, and the number of them of size at least $k$ is $\rank(A - \lambda I)^{k-1} - \rank(A - \lambda I)^k$. Moreover $\C^n$ is the direct sum $\bigoplus_{\lambda \in \Lambda(A)} G_\lambda$ of the generalized eigenspaces, and the columns of $S$ belonging to one block form a Jordan chain.</p>
+</div>
+<p class="src">Existence: Axler, <i>Linear Algebra Done Right</i>, 4th ed., §8A–8C (generalized eigenspace decomposition, then the structure of nilpotent operators); Treil, <i>Linear Algebra Done Wrong</i>, ch. 9, §3–5. Both are free.</p>
+<details class="proof"><summary>Proof of the block count and of uniqueness</summary>
+<p>Rank is a similarity invariant (<a class="xref" href="#prop-similar"></a>), so compute it on $J$. For a block $J_m(\mu)$ with $\mu \ne \lambda$, $J_m(\mu) - \lambda I$ is invertible and contributes $m$ to $\rank(J - \lambda I)^k$ for every $k$. For a block $J_m(\lambda)$, $(J_m(\lambda) - \lambda I)^k = N_m^k$ has ones on the $k$-th superdiagonal, so its rank is $\max(m - k, 0)$, which drops by one from $k - 1$ to $k$ exactly when $m \ge k$. Summing over blocks, $\rank(A - \lambda I)^{k-1} - \rank(A - \lambda I)^k$ counts the $\lambda$-blocks of size at least $k$. These numbers, which depend only on $A$, determine the block sizes, which proves uniqueness; $k = 1$ gives $n - \rank(A - \lambda I) = m_g(\lambda)$ blocks, by rank–nullity.</p>
+</details>
+
+<div class="blk cor" id="cor-similar" data-name="Similarity classification">
+<p>For $A, B \in \C^{n\times n}$ the following are equivalent: (i) $A$ and $B$ are similar; (ii) they have the same Jordan blocks, counted with multiplicity; (iii) $\rank(A - \lambda I)^k = \rank(B - \lambda I)^k$ for every $\lambda \in \C$ and every $k \ge 1$. In particular, two diagonalizable matrices are similar if and only if they have the same characteristic polynomial.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (i) $\Rightarrow$ (iii) is <a class="xref" href="#prop-similar"></a>. (iii) $\Rightarrow$ (ii): the eigenvalues are the $\lambda$ with $\rank(A - \lambda I) &lt; n$, and by <a class="xref" href="#thm-jordan"></a> these ranks determine the number of $\lambda$-blocks of each size. (ii) $\Rightarrow$ (i): $A$ and $B$ are similar to Jordan matrices that differ only in the order of the blocks, reordering the blocks is a similarity by a permutation matrix, and similarity is transitive. For diagonalizable matrices all blocks are $1\times 1$, so (ii) says that the eigenvalues agree with their algebraic multiplicities, that is, $p_A = p_B$.</p>
+</div>
+
+<figure class="wide" id="fig-jordan" aria-label="Jordan structure and the rank count">
+<svg viewBox="0 0 760 300" role="img" aria-label="A six by six Jordan matrix with blocks J3 of lambda, J1 of lambda and J2 of mu, the Jordan chains that span each block, and the diagram of block sizes for lambda obtained from ranks of powers of A minus lambda I" style="width:100%;height:auto;max-width:860px;display:block;margin:6px 0 4px">
+  <defs><marker id="jc-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--ink-2)"/></marker></defs>
+  <text x="136" y="24" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="15" fill="var(--ink)">J = J₃(λ) ⊕ J₁(λ) ⊕ J₂(μ)</text>
+  <rect x="40" y="40" width="96" height="96" fill="var(--tint-def)" stroke="var(--c1)" stroke-width="1.5"/>
+  <rect x="136" y="136" width="32" height="32" fill="var(--tint-def)" stroke="var(--c1)" stroke-width="1.5"/>
+  <rect x="168" y="168" width="64" height="64" fill="var(--tint-thm)" stroke="var(--c2)" stroke-width="1.5"/>
+  <path d="M36 38 h-6 v196 h6 M236 38 h6 v196 h-6" fill="none" stroke="var(--ink-2)" stroke-width="1.5"/>
+  <g font-family="var(--font-body)" font-style="italic" font-size="15" fill="var(--ink)" text-anchor="middle">
+    <text x="56" y="61">λ</text><text x="88" y="61">1</text>
+    <text x="88" y="93">λ</text><text x="120" y="93">1</text>
+    <text x="120" y="125">λ</text>
+    <text x="152" y="157">λ</text>
+    <text x="184" y="189">μ</text><text x="216" y="189">1</text>
+    <text x="216" y="221">μ</text>
+  </g>
+  <text x="136" y="262" text-anchor="middle" font-family="var(--font-ui)" font-size="12" fill="var(--muted)">blank entries are zero</text>
+  <text x="300" y="24" font-family="var(--font-ui)" font-size="12" letter-spacing="1" fill="var(--muted)">JORDAN CHAINS (COLUMNS OF S)</text>
+  <g font-family="var(--font-body)" font-style="italic" font-size="15" fill="var(--ink)">
+    <text x="318" y="82" text-anchor="end" font-style="normal" font-size="12" font-family="var(--font-ui)" fill="var(--muted)">J₃(λ)</text>
+    <text x="330" y="82">s₃</text><text x="414" y="82">s₂</text><text x="498" y="82">s₁</text><text x="582" y="82" font-style="normal">0</text>
+    <text x="318" y="132" text-anchor="end" font-style="normal" font-size="12" font-family="var(--font-ui)" fill="var(--muted)">J₁(λ)</text>
+    <text x="330" y="132">s₄</text><text x="414" y="132" font-style="normal">0</text>
+    <text x="318" y="182" text-anchor="end" font-style="normal" font-size="12" font-family="var(--font-ui)" fill="var(--muted)">J₂(μ)</text>
+    <text x="330" y="182">s₆</text><text x="414" y="182">s₅</text><text x="498" y="182" font-style="normal">0</text>
+  </g>
+  <g fill="none" stroke="var(--ink-2)" stroke-width="1.4">
+    <path d="M352 77 H404" marker-end="url(#jc-arrow)"/><path d="M436 77 H488" marker-end="url(#jc-arrow)"/><path d="M520 77 H572" marker-end="url(#jc-arrow)"/>
+    <path d="M352 127 H404" marker-end="url(#jc-arrow)"/>
+    <path d="M352 177 H404" marker-end="url(#jc-arrow)"/><path d="M436 177 H488" marker-end="url(#jc-arrow)"/>
+  </g>
+  <text x="450" y="212" text-anchor="middle" font-family="var(--font-ui)" font-size="12" fill="var(--muted)">each arrow applies A − λI (A − μI in the last chain)</text>
+  <text x="680" y="44" text-anchor="middle" font-family="var(--font-ui)" font-size="12" letter-spacing="1" fill="var(--muted)">λ-BLOCKS</text>
+  <g fill="var(--tint-def)" stroke="var(--c1)" stroke-width="1.3">
+    <rect x="652" y="58" width="24" height="24"/><rect x="678" y="58" width="24" height="24"/>
+    <rect x="652" y="84" width="24" height="24"/>
+    <rect x="652" y="110" width="24" height="24"/>
+  </g>
+  <g font-family="var(--font-ui)" font-size="12" fill="var(--ink-2)">
+    <text x="644" y="74" text-anchor="end">size ≥ 1</text><text x="644" y="100" text-anchor="end">size ≥ 2</text><text x="644" y="126" text-anchor="end">size ≥ 3</text>
+    <text x="712" y="74">2</text><text x="712" y="100">1</text><text x="712" y="126">1</text>
+  </g>
+  <text x="664" y="154" text-anchor="middle" font-family="var(--font-ui)" font-size="11.5" fill="var(--muted)">columns: blocks</text>
+  <text x="300" y="262" font-family="var(--font-ui)" font-size="12" fill="var(--ink-2)">rank (A − λI)ᵏ for k = 0, 1, 2, 3, 4:  6, 4, 3, 2, 2</text>
+  <text x="300" y="284" font-family="var(--font-ui)" font-size="12" fill="var(--ink-2)">successive drops 2, 1, 1, 0 count the λ-blocks of size ≥ k</text>
+</svg>
+</figure>
+
+<div class="blk prop" id="prop-jpow" data-name="Powers of a Jordan block">
+<p>For $m \ge 0$,</p>
+<div class="eq">$$J_k(\lambda)^m = \sum_{j=0}^{\min(m,\,k-1)} \binom{m}{j}\lambda^{m-j}N_k^{\,j},$$</div>
+<p>so the entries of $J_k(\lambda)^m$ on the $j$-th superdiagonal equal $\binom{m}{j}\lambda^{m-j}$, where $\binom{m}{j} = \frac{m!}{j!\,(m-j)!}$ is the binomial coefficient (zero for $j &gt; m$).</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> $\lambda I$ and $N_k$ commute, so the binomial theorem applies to $(\lambda I + N_k)^m$; $N_k^{\,j}$ has ones on the $j$-th superdiagonal and vanishes for $j \ge k$.</p>
+</div>
+
+<div class="blk cor" id="cor-powerform" data-name="The form of the powers">
+<p>Let $A \in \C^{n\times n}$ and, for each eigenvalue $\mu$, let $m_\mu$ be the size of the largest Jordan block for $\mu$. For every $k \ge n$,</p>
+<div class="eq">$$A^k = \sum_{\mu \in \Lambda(A),\ \mu \ne 0} \mu^k\,P_\mu(k),$$</div>
+<p>where the entries of the matrix $P_\mu(k)$ are polynomials in $k$ of degree at most $m_\mu - 1$. If $A$ is invertible, this holds for every $k \ge 0$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Write $A^k = SJ^kS^{-1}$ with the Jordan form. For a block $J_p(\mu)$ with $\mu \ne 0$, <a class="xref" href="#prop-jpow"></a> gives $J_p(\mu)^k = \mu^k\sum_{j=0}^{p-1}\binom{k}{j}\mu^{-j}N_p^{\,j}$ for every $k \ge 0$, and $\binom{k}{j} = k(k-1)\cdots(k-j+1)/j!$ is a polynomial in $k$ of degree $j$, which vanishes for $k &lt; j$ as the convention requires. A block $J_p(0)$ has $J_p(0)^k = N_p^{\,k} = 0$ for $k \ge p$, in particular for $k \ge n$. Collect the blocks of each eigenvalue and conjugate by $S$.</p>
+</div>
+
+<div class="blk probe">
+<p>For $\lambda = 0.9$ the corner entry of $J_2(0.9)^m$ is $m\,0.9^{m-1}$: it rises to about $3.87$ at $m = 9$ and $m = 10$ before decaying. A matrix whose eigenvalues are all smaller than one in modulus can still amplify for a while; chapter 6 measures such transients.</p>
+</div>
+
+<div class="blk def" id="def-minpoly" data-name="Minimal polynomial">
+<p>The <dfn>minimal polynomial</dfn> $q_A$ is the monic polynomial of least degree with $q_A(A) = 0$.</p>
+</div>
+
+<div class="blk prop" id="prop-minpoly" data-name="Properties of the minimal polynomial">
+<p>(i) $q_A$ exists, is unique, and divides every polynomial $f$ with $f(A) = 0$. (ii) $q_A(\lambda) = \prod_{\mu \in \Lambda(A)}(\lambda - \mu)^{k_\mu}$, where $k_\mu$ is the size of the largest Jordan block for $\mu$. (iii) $A$ is diagonalizable if and only if $q_A$ has only simple roots.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (i) The $n^2 + 1$ matrices $I, A, \dots, A^{n^2}$ are dependent in the $n^2$-dimensional space of matrices, so some nonzero polynomial annihilates $A$; take one of least degree and make it monic. Divide: $f = gq_A + h$ with $\deg h &lt; \deg q_A$; then $h(A) = 0$ forces $h = 0$, and uniqueness follows. (ii) $f(A) = Sf(J)S^{-1}$ and $f(J)$ is block diagonal with blocks $f(J_k(\mu)) = \sum_j \frac{f^{(j)}(\mu)}{j!}N_k^{\,j}$ (Taylor expansion of the polynomial $f$ at $\mu$, with $f^{(j)}$ its $j$-th derivative), which vanishes exactly when $f$ has a root of order at least $k$ at $\mu$. (iii) By (ii), all $k_\mu = 1$ exactly when every Jordan block is $1\times 1$.</p>
+</div>
+
+<div class="blk thm" id="thm-ch" data-name="Cayley–Hamilton">
+<p>$p_A(A) = 0$ for every $A \in \C^{n\times n}$; equivalently, $q_A$ divides $p_A$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> By <a class="xref" href="#thm-schur"></a>, $p_A(A) = U\,p_A(T)\,U^*$ with $p_A(T) = \prod_{i=1}^n(T - \lambda_iI)$ and $\lambda_i = t_{ii}$; the factors commute. Let $\mathcal V_k = \spn(e_1, \dots, e_k)$. Since $T$ is upper triangular with $k$-th diagonal entry $\lambda_k$, $(T - \lambda_kI)\mathcal V_k \subseteq \mathcal V_{k-1}$. Applying the factors for $k = n, n - 1, \dots, 1$ in turn maps $\C^n = \mathcal V_n$ into $\mathcal V_0 = \{0\}$, so $p_A(T) = 0$.</p>
+</div>
+
+<div class="blk cor" id="cor-ch" data-name="Powers reduce to degree below n">
+<p>Write the coefficients of the characteristic polynomial as</p>
+<div class="eq">$$p_A(\lambda) = \lambda^n + c_{n-1}\lambda^{n-1} + \dots + c_1\lambda + c_0.$$</div>
+<p>Every power $A^k$ is a linear combination of $I, A, \dots, A^{n-1}$, and if $A$ is invertible (so that $c_0 = (-1)^n\det A \ne 0$),</p>
+<div class="eq">$$A^{-1} = -\frac{1}{c_0}\big(A^{n-1} + c_{n-1}A^{n-2} + \dots + c_1 I\big).$$</div>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> $A^n = -(c_{n-1}A^{n-1} + \dots + c_0I)$ by Cayley–Hamilton; multiply by $A$ repeatedly for higher powers. For the inverse, factor $A$ out of $p_A(A) - c_0I = -c_0I$. <a href="ch09_controllability.html#thm-kalman">Chapter 9</a> uses the first statement in the Kalman rank test.</p>
+</div>
+
+<div class="blk prop" id="prop-continuity" data-name="Continuity of the eigenvalues">
+<p>Let $A \in \C^{n\times n}$ have eigenvalues $\lambda_1, \dots, \lambda_n$, listed with multiplicity. For every $\eps &gt; 0$ there is $\delta &gt; 0$ such that every $B \in \C^{n\times n}$ with $\norm{B - A} &lt; \delta$ has eigenvalues $\mu_1, \dots, \mu_n$, listed with multiplicity, that can be numbered so that $\abs{\mu_i - \lambda_i} &lt; \eps$ for every $i$.</p>
+</div>
+<details class="proof"><summary>Proof sketch</summary>
+<p>The coefficients of $p_B$ are polynomials in the entries of $B$, and the roots of a monic polynomial of fixed degree, as an unordered list with multiplicity, depend continuously on its coefficients. The second fact follows, for instance, from Rouché's theorem on small circles around the distinct roots of $p_A$: for $B$ near $A$, each such circle encloses as many roots of $p_B$ as the multiplicity of the root of $p_A$ at its centre.</p>
+</details>
+<p class="src">Horn and Johnson, <i>Matrix Analysis</i>, 2nd ed., Appendix D.</p>
+
+<div class="blk cex" id="cex-continuity">
+<p>Eigenvalues are continuous in the entries (<a class="xref" href="#prop-continuity"></a>); eigenvectors are not. For $A(\eps) = \begin{bmatrix}1 & 1\\ \eps & 1\end{bmatrix}$, $p(\lambda) = (\lambda - 1)^2 - \eps$, so the eigenvalues $1 \pm \sqrt\eps$ (equal to $1 \pm i\sqrt{-\eps}$ for $\eps &lt; 0$) are continuous at $\eps = 0$ but with infinite slope: a perturbation of size $10^{-8}$ moves them by $10^{-4}$. The eigenvectors $(1, \pm\sqrt\eps)^\T$ both tend to $e_1$, and at $\eps = 0$ only one eigendirection is left. Normalizing them to unit length, $V^\T V = \frac{1}{1 + \eps}\begin{bmatrix}1 + \eps & 1 - \eps\\ 1 - \eps & 1 + \eps\end{bmatrix}$ has eigenvalues $\frac{2}{1 + \eps}$ and $\frac{2\eps}{1 + \eps}$ for $0 &lt; \eps \le 1$, and $\kappa(V)$ is the square root of their ratio, the ratio of the largest to the smallest singular value of $V$ (<a href="ch04_svd.html#thm-norms">chapter 4</a>), so</p>
+<div class="eq">$$\kappa(V) = \abs{\eps}^{-1/2} \qquad (0 &lt; \abs{\eps} \le 1),$$</div>
+<p>with the same value for $\eps &lt; 0$, where the computation uses the complex eigenvectors $(1, \pm i\sqrt{-\eps})^\T$. Eigenvectors can jump even for symmetric matrices: $I + \eps\begin{bmatrix}\cos(2/\eps) & \sin(2/\eps)\\ \sin(2/\eps) & -\cos(2/\eps)\end{bmatrix}$ tends to $I$, with eigenvalues $1 \pm \eps$ and eigenvectors at the angle $1/\eps$, which spin without limit as $\eps \to 0$.</p>
+</div>
+
+<figure class="viz" id="viz-collide">
+<figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">Eigenvalues collide, eigenvectors merge</span><span class="viz-sub">A one-parameter family of $2\times 2$ matrices. Left: the eigenvalues in the complex plane (grey: their paths over the whole parameter range). Middle: the eigenvectors (real ones as arrows; for a complex pair, the real and imaginary parts of $v_1$). Right: the condition number $\kappa(V)$ of the unit-column eigenvector matrix along the family.</span></figcaption>
+<div class="viz-plots">
+<div class="plot" id="col-cplx"><div class="plot-cap">Eigenvalues in the complex plane</div></div>
+<div class="plot" id="col-vecs"><div class="plot-cap">Eigenvectors in the real plane</div></div>
+<div class="plot" id="col-kappa"><div class="plot-cap">$\kappa(V)$ along the family (log scale)</div></div>
+</div>
+<div class="viz-controls" id="col-controls"></div>
+<div class="viz-notes">
+<div><h5>Try this</h5><ol>
+<li>In the family $\begin{bmatrix}1 & 1\\ \eps & 1\end{bmatrix}$, move $\eps$ from $0.5$ toward $0$. The eigenvalues approach $1$ along the real axis and the two eigenvectors close up like scissors; at $\eps = 0.01$ the readout gives $\kappa(V) = 10$.</li>
+<li>Continue to negative $\eps$: the eigenvalues leave the real axis vertically as a conjugate pair, and $\kappa(V)$ comes back down along the same curve $\abs{\eps}^{-1/2}$.</li>
+<li>Switch to the symmetric family. The eigenvalues approach each other but turn away (an avoided crossing, closest gap $0.5$), and $\kappa(V) = 1$ throughout.</li>
+<li>Switch to the damped oscillator and move $\zeta$ through $1$: the complex pair on the unit circle meets at $-1$ and splits along the real axis.</li>
+</ol></div>
+<div><h5>What to notice</h5><p>The eigenvalues move continuously (<a class="xref" href="#prop-continuity"></a>), but at the collisions of these families they move like a square root of the parameter, and the eigenbasis degenerates: $\kappa(V) \to \infty$, as computed in <a class="xref" href="#cex-continuity"></a>. The collision point is a Jordan block, the only place in the family where the matrix is not diagonalizable. Symmetric matrices avoid this degeneration: they always have an orthonormal eigenvector basis, so $\kappa(V) = 1$ for a suitable $V$ even when two eigenvalues coincide (<a href="ch04_svd.html#thm-spectral">the spectral theorem</a>, chapter 4).</p></div>
+</div>
+</figure>
+
+<div class="blk rem">
+<p>The Jordan form is discontinuous in $A$: for $n \ge 2$, an arbitrarily small perturbation of $J_n(0)$, such as an entry $\eps &gt; 0$ in its bottom-left corner, splits its $n$-fold eigenvalue into $n$ distinct eigenvalues of modulus $\eps^{1/n}$ (<a href="ch06_nonnormality.html#thm-jordan-pert">the Jordan-block perturbation theorem</a>, chapter 6), so the perturbed matrix is diagonalizable (<a class="xref" href="#thm-diag"></a>). Software therefore computes Schur forms. The Jordan form remains the right theoretical tool for what powers and exponentials of a matrix can look like: products of $\mu^k$ with polynomials in $k$ of degree below the block size, once $k \ge n$ (<a class="xref" href="#cor-powerform"></a>), or of $e^{\mu t}$ with polynomials in $t$ (<a href="ch07_autonomous_systems.html#prop-jordan-exp">chapter 7</a>).</p>
+</div>
+
+<div class="blk pattern">
+<p>Three normal forms, compared:</p>
+</div>
+<div class="tbl-wrap"><table class="tbl">
+<thead><tr><th>Form</th><th>Change of basis</th><th>Exists</th><th>Off-diagonal part</th><th>Stable to compute</th><th>Used for</th></tr></thead>
+<tbody>
+<tr><td>Diagonal $V\Lambda V^{-1}$</td><td>similarity</td><td>exactly when $m_g = m_a$ for every $\lambda$ (<a class="xref" href="#thm-diag"></a>)</td><td>none</td><td>as a rule of thumb, only if $\kappa(V)$ is moderate</td><td>modes, $f(A)$ (<a class="xref" href="#prop-modes"></a>, <a class="xref" href="#prop-funcalc"></a>)</td></tr>
+<tr><td>Jordan $SJS^{-1}$</td><td>similarity</td><td>always, over $\C$ (<a class="xref" href="#thm-jordan"></a>)</td><td>zeros and ones on the superdiagonal</td><td>no: discontinuous in $A$</td><td>complete similarity invariant (<a class="xref" href="#cor-similar"></a>); $k\lambda^{k-1}$ terms (<a class="xref" href="#cor-powerform"></a>), $te^{\lambda t}$ terms (<a href="ch07_autonomous_systems.html#prop-jordan-exp">chapter 7</a>)</td></tr>
+<tr><td>Schur $UTU^*$</td><td>unitary similarity</td><td>always, over $\C$ (<a class="xref" href="#thm-schur"></a>)</td><td>any upper triangle; $\norm{N}_F$ fixed (<a class="xref" href="#prop-henrici"></a>)</td><td>yes: the QR algorithm is backward stable</td><td>computation, proofs, non-normality</td></tr>
+<tr><td>Real Schur $QTQ^\T$</td><td>orthogonal similarity</td><td>always, for real $A$ (<a class="xref" href="#thm-realschur"></a>)</td><td>block upper triangle</td><td>yes, in real arithmetic</td><td>real arithmetic</td></tr>
+</tbody>
+</table></div>
+</section>
+
+<section class="sec" id="s-powers">
+<h2>Powers and the spectral radius</h2>
+
+<div class="blk prob"><p>Describe $A^k$ and $x_k = A^kx_0$ as $k \to \infty$: whether they decay, how fast, and in which direction $x_k$ ends up pointing.</p></div>
+
+<div class="blk def" id="def-rho" data-name="Spectral radius">
+<p>The <dfn>spectral radius</dfn> of $A \in \C^{n\times n}$ is $\rho(A) = \max\{\abs{\lambda} : \lambda \in \Lambda(A)\}$.</p>
+</div>
+
+<div class="blk probe">
+<p>(i) Diagonal $A = \diag(\lambda_1, \lambda_2)$: $A^k = \diag(\lambda_1^k, \lambda_2^k) \to 0$ exactly when both $\abs{\lambda_i} &lt; 1$. (ii) The Jordan block $J_2(\lambda)$: the corner entry $k\lambda^{k-1}$ also tends to $0$ when $\abs{\lambda} &lt; 1$, since geometric decay beats polynomial growth, but $J_2(\lambda)^k$ is not bounded by any constant times $\abs{\lambda}^k$. (iii) The rotation $R_\theta$: every power is a rotation, $\rho = 1$, with neither growth nor decay.</p>
+</div>
+
+<div class="blk conj"><p>$A^k \to 0$ exactly when $\rho(A) &lt; 1$, and the rate is $\rho(A)^k$ up to factors that grow at most polynomially.</p></div>
+
+<div class="blk thm" id="thm-powers" data-name="Convergence of powers">
+<p>For $A \in \C^{n\times n}$, $A^k \to 0$ as $k \to \infty$ if and only if $\rho(A) &lt; 1$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> If $\rho(A) \ge 1$, take an eigenvector $Av = \lambda v$ with $\abs{\lambda} \ge 1$; then $\norm{A^kv} = \abs{\lambda}^k\norm{v} \not\to 0$. If $\rho(A) &lt; 1$, write $A^k = SJ^kS^{-1}$ with the Jordan form. By <a class="xref" href="#prop-jpow"></a> each entry of $J^k$ is $0$ or $\binom{k}{j}\lambda^{k-j}$ with $\abs{\lambda} \le \rho &lt; 1$ and $j &lt; n$, and $\binom{k}{j}\abs{\lambda}^{k-j} \le k^j\rho^{k-j} \to 0$.</p>
+</div>
+
+<div class="blk prop" id="prop-bounds" data-name="Two-sided bounds">
+<p>For any norm on $\C^n$ and its induced matrix norm $\norm{M} = \max_{x \ne 0}\norm{Mx}/\norm{x}$, $\rho(A)^k \le \norm{A^k}$ for all $k$. If $A = V\Lambda V^{-1}$ is diagonalizable, then in the induced 2-norm</p>
+<div class="eq">$$\rho(A)^k \le \norm{A^k} \le \kappa(V)\,\rho(A)^k,\qquad \kappa(V) = \norm{V}\norm{V^{-1}}.$$</div>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> For an eigenvector with $\abs{\lambda} = \rho(A)$, $\norm{A^kv} = \rho(A)^k\norm{v}$. For the upper bound, $\norm{A^k} = \norm{V\Lambda^kV^{-1}} \le \norm{V}\,\norm{\Lambda^k}\,\norm{V^{-1}}$, and the 2-norm of a diagonal matrix is its largest entry in modulus, $\rho(A)^k$.</p>
+</div>
+
+<p>The second half of the conjecture holds as well, with the degree of the polynomial factor read off the Jordan form.</p>
+
+<div class="blk prop" id="prop-envelope" data-name="Polynomial envelope of the powers">
+<p>Let $A \in \C^{n\times n}$ with $\rho = \rho(A) &gt; 0$, and let $m$ be the size of the largest Jordan block of $A$ for an eigenvalue of modulus $\rho$. For every norm on $\C^{n\times n}$ there are constants $0 &lt; c \le C$, independent of $k$, such that</p>
+<div class="eq">$$c\,k^{m-1}\rho^k \le \norm{A^k} \le C\,k^{m-1}\rho^k \qquad (k \ge 1).$$</div>
+<p>For diagonalizable $A$, $m = 1$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Let $A = SJS^{-1}$ be the Jordan form. All norms on $\C^{n\times n}$ are equivalent (<a href="ch02_least_squares.html#thm-equiv">chapter 2</a>), and $M \mapsto \norm{SMS^{-1}}$ is again a norm, so it suffices to bound the largest modulus of an entry of $J^k$. By <a class="xref" href="#prop-jpow"></a>, the entries of $J^k$ in a block $J_p(\mu)$ are $\binom{k}{j}\mu^{k-j}$ with $0 \le j &lt; p$, and $\binom{k}{j} \le k^j$. Upper bound: if $\abs\mu = \rho$, then $p \le m$ and $\binom{k}{j}\rho^{k-j} \le k^{m-1}\rho^k\max(1, \rho^{1-m})$; if $0 &lt; \abs\mu &lt; \rho$, the ratio of $k^j\abs\mu^{k-j}$ to $k^{m-1}\rho^k$ tends to $0$ and is therefore bounded; if $\mu = 0$, the entries vanish for $k \ge p$, so the ratio is again bounded. Lower bound: a block $J_m(\mu)$ with $\abs\mu = \rho$ has the corner entry $\binom{k}{m-1}\mu^{k-m+1}$, and $\binom{k}{m-1} \ge \big(k/(m-1)\big)^{m-1}$ for $k \ge m - 1 \ge 1$; for $m = 1$ use the diagonal entry $\mu^k$. The finitely many $k &lt; m - 1$ are covered by a smaller $c$, since $A^k \ne 0$ when $\rho &gt; 0$.</p>
+</div>
+
+<div class="blk thm" id="thm-gelfand" data-name="Gelfand's formula">
+<p>For every norm on $\C^{n\times n}$, $\rho(A) = \lim_{k\to\infty}\norm{A^k}^{1/k}$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> If $\rho(A) = 0$, then $p_A(\lambda) = \lambda^n$, so $A$ is nilpotent, $A^k = 0$ for $k \ge n$ by Cayley–Hamilton, and both sides vanish. If $\rho(A) &gt; 0$, take $k$-th roots in <a class="xref" href="#prop-envelope"></a>: $c^{1/k}k^{(m-1)/k}\rho(A) \le \norm{A^k}^{1/k} \le C^{1/k}k^{(m-1)/k}\rho(A)$, and $c^{1/k}$, $C^{1/k}$ and $k^{1/k}$ tend to $1$.</p>
+</div>
+<p class="src">Matrix case: Horn and Johnson, ch. 5. The formula also holds for bounded operators on complex Banach spaces, with the spectrum of chapter 5 (<a href="ch05_hilbert_spaces.html#prop-spectrum">the proposition on basic properties of the spectrum</a>).</p>
+
+<div class="blk prop" id="prop-triangle" data-name="The stability triangle">
+<p>A real $2\times 2$ matrix with trace $\tau$ and determinant $\Delta$ has $\rho(A) &lt; 1$ if and only if</p>
+<div class="eq">$$\abs{\tau} - 1 &lt; \Delta &lt; 1.$$</div>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> If the eigenvalues are a nonreal pair, $\abs{\lambda}^2 = \lambda\bar\lambda = \Delta$, so $\rho &lt; 1$ means $\Delta &lt; 1$; and then $\abs{\tau} &lt; 2\sqrt{\Delta} \le 1 + \Delta$ holds automatically ($D &lt; 0$ and $(1 - \sqrt\Delta)^2 \ge 0$). If they are real, both lie in $(-1, 1)$ exactly when $p_A(1) = 1 - \tau + \Delta &gt; 0$, $p_A(-1) = 1 + \tau + \Delta &gt; 0$, and the two roots are not both beyond $1$ or both beyond $-1$; given the first two conditions, the excluded cases are those with $\Delta = \lambda_+\lambda_- &gt; 1$. The first two conditions together say $\abs{\tau} &lt; 1 + \Delta$.</p>
+</div>
+
+<div class="blk thm" id="thm-power" data-name="Power iteration">
+<p>Let $A = V\Lambda V^{-1}$ be diagonalizable with eigenvalues ordered so that $\abs{\lambda_1} &gt; \abs{\lambda_2} \ge \dots \ge \abs{\lambda_n}$, and let $x_0$ satisfy $c_1 = w_1^*x_0 \ne 0$. Then $x_k = A^kx_0 \ne 0$ for all $k$, and the angle $\theta_k$ between $x_k$ and the line $\spn(v_1)$, defined by $\sin\theta_k = \min_{c \in \C}\norm{x_k - cv_1}/\norm{x_k}$, satisfies</p>
+<div class="eq">$$\sin\theta_k \le C\,\Big|\frac{\lambda_2}{\lambda_1}\Big|^k$$</div>
+<p>for a constant $C$ depending on $x_0$ and $V$ but not on $k$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> By the modal expansion (<a class="xref" href="#prop-modes"></a>), $x_k = \lambda_1^k\,(c_1v_1 + \eta_k)$ with the error term $\eta_k = \sum_{i\ge2} c_i(\lambda_i/\lambda_1)^kv_i$ and $c_i = w_i^*x_0$, so $\norm{\eta_k} \le \beta\,\abs{\lambda_2/\lambda_1}^k$ with $\beta = \sum_{i\ge2}\abs{c_i}\norm{v_i}$. Here $\lambda_1 \ne 0$ and the $v_i$ are independent, so $x_k \ne 0$. The distance from $c_1v_1 + \eta_k$ to $\spn(v_1)$ is at most $\norm{\eta_k}$, and $\norm{c_1v_1 + \eta_k} \ge \abs{c_1}\norm{v_1} - \norm{\eta_k}$, which exceeds $\frac12\abs{c_1}\norm{v_1}$ for large $k$; for those $k$, $\sin\theta_k \le 2\beta\abs{\lambda_2/\lambda_1}^k/(\abs{c_1}\norm{v_1})$. Since $\sin\theta_k \le 1$, enlarging the constant covers the finitely many remaining $k$.</p>
+</div>
+<p>In practice $x_k$ is rescaled to unit length at each step, which avoids overflow and, since $A$ is linear, changes neither the directions nor the angles $\theta_k$. The eigenvalue is estimated by the Rayleigh quotient, which converges twice as fast when $A$ is Hermitian ($A^* = A$) or, more generally, normal.</p>
+
+<div class="blk prop" id="prop-rayleigh" data-name="Rayleigh quotient for normal matrices">
+<p>Let $A = U\Lambda U^*$ with $U$ unitary, so that $A$ is normal, with the eigenvalues ordered as in <a class="xref" href="#thm-power"></a>, and let $x_0$ satisfy $c_1 = u_1^*x_0 \ne 0$, where $u_1$ is the first column of $U$. Then the Rayleigh quotients $r_k = x_k^*Ax_k/x_k^*x_k$ of $x_k = A^kx_0$ satisfy</p>
+<div class="eq">$$\abs{r_k - \lambda_1} \le C\,\Big|\frac{\lambda_2}{\lambda_1}\Big|^{2k}$$</div>
+<p>for a constant $C$ depending on $x_0$ and $A$ but not on $k$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> With $c = U^*x_0$, $x_k = U\Lambda^kc$, so $x_k^*x_k = \sum_i\abs{c_i}^2\abs{\lambda_i}^{2k}$ and $x_k^*Ax_k = \sum_i\abs{c_i}^2\abs{\lambda_i}^{2k}\lambda_i$. Hence</p>
+<div class="eq">$$r_k - \lambda_1 = \frac{\sum_{i\ge2}\abs{c_i}^2\abs{\lambda_i}^{2k}(\lambda_i - \lambda_1)}{\sum_i\abs{c_i}^2\abs{\lambda_i}^{2k}},$$</div>
+<p>and bounding the denominator below by $\abs{c_1}^2\abs{\lambda_1}^{2k}$ and each $\abs{\lambda_i}$, $i \ge 2$, above by $\abs{\lambda_2}$ gives the bound with $C = \sum_{i\ge2}\abs{c_i}^2\abs{\lambda_i - \lambda_1}/\abs{c_1}^2$.</p>
+</div>
+<p class="src">For real symmetric $A$, together with the convergence of the eigenvector: Trefethen and Bau, Lecture 27.</p>
+<div class="blk cex" id="cex-rayleigh-nonnormal"><p>Normality cannot be dropped. For $A = \begin{bmatrix}2 & 1\\ 0 & 1\end{bmatrix}$ and $x_0 = e_2 = (0, 1)^\T$, the iterates are $x_k = A^kx_0 = (a, 1)^\T$ with $a = 2^k - 1$, and</p>
+<div class="eq">$$r_k = \frac{2a^2 + a + 1}{a^2 + 1} = 2 + \frac{a - 1}{a^2 + 1},$$</div>
+<p>so $r_k - \lambda_1$ decays like $2^{-k} = \abs{\lambda_2/\lambda_1}^k$, not like $\abs{\lambda_2/\lambda_1}^{2k}$.</p></div>
+
+<div class="blk cex" id="cex-nodominant">
+<p>Power iteration can fail when two different eigenvalues share the largest modulus. For the rotation $R_\theta$ with $\theta$ not an integer multiple of $\pi$, both eigenvalues have modulus $1$ and $x_k = R_{k\theta}x_0$ keeps turning without settling. For $A = \diag(0.9, -0.9)$ the direction of $x_k = 0.9^k\,(x_{0,1}, (-1)^kx_{0,2})^\T$ alternates between two lines unless $x_0$ is an eigenvector.</p>
+</div>
+
+<p>A repeated dominant eigenvalue does not by itself prevent convergence. For a $2\times 2$ matrix with a defective eigenvalue, the iterates still align with the eigendirection, but only at the algebraic rate $1/k$.</p>
+
+<div class="blk prop" id="prop-defective" data-name="Power iteration at a defective eigenvalue">
+<p>Let $A \in \C^{2\times 2}$ have a single eigenvalue $\lambda \ne 0$ with $m_g(\lambda) = 1$ and eigenvector $v$, and let $x_0 \notin \spn(v)$. Then $x_k = A^kx_0 \ne 0$, and the angle $\theta_k$ between $x_k$ and $\spn(v)$, defined as in <a class="xref" href="#thm-power"></a>, satisfies</p>
+<div class="eq">$$\frac{c}{k} \le \sin\theta_k \le \frac{C}{k}\qquad (k \ge 1)$$</div>
+<p>for constants $0 &lt; c \le C$ independent of $k$. For $A = J_2(\lambda)$ and $x_0 = e_2$, $\tan\theta_k = \abs{\lambda}/k$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> By <a class="xref" href="#thm-jordan"></a> there is a Jordan chain $s_1, s_2$ for $\lambda$, which after rescaling has $s_1 = v$ because $m_g(\lambda) = 1$, and which is a basis of $\C^2$ (<a class="xref" href="#lem-chain"></a>); write $x_0 = as_1 + bs_2$ with $b \ne 0$. By <a class="xref" href="#prop-jpow"></a>, $x_k = \lambda^{k-1}\big((a\lambda + bk)s_1 + b\lambda s_2\big)$, which is nonzero. Let $\delta &gt; 0$ be the distance from $s_2$ to $\spn(s_1)$. The distance from $x_k$ to $\spn(v)$ is $\abs{\lambda}^{k-1}\abs{b\lambda}\delta$, while $\norm{x_k}/\abs{\lambda}^{k-1}$ differs from $\abs{b}k\norm{s_1}$ by at most $K = \abs{a\lambda}\norm{s_1} + \abs{b\lambda}\norm{s_2}$. Dividing gives $\sin\theta_k \ge \abs{b\lambda}\delta/\big((\abs{b}\norm{s_1} + K)k\big)$ for all $k \ge 1$, and $\sin\theta_k \le 2\abs{\lambda}\delta/(\norm{s_1}k)$ once $\abs{b}k\norm{s_1} \ge 2K$; since $\sin\theta_k \le 1$, a larger $C$ covers the remaining $k$. For $J_2(\lambda)$ and $e_2$, $x_k = (k\lambda^{k-1}, \lambda^k)^\T$.</p>
+</div>
+<p><a class="xref" href="#thm-power"></a> does not apply here: a defective eigenvalue has $m_a &gt; m_g \ge 1$ (<a class="xref" href="#prop-mgma"></a>), so it is repeated and $\abs{\lambda_1} = \abs{\lambda_2}$; and $A$ is not diagonalizable.</p>
+
+<figure class="viz" id="viz-iter">
+<figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">Iterating a matrix</span><span class="viz-sub">The matrix is built from its eigenvalues and eigenvector directions, $A = V\Lambda V^{-1}$, or from a Jordan block or a scaled rotation in a skewed basis. Drag the starting point $x_0$. Orange dots on the unit circle are the normalized iterates $x_k/\norm{x_k}$.</span></figcaption>
+<div class="viz-plots main-side">
+<div class="plot" id="iter-phase"><div class="plot-cap">Iterates $x_0, x_1, \dots, x_{40}$ and eigendirections</div></div>
+<div class="iter-side">
+<div class="plot" id="iter-norm"><div class="plot-cap">Norms on a log scale</div></div>
+<div class="plot" id="iter-angle"><div class="plot-cap">Angle between $x_k$ and the dominant eigendirection</div></div>
+</div>
+</div>
+<div class="viz-controls" id="iter-controls"></div>
+<div class="viz-notes">
+<div><h5>Try this</h5><ol>
+<li>Start with <i>Stable node</i>: the trajectory curves into the solid green eigendirection, the orange dots pile up at $\pm v_1$, and the angle decays like the dashed reference $\abs{\lambda_2/\lambda_1}^k$, a straight line on the log scale.</li>
+<li>Choose <i>Nearly parallel eigenvectors</i>. Both eigenvalues are below $1$, yet $\norm{A^k}$ climbs to about $2$ before decaying, inside the band between $\rho^k$ and $\kappa(V)\rho^k$ with $\kappa(V) \approx 14$.</li>
+<li>Choose <i>Jordan block</i>: the norm rises to about $3.9$ at $k = 9$, and the angle now decays like $1/k$ (<a class="xref" href="#prop-defective"></a>), much more slowly than any geometric rate.</li>
+<li>Choose <i>Equal moduli</i> or <i>Spiral</i>: two different eigenvalues share the largest modulus, and the normalized iterates never settle (<a class="xref" href="#cex-nodominant"></a>).</li>
+</ol></div>
+<div><h5>What to notice</h5><p>The readout shows $\norm{A^{40}}^{1/40}$ next to $\rho(A)$, Gelfand's formula (<a class="xref" href="#thm-gelfand"></a>) at a finite $k$, and checks the bounds of <a class="xref" href="#prop-bounds"></a> at every step. The eigenvalues fix the eventual rate; the eigenvector geometry controls the transient, through the bound $\kappa(V)\rho^k$ for a diagonalizable matrix (<a class="xref" href="#prop-bounds"></a>) and through the factor $k^{m-1}$ for a Jordan block of size $m$ (<a class="xref" href="#prop-envelope"></a>).</p></div>
+</div>
+</figure>
+
+<div class="blk why">
+<p>A linear recurrent network $x_{k+1} = Wx_k$, with connectivity matrix $W$, forgets its initial state at the rate $\rho(W)$ (<a class="xref" href="#thm-gelfand"></a>) and, when $W$ is diagonalizable with one strictly dominant eigenvalue, settles onto that mode from every initial state with a component along it (<a class="xref" href="#thm-power"></a>); <a href="ch13_neural_bridges.html#s-memory">chapter 13</a> studies line attractors, where an eigenvalue of $W$ is tuned to $1$. Oja showed that his Hebbian learning rule drives the weight vector of a single linear neuron to a unit eigenvector of its input correlation matrix for the largest eigenvalue, under conditions that include a simple largest eigenvalue and a suitably decreasing learning rate (E. Oja, <i>J. Math. Biol.</i> 15, 1982); its averaged dynamics can be read as a continuous-time, normalized relative of power iteration.</p>
+</div>
+</section>
+
+<section class="selfcheck" id="s-selfcheck">
+<h2>Self-check</h2>
+<ol>
+<li><p>For nonzero $u, v \in \R^n$ with $n \ge 2$, find the eigenvalues of $uv^\T$ and decide when it is diagonalizable.</p>
+<details><summary>Answer</summary><p>$uv^\T u = (v^\T u)\,u$ and $uv^\T x = 0$ for $x \perp v$, so the eigenvalues are $v^\T u$ and $0$ with $m_g(0) = n - 1$. If $v^\T u \ne 0$ these give $n$ independent eigenvectors. If $v^\T u = 0$, then $(uv^\T)^2 = u(v^\T u)v^\T = 0$: the matrix is nilpotent, $m_a(0) = n &gt; m_g(0)$, and it is not diagonalizable. This is <a class="xref" href="#prop-rankone"></a>, with the multiplicities from <a class="xref" href="#cor-abba"></a>.</p></details></li>
+<li><p>A $4\times 4$ matrix has $p_A(\lambda) = (\lambda - 2)^4$, $\rank(A - 2I) = 2$ and $(A - 2I)^2 = 0$. What is its Jordan form?</p>
+<details><summary>Answer</summary><p>Blocks of size at least $1$: $4 - 2 = 2$; of size at least $2$: $2 - 0 = 2$; of size at least $3$: $0$. So $J = J_2(2) \oplus J_2(2)$, by <a class="xref" href="#thm-jordan"></a>.</p></details></li>
+<li><p>Show that $\rho(A) \le \norm{A}$ for every induced norm, and give a matrix with $\rho(A) = 0$ and $\norm{A} = 100$.</p>
+<details><summary>Answer</summary><p>Take $k = 1$ in <a class="xref" href="#prop-bounds"></a>: for an eigenvector, $\abs{\lambda}\norm{v} = \norm{Av} \le \norm{A}\norm{v}$. The matrix $\begin{bmatrix}0 & 100\\ 0 & 0\end{bmatrix}$ is nilpotent, so $\rho = 0$, and it maps $e_2$ to $100\,e_1$.</p></details></li>
+<li><p>Use Cayley–Hamilton to invert $A = \begin{bmatrix}2 & 1\\ 1 & 1\end{bmatrix}$ without row reduction.</p>
+<details><summary>Answer</summary><p>$p_A(\lambda) = \lambda^2 - 3\lambda + 1$, so $A^2 - 3A + I = 0$, that is, $A(3I - A) = I$ and $A^{-1} = 3I - A = \begin{bmatrix}1 & -1\\ -1 & 2\end{bmatrix}$.</p></details></li>
+<li><p>Two matrices have the same characteristic polynomial. Must they be similar? What if both are diagonalizable?</p>
+<details><summary>Answer</summary><p>Not in general: $I$ and the shear (<a class="xref" href="#cex-notsimilar"></a>). If both are diagonalizable, both are similar to the same diagonal matrix of eigenvalues (up to the order of its entries, which a permutation similarity changes), hence to each other: <a class="xref" href="#cor-similar"></a>.</p></details></li>
+</ol>
+</section>
+
+<section class="refs" id="s-refs">
+<h2>Sources and further reading</h2>
+<ul>
+<li>S. Axler, <i>Linear Algebra Done Right</i>, 4th ed. (Springer, 2024), ch. 5 (§5A eigenvectors and invariant subspaces, §5B minimal polynomial, §5C upper-triangular matrices, §5D diagonalizable operators) and ch. 8 (§8A generalized eigenvectors and nilpotent operators, §8B generalized eigenspace decomposition, §8C Jordan form). <a href="https://linear.axler.net/">linear.axler.net</a><span class="free">Open access</span></li>
+<li>S. Treil, <i>Linear Algebra Done Wrong</i>, ch. 4 (§1 main definitions, §2 diagonalization) and ch. 9 (§1 Cayley–Hamilton, §2 spectral mapping, §3–5 generalized eigenspaces, nilpotent operators, Jordan decomposition). <a href="https://sites.google.com/a/brown.edu/sergei-treil-homepage/linear-algebra-done-wrong">author page</a><span class="free">Free</span></li>
+<li>R. A. Horn and C. R. Johnson, <i>Matrix Analysis</i>, 2nd ed. (Cambridge, 2013): ch. 1 (eigenvalues, similarity), ch. 2 (unitary similarity, Schur form, normal matrices), ch. 3 (Jordan canonical form, minimal polynomial), ch. 5 (norms and the spectral radius), Appendix D (continuity of eigenvalues).</li>
+<li>L. N. Trefethen and D. Bau, <i>Numerical Linear Algebra</i> (SIAM, 1997), Lectures 24–29: eigenvalue problems and the Schur factorization, power iteration and the Rayleigh quotient, the QR algorithm.</li>
+<li>G. H. Golub and C. F. Van Loan, <i>Matrix Computations</i>, 4th ed. (Johns Hopkins, 2013), ch. 7 (the unsymmetric eigenvalue problem: real Schur form, power methods, sensitivity).</li>
+<li>P. Henrici, "Bounds for iterates, inverses, spectral variation and fields of values of non-normal matrices", <i>Numer. Math.</i> 4 (1962) 24–40; E. Oja, "A simplified neuron model as a principal component analyzer", <i>J. Math. Biol.</i> 15 (1982) 267–273.</li>
+</ul>
+</section>
+
+</div>
+</main>
+</div>
+<script>LT.page.init();</script>
+<script>
+(function () {
+  'use strict';
+  const { Plot, ui, mat: M, fmt, fmtC } = LT;
+  const DEG = Math.PI / 180;
+  const unitv = th => [Math.cos(th), Math.sin(th)];
+  const mag2 = z => z.re * z.re + z.im * z.im;
+
+  /* Closed-form eigen-decomposition of a real 2 x 2 matrix with complex arithmetic.
+     Returns eigenvalues (larger real part first; for a complex pair, positive imaginary part first),
+     unit eigenvectors (complex, arrays of {re, im}) or null when A is a multiple of I, and the discriminant D. */
+  function eig2c(A) {
+    const a = A[0][0], b = A[0][1], c = A[1][0], d = A[1][1], tr = a + d, D = (a - d) * (a - d) / 4 + b * c;
+    const s = D >= 0 ? { re: Math.sqrt(D), im: 0 } : { re: 0, im: Math.sqrt(-D) };
+    const lams = [{ re: tr / 2 + s.re, im: s.im }, { re: tr / 2 - s.re, im: -s.im }];
+    const scale = Math.max(Math.abs(a), Math.abs(b), Math.abs(c), Math.abs(d), 1e-300);
+    const vecs = lams.map(l => {
+      const v1 = [{ re: b, im: 0 }, { re: l.re - a, im: l.im }], v2 = [{ re: l.re - d, im: l.im }, { re: c, im: 0 }];
+      const nrm = v => Math.sqrt(mag2(v[0]) + mag2(v[1])), n1 = nrm(v1), n2 = nrm(v2);
+      if (Math.max(n1, n2) < 1e-12 * scale) return null;
+      const v = n1 >= n2 ? v1 : v2, nv = n1 >= n2 ? n1 : n2;
+      return v.map(z => ({ re: z.re / nv, im: z.im / nv }));
+    });
+    return { lams, vecs, D, tr, det: a * d - b * c };
+  }
+  const hermAbs = (u, v) => { let re = 0, im = 0; for (let i = 0; i < 2; i++) { re += u[i].re * v[i].re + u[i].im * v[i].im; im += u[i].re * v[i].im - u[i].im * v[i].re; } return Math.hypot(re, im); };
+  const kappaUnit = (u, v) => { const c = Math.min(1, hermAbs(u, v)); return c >= 1 - 1e-14 ? Infinity : Math.sqrt((1 + c) / (1 - c)); };
+  // largest singular value of a real 2 x 2 matrix, in a form free of cancellation
+  const norm2x2 = A => { const [[a, b], [c, d]] = A; return 0.5 * (Math.hypot(a + d, c - b) + Math.hypot(a - d, b + c)); };
+  const fmtK = k => (Number.isFinite(k) ? (k < 1e4 ? fmt(k, 2) : LT.fmtSig(k, 3)) : '∞');
+
+  /* ---------------- Visual 3.1: hunting for eigenvectors ---------------- */
+  (function () {
+    const PRE = {
+      sym: [[1.5, 0.5], [0.5, 1.5]], rot: M.scale(M.rot(Math.PI / 3), 1.2), shear: [[1, 1], [0, 1]],
+      proj: [[0.75, Math.sqrt(3) / 4], [Math.sqrt(3) / 4, 0.25]], refl: [[0.5, Math.sqrt(3) / 2], [Math.sqrt(3) / 2, -0.5]],
+      defect: [[2, 1], [-1, 0]], nonorth: [[0.8, 1.2], [0, 1.6]], neg: [[0.6, 1.2], [1.2, -1.2]], scalar: [[1.5, 0], [0, 1.5]]
+    };
+    const st = { A: M.clone(PRE.sym), th: 20 * DEG };
+    const piLab = v => { const k = Math.round(v * 2); if (Math.abs(v * 2 - k) > 1e-6) return ''; return { '-2': '−π', '-1': '−π/2', '0': '0', '1': 'π/2', '2': 'π', '3': '3π/2', '4': '2π' }[k] || ''; };
+    const pl = new Plot('#hunt-plane', { xlim: [-3, 3], ylim: [-2.6, 2.6], equal: true, minH: 300, maxH: 440, label: 'A unit vector x, its image Ax, the image of the unit circle and the real eigendirections' });
+    const pa = new Plot('#hunt-angle', { xlim: [0, 2], ylim: [-1.15, 1.15], frame: true, aspect: 0.86, maxH: 440, xlabel: 'angle θ of x', ylabel: 'angle from x to Ax', xfmt: piLab, yfmt: piLab, label: 'Signed angle from x to Ax as a function of the angle of x' });
+    pl.el.insertBefore(pl.canvas, pl.el.firstChild); pa.el.insertBefore(pa.canvas, pa.el.firstChild);
+    const panel = ui.panel('#hunt-controls');
+    const sel = panel.select({ id: 'hunt-preset', label: 'Matrix', value: 'sym', options: [
+      ['custom', 'Drag the columns'], ['sym', 'Symmetric'], ['nonorth', 'Non-orthogonal eigenvectors'], ['rot', 'Rotation by 60°, scaled'], ['shear', 'Shear'],
+      ['defect', 'Defective (not triangular)'], ['proj', 'Projection'], ['refl', 'Reflection'], ['neg', 'Negative eigenvalue'], ['scalar', 'Multiple of I']],
+      onChange: v => { if (PRE[v]) { st.A = M.clone(PRE[v]); update(); } } });
+    let anim = null;
+    const [play] = panel.buttons([{ label: 'Play', kind: 'primary', onClick: () => { anim.toggle(); } }]);
+    panel.note(ui.legend([{ color: 'c7', label: '<span>unit vector <i>x</i></span>' }, { color: 'c2', label: '<span><i>Ax</i></span>' }, { color: 'c1', label: '<span>image of the unit circle</span>' }, { color: 'c3', label: '<span>eigendirections</span>', kind: 'dash' }]));
+    const out = panel.readout({});
+    anim = LT.animate(dt => { st.th = (st.th + dt * Math.PI / 4) % (2 * Math.PI); update(); }, { el: '#viz-hunt', onState: on => play.setLabel(on ? 'Pause' : 'Play') });
+    let E = null;
+    function compute() {
+      const A = st.A, e = M.eig2(A), dirs = [];
+      if (e.real) e.vectors.forEach((v, i) => { if (!v) return; if (dirs.some(q => Math.abs(q.v[0] * v[1] - q.v[1] * v[0]) < 1e-7)) return; dirs.push({ v, lam: e.values[i].re }); });
+      const scalar = e.real && !e.vectors[0];
+      const curve = [];
+      let prev = null;
+      for (let k = 0; k <= 720; k++) {
+        const t = 2 * Math.PI * k / 720, x = unitv(t), Ax = M.mv(A, x);
+        const phi = (Math.hypot(Ax[0], Ax[1]) < 1e-12 ? NaN : Math.atan2(x[0] * Ax[1] - x[1] * Ax[0], M.dot(x, Ax))) / Math.PI;
+        if (prev != null && Number.isFinite(phi) && Math.abs(phi - prev) > 0.66) curve.push(null);
+        curve.push([t / Math.PI, phi]); prev = Number.isFinite(phi) ? phi : prev;
+      }
+      return { e, dirs, scalar, curve };
+    }
+    pl.draw = g => {
+      const A = st.A, x = unitv(st.th), Ax = M.mv(A, x), c1 = [A[0][0], A[1][0]], c2 = [A[0][1], A[1][1]];
+      const O = [pl.X(0), pl.Y(0)], P = v => [pl.X(v[0]), pl.Y(v[1])], far = (a, b, r) => Math.hypot(a[0] - b[0], a[1] - b[1]) >= r;
+      g.circle([0, 0], 1, { color: 'c7', alpha: 0.45, width: 1.25, dash: [3, 4] });
+      g.ellipse([0, 0], A, { color: 'c1', width: 2 });
+      g.line(0, 0, c1[0], c1[1], { color: 'muted', width: 1, dash: [2, 3] }); g.line(0, 0, c2[0], c2[1], { color: 'muted', width: 1, dash: [2, 3] });
+      // labels of x and Ax just beyond the arrow tips, pushed apart perpendicular to x if they would collide
+      const tip = (v, off) => { const q = P(v), L = Math.hypot(q[0] - O[0], q[1] - O[1]) || 1; return [q[0] + off * (q[0] - O[0]) / L, q[1] + off * (q[1] - O[1]) / L]; };
+      let lx = tip(x, 24), la = tip(Ax, 20);
+      if (!far(lx, la, 26)) { const n = [-(P(x)[1] - O[1]), P(x)[0] - O[0]], nl = Math.hypot(n[0], n[1]) || 1, sd = (la[0] - lx[0]) * n[0] + (la[1] - lx[1]) * n[1] >= 0 ? 1 : -1; la = [la[0] + sd * 14 * n[0] / nl, la[1] + sd * 14 * n[1] / nl]; lx = [lx[0] - sd * 14 * n[0] / nl, lx[1] - sd * 14 * n[1] / nl]; }
+      const taken = [lx, la, P(x), P(c1), P(c2)];
+      E.dirs.forEach(d => {
+        g.ray([0, 0], d.v, { color: 'c3', width: 1.6, dash: [8, 5] });
+        // label at radius 2.05 on whichever half of the line keeps clear of the other labels, 14 px off the line
+        // screen normal of the line, turned to point up (or right for a near-vertical line); offset clears the label box
+        let n = [d.v[1], d.v[0]]; if (n[1] > 0 || (Math.abs(n[1]) < 0.2 && n[0] < 0)) n = [-n[0], -n[1]];
+        const off = 31 * Math.abs(n[0]) + 8 * Math.abs(n[1]) + 6;
+        const cands = [d.v, [-d.v[0], -d.v[1]]].map(q => { const b = P([2.05 * q[0], 2.05 * q[1]]); return [b[0] + off * n[0], b[1] + off * n[1]]; });
+        const score = c => Math.min(...taken.map(t => Math.hypot(t[0] - c[0], t[1] - c[1]))) + (c[1] < O[1] ? 8 : 0);
+        const best = score(cands[0]) >= score(cands[1]) ? cands[0] : cands[1];
+        taken.push(best);
+        g.text(best, 'λ = ' + fmt(d.lam, 2), { px: true, font: 'ui', italic: false, size: 12.5, color: 'ink-2', align: 'center' });
+      });
+      if (E.scalar) g.text([-2.9, 2.35], 'every direction is an eigendirection', { font: 'ui', italic: false, size: 12.5, color: 'ink-2' });
+      g.arrow([0, 0], Ax, { color: 'c2', width: 2.5 });
+      g.arrow([0, 0], x, { color: 'c7', width: 2.5 });
+      g.text(la, 'Ax', { px: true, size: 14, align: 'center' }); g.text(lx, 'x', { px: true, size: 14, align: 'center' });
+      // a column handle keeps its label only where the label lands clear of other handles and labels
+      [[hc1, 'Ae₁', c2], [hc2, 'Ae₂', c1]].forEach(([h, lab, other]) => { const q = P(h.get()), L = [q[0] + 13, q[1] - 11]; h.label = [lx, la, P(x), P(other)].every(t => far(t, L, 22)) ? lab : ''; });
+    };
+    pa.draw = g => {
+      g.hline(1, { color: 'muted', width: 1, dash: [4, 4] }); g.hline(-1, { color: 'muted', width: 1, dash: [4, 4] });
+      E.dirs.forEach(d => { let t = Math.atan2(d.v[1], d.v[0]); if (t < 0) t += Math.PI; t %= Math.PI; [t, t + Math.PI].forEach(s => g.vline(s / Math.PI, { color: 'c3', width: 1.5, dash: [6, 4] })); });
+      g.path(E.curve, { color: 'c1', width: 2.25 });
+      const x = unitv(st.th), Ax = M.mv(st.A, x), phi = Math.atan2(x[0] * Ax[1] - x[1] * Ax[0], M.dot(x, Ax)) / Math.PI;
+      g.vline(st.th / Math.PI, { color: 'c7', width: 1.25, alpha: 0.6 });
+      if (Math.hypot(Ax[0], Ax[1]) > 1e-12) g.dot([st.th / Math.PI, phi], { color: 'c7', r: 5 });
+    };
+    pl.addHandle({ get: () => unitv(st.th), set: (x, y) => { st.th = Math.atan2(y, x); if (st.th < 0) st.th += 2 * Math.PI; update(); }, color: 'c7', r: 7 });
+    const hc1 = pl.addHandle({ get: () => [st.A[0][0], st.A[1][0]], set: (x, y) => { st.A = [[x, st.A[0][1]], [y, st.A[1][1]]]; sel.set('custom'); update(); }, color: 'ink-2', r: 5, snap: 0.05, label: 'Ae₁' });
+    const hc2 = pl.addHandle({ get: () => [st.A[0][1], st.A[1][1]], set: (x, y) => { st.A = [[st.A[0][0], x], [st.A[1][0], y]]; sel.set('custom'); update(); }, color: 'ink-2', r: 5, snap: 0.05, label: 'Ae₂' });
+    function update() {
+      E = compute();
+      const A = st.A, e = E.e, x = unitv(st.th), Ax = M.mv(A, x), phi = Math.atan2(x[0] * Ax[1] - x[1] * Ax[0], M.dot(x, Ax));
+      const D = e.disc, tol = 1e-9 * (1 + e.tr * e.tr);
+      const tag = E.scalar ? '<span class="tag good">every direction</span>' : D > tol ? '<span class="tag good">two real eigendirections</span>' : D < -tol ? '<span class="tag bad">complex pair: none</span>' : '<span class="tag bad">defective: one eigendirection</span>';
+      out.set(`${ui.mat(A, 2, { name: 'A' })}` +
+        `<span><i>τ</i> <span class="num">${fmt(e.tr, 3)}</span>, <i>Δ</i> <span class="num">${fmt(e.det, 3)}</span>, <i>D</i> <span class="num">${fmt(D, 3)}</span></span>` +
+        `<span>eigenvalues <span class="num">${fmtC(e.values[0], 3)}</span>, <span class="num">${fmtC(e.values[1], 3)}</span></span>` +
+        `<span><i>θ</i> <span class="num">${fmt(st.th / DEG, 1)}°</span>, ‖<i>Ax</i>‖ <span class="num">${fmt(Math.hypot(Ax[0], Ax[1]), 3)}</span>, angle to <i>Ax</i> <span class="num">${fmt(phi / DEG, 1)}°</span></span>${tag}`);
+      pl.redraw(); pa.redraw();
+    }
+    update();
+  })();
+
+  /* ---------------- Visual 3.2: eigenvalue collision ---------------- */
+  (function () {
+    const FAM = {
+      jordan: { range: [-1, 1], v0: 0.25, step: 0.001, sym: 'ε', tex: '$\\varepsilon$', A: e => [[1, 1], [e, 1]], zx: [-0.3, 2.3], zy: [-1.25, 1.25], col: [0], circle: false },
+      sym: { range: [-1, 1], v0: 0.25, step: 0.001, sym: 'ε', tex: '$\\varepsilon$', A: e => [[1 + e, 0.25], [0.25, 1 - e]], zx: [-0.6, 2.6], zy: [-1.25, 1.25], col: [], circle: false },
+      osc: { range: [0, 2], v0: 0.5, step: 0.002, sym: 'ζ', tex: '$\\zeta$', A: z => [[0, 1], [-1, -2 * z]], zx: [-4, 1], zy: [-1.5, 1.5], col: [1], circle: true }
+    };
+    const st = { fam: 'jordan', s: 0.25 };
+    const pc = new Plot('#col-cplx', { xlim: FAM.jordan.zx, ylim: FAM.jordan.zy, equal: true, height: 290, xlabel: 'Re', ylabel: 'Im', label: 'Eigenvalues of the current matrix in the complex plane, with their paths along the family' });
+    const pv = new Plot('#col-vecs', { xlim: [-1.4, 1.4], ylim: [-1.25, 1.25], equal: true, height: 290, label: 'Eigenvectors of the current matrix' });
+    const pk = new Plot('#col-kappa', { xlim: FAM.jordan.range, ylim: [0.7, 400], frame: true, logy: true, height: 290, xlabel: 'parameter', label: 'Condition number of the eigenvector matrix along the family' });
+    [pc, pv, pk].forEach(p => p.el.insertBefore(p.canvas, p.el.firstChild));
+    const panel = ui.panel('#col-controls');
+    panel.select({ id: 'col-family', label: 'Family', value: 'jordan', options: [['jordan', 'Jordan point: [[1, 1], [ε, 1]]'], ['sym', 'Symmetric: [[1+ε, ¼], [¼, 1−ε]]'], ['osc', 'Damped oscillator: [[0, 1], [−1, −2ζ]]']], onChange: v => setFam(v) });
+    const sl = panel.slider({ id: 'col-param', label: 'Parameter $\\varepsilon$', min: -1, max: 1, step: 0.001, value: st.s, digits: 3, onInput: v => { st.s = v; update(); } });
+    const [goBtn] = panel.buttons([{ label: 'Go to the collision', onClick: () => { const F = FAM[st.fam]; if (F.col.length) { st.s = F.col[0]; sl.set(st.s); update(); } } }]);
+    panel.note(ui.legend([{ color: 'c1', label: '<span><i>λ</i><sub>1</sub>, <i>v</i><sub>1</sub></span>', kind: 'dot' }, { color: 'c2', label: '<span><i>λ</i><sub>2</sub>, <i>v</i><sub>2</sub></span>', kind: 'dot' }, { color: 'muted', label: '<span>paths of the eigenvalues</span>', kind: 'dot' }, { color: 'c4', label: '<span>|ε|<sup>−1/2</sup> (Jordan family)</span>', kind: 'dash' }]));
+    const out = panel.readout({});
+    let cache = null;
+    function famCache() { // loci and kappa curve, computed once per family
+      const F = FAM[st.fam], N = 801, loci = [], kap = [];
+      for (let k = 0; k < N; k++) {
+        const s = F.range[0] + (F.range[1] - F.range[0]) * k / (N - 1), E = eig2c(F.A(s));
+        E.lams.forEach(l => loci.push([l.re, l.im]));
+        const kv = E.vecs[0] && E.vecs[1] ? kappaUnit(E.vecs[0], E.vecs[1]) : Infinity;
+        kap.push([s, Number.isFinite(kv) ? Math.min(kv, 1e6) : NaN]);
+      }
+      return { loci, kap };
+    }
+    function setFam(v) {
+      st.fam = v; const F = FAM[v]; st.s = F.v0;
+      sl.input.min = F.range[0]; sl.input.max = F.range[1]; sl.input.step = F.step; sl.set(st.s);
+      const lab = sl.el.querySelector('.ctl-label'); lab.innerHTML = 'Parameter ' + F.tex; LT.typeset(lab);
+      pc.setLimits(F.zx, F.zy); pk.setLimits(F.range, [0.7, 400]); goBtn.el.style.display = F.col.length ? '' : 'none';
+      cache = famCache(); update();
+    }
+    pc.draw = g => {
+      const F = FAM[st.fam], E = eig2c(F.A(st.s));
+      if (F.circle) g.circle([0, 0], 1, { color: 'muted', width: 1, dash: [3, 4] });
+      cache.loci.forEach(q => g.dot(q, { color: 'muted', r: 1.3, ring: false, alpha: 0.55 }));
+      F.col.forEach(s => { const l = eig2c(F.A(s)).lams[0]; g.marker([l.re, l.im], { shape: 'x', size: 6, color: 'ink-2', width: 1.5 }); });
+      g.dot([E.lams[1].re, E.lams[1].im], { color: 'c2', r: 6 }); g.dot([E.lams[0].re, E.lams[0].im], { color: 'c1', r: 6 });
+    };
+    pv.draw = g => {
+      const E = eig2c(FAM[st.fam].A(st.s));
+      g.circle([0, 0], 1, { color: 'rule-strong', width: 1, dash: [2, 4] });
+      const real = E.D >= 0;
+      if (real) E.vecs.forEach((v, i) => { if (!v) return; const r = [v[0].re, v[1].re]; g.ray([0, 0], r, { color: i ? 'c2' : 'c1', width: 1, alpha: 0.5 }); g.arrow([0, 0], r, { color: i ? 'c2' : 'c1', width: 2.5, label: i ? 'v₂' : 'v₁', labelOffset: 18 }); });
+      else if (E.vecs[0]) {
+        const v = E.vecs[0], re = [v[0].re, v[1].re], im = [v[0].im, v[1].im];
+        g.arrow([0, 0], re, { color: 'c1', width: 2.5, label: 'Re v₁', labelOffset: 26 }); g.arrow([0, 0], im, { color: 'c1', width: 2.25, dash: [6, 4], label: 'Im v₁', labelOffset: 26 });
+      }
+    };
+    pk.draw = g => {
+      const F = FAM[st.fam];
+      if (st.fam === 'jordan') g.fn(x => Math.pow(Math.abs(x), -0.5), { color: 'c4', width: 2, dash: [7, 5] }, { n: 600 });
+      g.path(cache.kap.map(q => (Number.isFinite(q[1]) ? q : null)), { color: 'c7', width: 2 });
+      F.col.forEach(s => g.vline(s, { color: 'ink-2', width: 1, dash: [3, 3] }));
+      const E = eig2c(F.A(st.s)), kv = E.vecs[0] && E.vecs[1] ? kappaUnit(E.vecs[0], E.vecs[1]) : Infinity;
+      g.vline(st.s, { color: 'c7', width: 1, alpha: 0.5 });
+      if (Number.isFinite(kv)) g.dot([st.s, Math.min(kv, 400)], { color: 'c7', r: 5 });
+    };
+    function update() {
+      const F = FAM[st.fam], A = F.A(st.s), E = eig2c(A);
+      const both = E.vecs[0] && E.vecs[1], kv = both ? kappaUnit(E.vecs[0], E.vecs[1]) : Infinity, cosg = both ? Math.min(1, hermAbs(E.vecs[0], E.vecs[1])) : 1;
+      const tol = 1e-12, tag = Math.abs(E.D) <= tol ? '<span class="tag bad">collision: one eigenvector (Jordan block)</span>' : E.D > 0 ? '<span class="tag good">two real eigenvalues</span>' : '<span class="tag">complex conjugate pair</span>';
+      const gap = Math.hypot(E.lams[0].re - E.lams[1].re, E.lams[0].im - E.lams[1].im);
+      out.set(`<span>${F.sym} <span class="num">${fmt(st.s, 3)}</span></span>${ui.mat(A, 3, { name: 'A' })}` +
+        `<span>eigenvalues <span class="num">${fmtC(E.lams[0], 3)}</span>, <span class="num">${fmtC(E.lams[1], 3)}</span></span>` +
+        `<span>|<i>λ</i><sub>1</sub> − <i>λ</i><sub>2</sub>| <span class="num">${fmt(gap, 3)}</span>, <i>D</i> <span class="num">${fmt(E.D, 4)}</span></span>` +
+        `<span>angle between eigenvectors <span class="num">${fmt(Math.acos(cosg) / DEG, 1)}°</span>, <i>κ</i>(<i>V</i>) <span class="num">${fmtK(kv)}</span>` +
+        (st.fam === 'jordan' && st.s !== 0 ? `, |ε|<sup>−1/2</sup> <span class="num">${fmtK(Math.pow(Math.abs(st.s), -0.5))}</span>` : '') + `</span>${tag}`);
+      pc.redraw(); pv.redraw(); pk.redraw();
+    }
+    cache = famCache(); update();
+  })();
+
+  /* ---------------- Visual 3.3: iterating a matrix ---------------- */
+  (function () {
+    const K = 40;
+    const PRE = {
+      node: { mode: 'real', l1: 0.95, l2: 0.6, t1: 20, t2: 75 }, slow: { mode: 'real', l1: 1.02, l2: 0.98, t1: 20, t2: 110 },
+      neg: { mode: 'real', l1: -0.95, l2: 0.5, t1: 30, t2: 120 }, nearpar: { mode: 'real', l1: 0.9, l2: 0.8, t1: 30, t2: 38 },
+      jordan: { mode: 'jordan', l1: 0.9, l2: 0.9, t1: 20, t2: 110 }, spiral: { mode: 'complex', r: 0.96, phi: 20, t1: 0, t2: 70 },
+      equal: { mode: 'real', l1: 0.9, l2: -0.9, t1: 20, t2: 110 }, unstable: { mode: 'real', l1: 1.12, l2: 0.7, t1: 25, t2: 95 }
+    };
+    const st = { mode: 'real', l1: 0.95, l2: 0.6, r: 0.96, phi: 20, t1: 20, t2: 75, x0: [1.6, 1.15], kShow: K };
+    const pp = new Plot('#iter-phase', { xlim: [-2.6, 2.6], ylim: [-1.9, 1.9], equal: true, minH: 300, maxH: 520, label: 'Iterates of x under A, the eigendirections, and the normalized iterates on the unit circle' });
+    const pn = new Plot('#iter-norm', { xlim: [0, K], ylim: [1e-2, 10], frame: true, logy: true, aspect: 0.6, minH: 200, maxH: 260, xlabel: 'k', label: 'Norm of A to the k, norm of x_k, and the bounds rho^k and kappa(V) rho^k' });
+    const pg = new Plot('#iter-angle', { xlim: [0, K], ylim: [1e-8, 2], frame: true, logy: true, aspect: 0.6, minH: 200, maxH: 260, xlabel: 'k', label: 'Angle between x_k and the dominant eigendirection on a log scale' });
+    [pp, pn, pg].forEach(p => p.el.insertBefore(p.canvas, p.el.firstChild));
+    const panel = ui.panel('#iter-controls');
+    const sel = panel.select({ id: 'iter-preset', label: 'Preset', value: 'node', options: [['custom', 'Your settings'], ['node', 'Stable node'], ['slow', 'Slow alignment, |λ₂/λ₁| near 1'], ['neg', 'Negative dominant eigenvalue'], ['nearpar', 'Nearly parallel eigenvectors'], ['jordan', 'Jordan block'], ['spiral', 'Spiral (complex pair)'], ['equal', 'Equal moduli: 0.9 and −0.9'], ['unstable', 'Unstable: ρ > 1']], onChange: v => { if (PRE[v]) { Object.assign(st, PRE[v]); syncSliders(); restart(); } } });
+    const mode = panel.select({ id: 'iter-mode', label: 'Structure', value: 'real', options: [['real', 'Two real eigenvalues'], ['jordan', 'Jordan block (defective)'], ['complex', 'Complex pair']], onChange: v => { st.mode = v; sel.set('custom'); showSliders(); restart(); } });
+    const custom = f => v => { f(v); sel.set('custom'); restart(); };
+    const sL1 = panel.slider({ id: 'iter-l1', label: '$\\lambda_1$', min: -1.3, max: 1.3, step: 0.01, value: st.l1, onInput: custom(v => { st.l1 = v; }) });
+    const sL2 = panel.slider({ id: 'iter-l2', label: '$\\lambda_2$', min: -1.3, max: 1.3, step: 0.01, value: st.l2, onInput: custom(v => { st.l2 = v; }) });
+    const sR = panel.slider({ id: 'iter-r', label: 'modulus $r$', min: 0.5, max: 1.2, step: 0.01, value: st.r, onInput: custom(v => { st.r = v; }) });
+    const sPhi = panel.slider({ id: 'iter-phi', label: 'rotation $\\phi$', min: 0, max: 90, step: 1, value: st.phi, digits: 0, fmt: v => fmt(v, 0) + '°', onInput: custom(v => { st.phi = v; }) });
+    const sT1 = panel.slider({ id: 'iter-t1', label: 'angle of $v_1$', min: 0, max: 180, step: 1, value: st.t1, digits: 0, fmt: v => fmt(v, 0) + '°', onInput: custom(v => { st.t1 = v; }) });
+    const sT2 = panel.slider({ id: 'iter-t2', label: 'angle of $v_2$', min: 0, max: 180, step: 1, value: st.t2, digits: 0, fmt: v => fmt(v, 0) + '°', onInput: custom(v => { st.t2 = v; }) });
+    let anim = null;
+    const [play] = panel.buttons([{ label: 'Play the iteration', kind: 'primary', onClick: () => { st.kShow = 0; anim.play(); } }]);
+    panel.note(ui.legend([{ color: 'c7', label: '<span>iterates <i>x<sub>k</sub></i></span>', kind: 'dot' }, { color: 'c2', label: '<span><i>x<sub>k</sub></i>/‖<i>x<sub>k</sub></i>‖</span>', kind: 'dot' }, { color: 'c3', label: '<span>dominant eigendirection</span>' }, { color: 'c1', label: '<span>‖<i>A<sup>k</sup></i>‖</span>' }, { color: 'muted', label: '<span><i>ρ<sup>k</sup></i> and <i>κ</i>(<i>V</i>)<i>ρ<sup>k</sup></i>; reference rates</span>', kind: 'dash' }]));
+    const out = panel.readout({});
+    let acc = 0;
+    anim = LT.animate(dt => { acc += dt; while (acc > 0.16 && st.kShow < K) { acc -= 0.16; st.kShow++; } if (st.kShow >= K) { anim.pause(); acc = 0; } pp.redraw(); }, { el: '#viz-iter', onState: on => play.setLabel(on ? 'Playing…' : 'Play the iteration') });
+    function showSliders() {
+      const c = st.mode === 'complex';
+      sL1.el.style.display = c ? 'none' : ''; sL2.el.style.display = c || st.mode === 'jordan' ? 'none' : '';
+      sR.el.style.display = c ? '' : 'none'; sPhi.el.style.display = c ? '' : 'none';
+    }
+    function syncSliders() { mode.set(st.mode); sL1.set(st.l1); sL2.set(st.l2); sR.set(st.r); sPhi.set(st.phi); sT1.set(st.t1); sT2.set(st.t2); showSliders(); }
+    let C = null;
+    function build() {
+      let t2 = st.t2; if (Math.abs(Math.sin((t2 - st.t1) * DEG)) < 0.02) t2 = st.t1 + 1.2;       // keep the basis invertible
+      const s1 = unitv(st.t1 * DEG), s2 = unitv(t2 * DEG), S = M.fromCols([s1, s2]);
+      const core = st.mode === 'real' ? [[st.l1, 0], [0, st.l2]] : st.mode === 'jordan' ? [[st.l1, 1], [0, st.l1]] : M.scale(M.rot(st.phi * DEG), st.r);
+      const A = M.mul(M.mul(S, core), M.inv(S)), sv = M.svd(S).S;
+      const kap = st.mode === 'jordan' ? Infinity : sv[0] / sv[1];                               // unit columns: kappa(V) = kappa(S), also for the complex pair
+      const lam = st.mode === 'real' ? [st.l1, st.l2] : st.mode === 'jordan' ? [st.l1, st.l1] : null;
+      const rho = lam ? Math.max(Math.abs(lam[0]), Math.abs(lam[1])) : st.r;
+      let dom = null, ratio = null;                                                              // dominant real eigendirection, if any
+      if (st.mode === 'jordan') dom = s1;
+      else if (st.mode === 'real' && Math.abs(Math.abs(st.l1) - Math.abs(st.l2)) > 1e-9) { const i = Math.abs(st.l1) > Math.abs(st.l2) ? 0 : 1; dom = i ? s2 : s1; ratio = Math.abs(lam[1 - i] / lam[i]); }
+      const xs = [st.x0.slice()], nA = [1], nx = [1], ang = [];
+      let P = M.eye(2), x = st.x0.slice(), ok = true; const n0 = M.vnorm(st.x0);
+      for (let k = 0; k <= K; k++) {
+        if (k > 0) { P = M.mul(A, P); x = M.mv(A, x); xs.push(x.slice()); nA.push(norm2x2(P)); nx.push(M.vnorm(x) / n0); }
+        if (nA[k] < rho ** k * (1 - 1e-9) || (Number.isFinite(kap) && nA[k] > kap * rho ** k * (1 + 1e-9))) ok = false;
+        if (dom) { const u = M.unit(x); ang.push(Math.asin(Math.min(1, Math.abs(u[0] * dom[1] - u[1] * dom[0])))); }
+      }
+      return { A, S, s1, s2, kap, rho, dom, ratio, xs, nA, nx, ang, ok, lam };
+    }
+    function restart() { st.kShow = K; if (anim && anim.running) anim.pause(); update(); }
+    pp.draw = g => {
+      const c = C;
+      g.circle([0, 0], 1, { color: 'rule-strong', width: 1, dash: [2, 4] });
+      if (st.mode === 'complex') {
+        g.ray([0, 0], c.s1, { color: 'muted', width: 1, dash: [5, 5] }); g.ray([0, 0], c.s2, { color: 'muted', width: 1, dash: [5, 5] });
+        const z = M.solve(c.S, st.x0), rz = Math.hypot(z[0], z[1]);                           // invariant ellipse of the rotation part through x0
+        g.ellipse([0, 0], M.scale(c.S, rz), { color: 'muted', width: 1.25, dash: [3, 3] });
+      } else {
+        const other = c.dom === c.s1 ? c.s2 : c.s1;
+        if (st.mode === 'jordan') { g.ray([0, 0], c.s1, { color: 'c3', width: 2 }); g.ray([0, 0], c.s2, { color: 'muted', width: 1, dash: [5, 5] }); }
+        else if (c.dom) { g.ray([0, 0], c.dom, { color: 'c3', width: 2 }); g.ray([0, 0], other, { color: 'c3', width: 1.25, dash: [7, 5] }); }
+        else { g.ray([0, 0], c.s1, { color: 'c3', width: 1.25, dash: [7, 5] }); g.ray([0, 0], c.s2, { color: 'c3', width: 1.25, dash: [7, 5] }); }
+      }
+      const kS = st.kShow, pts = c.xs.slice(0, kS + 1);
+      g.path(pts, { color: 'c7', width: 1.25, alpha: 0.7 });
+      pts.forEach((q, k) => { if (k > 0) g.dot(q, { color: 'c7', r: 3, ring: false, alpha: 0.35 + 0.65 * (1 - k / K) }); });
+      pts.forEach((q, k) => { const u = M.unit(q); if (M.vnorm(q) > 0) g.dot(u, { color: 'c2', r: 2.6, ring: false, alpha: 0.25 + 0.75 * k / K }); });
+      if (kS > 0) g.dot(c.xs[kS], { color: 'c7', r: 4.5 });
+      g.text(st.x0, 'x₀', { size: 15, dx: 12, dy: -14 });
+    };
+    pn.draw = g => {
+      const c = C, ks = c.nA.map((_, k) => k);
+      if (Number.isFinite(c.kap)) g.path(ks.map(k => [k, c.kap * c.rho ** k]), { color: 'muted', width: 1.5, dash: [2, 3] });
+      g.path(ks.map(k => [k, c.rho ** k]), { color: 'muted', width: 1.5, dash: [6, 4] });
+      g.path(ks.map(k => [k, c.nx[k]]), { color: 'c7', width: 1.75, alpha: 0.85 });
+      g.path(ks.map(k => [k, c.nA[k]]), { color: 'c1', width: 2.25 });
+    };
+    pg.draw = g => {
+      const c = C;
+      if (!c.dom) { g.text([g.p.W / 2, g.p.H / 2 - 6], 'no dominant real eigenvalue:', { px: true, align: 'center', font: 'ui', italic: false, size: 12.5, color: 'ink-2' }); g.text([g.p.W / 2, g.p.H / 2 + 12], 'the direction need not converge', { px: true, align: 'center', font: 'ui', italic: false, size: 12.5, color: 'ink-2' }); return; }
+      // reference rates drawn through the first point: |lambda2/lambda1|^k (geometric) or 1/k (Jordan block)
+      const kref = st.mode === 'jordan' ? K : 0;
+      if (c.ang[kref] > 1e-15) {
+        if (st.mode === 'jordan') g.path(c.ang.map((_, k) => (k ? [k, 2 * c.ang[kref] * kref / k] : null)), { color: 'muted', width: 1.5, dash: [6, 4] });
+        else g.path(c.ang.map((_, k) => [k, c.ang[kref] * Math.pow(c.ratio, k - kref)]), { color: 'muted', width: 1.5, dash: [6, 4] });
+      }
+      g.path(c.ang.map((a, k) => (a > 1e-300 ? [k, a] : null)), { color: 'c3', width: 2.25 });
+    };
+    pp.addHandle({ get: () => st.x0, set: (x, y) => { if (Math.hypot(x, y) < 0.08) return; st.x0 = [x, y]; restart(); }, color: 'c7', r: 7, snap: 0.05 });
+    const decade = (lo, hi) => [Math.pow(10, Math.floor(Math.log10(lo))), Math.pow(10, Math.ceil(Math.log10(hi)))];
+    function update() {
+      C = build();
+      const vals = C.nA.concat(C.nx, C.nA.map((_, k) => C.rho ** k), Number.isFinite(C.kap) ? C.nA.map((_, k) => C.kap * C.rho ** k) : []).filter(v => v > 0 && Number.isFinite(v));
+      let [lo, hi] = decade(Math.max(1e-6, Math.min(...vals)), Math.min(1e6, Math.max(...vals))); if (hi / lo < 10) hi = lo * 10; pn.setLimits(null, [lo, hi]);
+      if (C.dom) { const av = C.ang.filter(a => a > 1e-14); const [alo] = decade(Math.max(1e-12, Math.min(...av, 1)), 2); pg.setLimits(null, [alo, 2]); }
+      const evs = st.mode === 'complex' ? `${fmt(st.r, 2)}e<sup>±i${fmt(st.phi, 0)}°</sup>` : st.mode === 'jordan' ? `${fmt(st.l1, 2)} (twice, one eigenvector)` : `${fmt(st.l1, 2)}, ${fmt(st.l2, 2)}`;
+      let P40 = M.eye(2); for (let k = 0; k < K; k++) P40 = M.mul(C.A, P40);
+      out.set(`${ui.mat(C.A, 2, { name: 'A' })}<span>eigenvalues <span class="num">${evs}</span></span>` +
+        `<span><i>ρ</i>(<i>A</i>) <span class="num">${fmt(C.rho, 3)}</span>, ‖<i>A</i><sup>40</sup>‖<sup>1/40</sup> <span class="num">${fmt(Math.pow(norm2x2(P40), 1 / K), 3)}</span></span>` +
+        `<span><i>κ</i>(<i>V</i>) <span class="num">${fmtK(C.kap)}</span>${C.ratio != null ? `, |<i>λ</i><sub>2</sub>/<i>λ</i><sub>1</sub>| <span class="num">${fmt(C.ratio, 3)}</span>` : ''}</span>` +
+        `<span>max<sub>k</sub> ‖<i>A<sup>k</sup></i>‖ <span class="num">${fmt(Math.max(...C.nA), 3)}</span></span>` +
+        (Number.isFinite(C.kap) ? `<span><i>ρ<sup>k</sup></i> ≤ ‖<i>A<sup>k</sup></i>‖ ≤ <i>κ</i>(<i>V</i>)<i>ρ<sup>k</sup></i> for <i>k</i> ≤ 40</span>${C.ok ? '<span class="tag good">holds</span>' : '<span class="tag bad">violated</span>'}` : `<span><i>ρ<sup>k</sup></i> ≤ ‖<i>A<sup>k</sup></i>‖ for <i>k</i> ≤ 40</span>${C.ok ? '<span class="tag good">holds</span>' : '<span class="tag bad">violated</span>'}<span class="tag">defective: no eigenvector basis</span>`));
+      pp.redraw(); pn.redraw(); pg.redraw();
+    }
+    showSliders(); update();
+  })();
+})();
+</script>
+</body>
+</html>

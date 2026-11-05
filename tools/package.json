@@ -1,0 +1,6 @@
+{
+  "name": "linear-theory-tools",
+  "private": true,
+  "description": "Checker and tests for the Linear Theory study guide",
+  "dependencies": { "mathjax": "3.2.2", "playwright": "^1.45.0" }
+}

@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Linear Theory Study Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap">
+<link rel="stylesheet" href="assets/lt.css">
+<script src="assets/toc.js"></script>
+<script src="assets/lt.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+<style>
+  .hub-meta { display: flex; flex-wrap: wrap; gap: 6px 22px; font-family: var(--font-ui); font-size: 13px; color: var(--muted); margin: 0 0 6px; }
+  .hub-meta b { color: var(--ink); font-weight: 600; }
+  .hero-fig { margin: 0; }
+  .hero-fig .lt-canvas { border-radius: 6px; }
+  .hero-inset { margin-top: 8px; }
+  .hero-cap { font-size: 15px; line-height: 1.5; color: var(--ink-2); margin: 10px 2px 0; }
+  .hero-ctl { display: flex; gap: 10px; align-items: center; margin-top: 8px; font-family: var(--font-ui); font-size: 12.5px; color: var(--muted); }
+  .stage-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 10px 0 0; padding: 0; list-style: none; }
+  .stage-legend li { margin: 0; }
+  .hub-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 18px 40px; }
+  .hub-cols ul { padding-left: 20px; }
+  .hub-section { margin-top: 64px; }
+  .hub-section > h2 { margin-top: 0; }
+  .sw-inline { display: inline-block; width: 18px; height: 3px; border-radius: 2px; vertical-align: 0.3em; margin-right: 6px; }
+</style>
+</head>
+<body>
+<div class="topbar"><button class="btn" id="lt-menu" type="button" aria-controls="lt-side" aria-expanded="false">Contents</button><span class="topbar-title">Linear Theory · Contents</span></div>
+<div class="shell">
+<nav class="side" id="lt-side" aria-label="Chapters"></nav>
+<main class="page" id="main" data-page="index">
+<div class="content">
+
+<section class="hub-hero" aria-label="Introduction">
+  <div>
+    <div class="eyebrow">Interactive study guide</div>
+    <h1>Linear Theory</h1>
+    <p class="lead">From vector spaces to feedback. A fast refresher of linear algebra, then linear analysis, dynamical systems and control theory, built around figures you can move.</p>
+    <p class="hub-meta"><span><b>13</b> chapters</span><span><b>5</b> parts</span><span>each with theorems, proofs, probes, counterexamples and live visuals</span></p>
+    <p class="hub-meta"><a href="ch01_linear_maps.html">Start with chapter 1</a><a href="notation.html">Notation and abbreviations</a><a href="https://claude.ai/artifact/YSpFLRHgRFxoYuQPT58naP">Curriculum doc</a></p>
+  </div>
+  <figure class="hero-fig">
+    <div class="plot" id="hero-plot"></div>
+    <div class="plot hero-inset" id="hero-inset"></div>
+    <div class="hero-ctl" id="hero-ctl"></div>
+    <figcaption class="hero-cap">A circle of initial conditions under $\dot x = Ax$ with $A = \begin{bmatrix}-1 & 7\\ 0 & -2\end{bmatrix}$. Both eigenvalues are negative, so every solution decays in the end, yet the circle first stretches to about $1.84$ times its size, near $t \approx 0.63$. Eigenvalues decide the long run; the geometry of a non-normal matrix decides the transient (chapter 6, and chapter 13 for cortical circuits).</figcaption>
+  </figure>
+</section>
+
+<section class="hub-section" id="how">
+<h2>How each chapter works</h2>
+<p>Every core topic is worked in the same order, so the reasoning is visible and not only the result. The stages appear in the text as small run-in labels; definitions and theorems sit in tinted boxes, in textbook style, and are numbered by chapter.</p>
+<ol class="loop-steps wide">
+  <li><b>Problem</b>The question, in one sentence.</li>
+  <li><b>Setting and assumptions</b>The spaces, the field, what is given and what is not.</li>
+  <li><b>Goal</b>What an answer must deliver.</li>
+  <li><b>Probe</b>The simplest, extreme and degenerate cases, and counterexamples to tempting claims.</li>
+  <li><b>Pattern</b>The invariants, symmetries and equivalences that the probes expose.</li>
+  <li><b>Conjecture, then theorem</b>The pattern stated precisely, with hypotheses.</li>
+  <li><b>Deduction</b>A short proof, or a pointer to an open source when the proof is long.</li>
+  <li><b>Visual</b>An interactive figure or toy example with "try this" prompts.</li>
+</ol>
+<ul class="stage-legend" aria-label="Label styles">
+  <li><span class="blk-label" style="color:var(--lab-stage)">Problem</span></li>
+  <li><span class="blk-label" style="color:var(--lab-probe)">Probe</span></li>
+  <li><span class="blk-label" style="color:var(--lab-cex)">Counterexample</span></li>
+  <li><span class="blk-label" style="color:var(--lab-pattern)">Pattern</span></li>
+  <li><span class="blk-label" style="color:var(--lab-conj)">Conjecture</span></li>
+  <li><span class="blk-label" style="color:var(--lab-def)">Definition</span></li>
+  <li><span class="blk-label" style="color:var(--lab-thm)">Theorem</span></li>
+  <li><span class="blk-label" style="color:var(--lab-ex)">Example</span></li>
+</ul>
+</section>
+
+<section class="hub-section" id="curriculum">
+<h2>Curriculum</h2>
+<p>Part I is review and moves fast, ending with the singular value decomposition (SVD). Parts II to IV carry the weight for control and dynamics, through the linear quadratic regulator (LQR), the Kalman filter and linear quadratic Gaussian (LQG) control to robustness. Part V turns the toolkit on neural circuits and on linear methods for nonlinear problems. Each card gives the chapter's core question.</p>
+<div class="part-grid" id="part-grid"></div>
+</section>
+
+<section class="hub-section" id="reading">
+<h2>Reading the figures</h2>
+<div class="hub-cols">
+  <div>
+    <ul>
+      <li>Round handles can be dragged. Presets jump to the special cases named in the text: the probes and counterexamples are one click away.</li>
+      <li>Readouts show the quantities a theorem relates, often both sides of an inequality, so you can watch it hold while you drag.</li>
+      <li>Each figure ends with <i>Try this</i> (things to do, with the expected observation) and <i>What to notice</i> (the theorem behind it).</li>
+    </ul>
+  </div>
+  <div>
+    <ul>
+      <li>Colours keep their roles across the guide: <span class="sw-inline" style="background:var(--c1)"></span>first object, ranges and reachable sets; <span class="sw-inline" style="background:var(--c2)"></span>second object; <span class="sw-inline" style="background:var(--c3)"></span>solutions, projections, stable outcomes; <span class="sw-inline" style="background:var(--c7)"></span>the moving state or test vector; <span class="sw-inline" style="background:var(--c8)"></span>null spaces, errors, instability; <span class="sw-inline" style="background:var(--c4)"></span>targets and right-hand sides.</li>
+      <li>Everything is computed live from the mathematics in a small linear algebra library (eigenvalues, singular values, matrix exponentials, Lyapunov and Riccati solvers); nothing is a redrawn picture.</li>
+    </ul>
+  </div>
+</div>
+</section>
+
+<section class="hub-section" id="sources">
+<h2>Companion and core sources</h2>
+<p>The <a href="https://claude.ai/artifact/YSpFLRHgRFxoYuQPT58naP">curriculum doc</a> holds the textbook survey, the chapter-by-chapter plan with readings, and the pacing. The books carrying most of the weight:</p>
+<ul class="refs">
+  <li>S. Axler, <i>Linear Algebra Done Right</i>, 4th ed. (2024). <a href="https://linear.axler.net/">linear.axler.net</a><span class="free">Open access</span></li>
+  <li>L. N. Trefethen and M. Embree, <i>Spectra and Pseudospectra</i> (Princeton, 2005).</li>
+  <li>D. G. Luenberger, <i>Optimization by Vector Space Methods</i> (Wiley, 1969).</li>
+  <li>J. P. Hespanha, <i>Linear Systems Theory</i>, 2nd ed. (Princeton, 2018).</li>
+  <li>E. D. Sontag, <i>Mathematical Control Theory</i>, 2nd ed. (Springer, 1998). <a href="https://stuff.mit.edu/afs/athena.mit.edu/user/e/s/esontag/www/mct.html">author page</a><span class="free">Free</span></li>
+  <li>K. J. Åström and R. M. Murray, <i>Feedback Systems</i>, 2nd ed. (Princeton, 2021). <a href="https://www.cds.caltech.edu/~murray/amwiki/Second_Edition.html">book site</a><span class="free">Free</span></li>
+  <li>J. C. Doyle, B. A. Francis and A. R. Tannenbaum, <i>Feedback Control Theory</i> (1992). <a href="https://www.control.utoronto.ca/people/profs/francis/dft.pdf">draft PDF</a><span class="free">Free</span></li>
+  <li>K. Zhou, J. C. Doyle and K. Glover, <i>Robust and Optimal Control</i> (Prentice Hall, 1996).</li>
+</ul>
+</section>
+
+</div>
+</main>
+</div>
+<script>LT.page.init();</script>
+<script>
+(function () {
+  'use strict';
+  const { Plot, mat: M, ui, fmt } = LT;
+
+  /* Chapter cards from the table of contents */
+  const grid = document.getElementById('part-grid');
+  grid.innerHTML = LT_TOC.parts.map(p => `
+    <div class="part-row">
+      <h3><small>Part ${p.id}</small>${p.name}</h3>
+      <div class="ch-cards">${p.chapters.map(c => `<a class="ch-card" href="${c.file}"><span class="n">CHAPTER ${c.n}</span><span class="t">${c.title}</span><span class="q">${c.q}</span></a>`).join('')}</div>
+    </div>`).join('');
+
+  /* Hero: a circle of initial conditions under a stable, non-normal flow */
+  const w = 7, A = [[-1, w], [0, -2]];
+  const E = t => [[Math.exp(-t), w * (Math.exp(-t) - Math.exp(-2 * t))], [0, Math.exp(-2 * t)]];
+  const nrm = t => M.svd(E(t)).S[0];
+  const T_END = 5, ts = LT.sys.linspace(0, T_END, 241), norms = ts.map(nrm);
+  const ev2 = M.unit([-w, 1]);
+  const seeds = []; for (let k = 0; k < 10; k++) { const a = 2 * Math.PI * k / 10 + 0.31; seeds.push([Math.cos(a), Math.sin(a)]); }
+  const st = { t: 0.7 };
+  const p = new Plot('#hero-plot', { xlim: [-2.3, 2.3], ylim: [-1.75, 1.75], equal: true, maxH: 400, label: 'A circle of initial conditions evolving under a stable but non-normal linear system' });
+  const inset = new Plot('#hero-inset', { xlim: [0, T_END], ylim: [0, 2], frame: true, height: 128, grid: 'lines', xlabel: 'time t', label: 'Norm of the matrix exponential over time' });
+  p.draw = g => {
+    g.circle([0, 0], 1, { color: 'muted', width: 1, dash: [3, 4] });
+    g.ray([0, 0], [1, 0], { color: 'c8', width: 1.25, dash: [6, 5], alpha: 0.7 });
+    g.ray([0, 0], ev2, { color: 'c8', width: 1.25, dash: [6, 5], alpha: 0.7 });
+    const Et = E(st.t);
+    g.ellipse([0, 0], Et, { fill: 'c1', fillAlpha: 0.12, color: 'c1', width: 2 });
+    seeds.forEach(x0 => {
+      const pts = []; for (let k = 0; k <= 60; k++) { const s = st.t * k / 60; pts.push(M.mv(E(s), x0)); }
+      g.path(pts, { color: 'c7', width: 1.25, alpha: 0.45 });
+      g.dot(M.mv(Et, x0), { color: 'c7', r: 3.5 });
+    });
+    g.text([-2.2, 1.55], 'eigenvector directions (dashed)', { font: 'ui', italic: false, size: 11.5, color: 'muted' });
+  };
+  inset.draw = g => {
+    g.fn(t => Math.exp(-t), { color: 'muted', width: 1.25, dash: [5, 4] });
+    g.path(ts.map((t, i) => [t, norms[i]]), { color: 'c1', width: 2 });
+    g.hline(1, { color: 'axis', width: 1 });
+    g.dot([st.t, nrm(st.t)], { color: 'c1', r: 4.5 });
+    g.text([2.6, 1.65], 'largest stretch of the circle', { font: 'ui', italic: false, size: 11.5, color: 'ink-2' });
+    g.text([1.15, 0.13], 'e⁻ᵗ, the envelope set by the eigenvalues', { font: 'ui', italic: false, size: 11.5, color: 'muted' });
+  };
+  const ctl = ui.panel('#hero-ctl');
+  let playBtn;
+  const anim = LT.animate((dt) => { st.t += dt * 0.8; if (st.t > T_END + 0.8) st.t = 0; p.redraw(); inset.redraw(); },
+    { el: '#hero-plot', onState: on => { if (playBtn) playBtn.setLabel(on ? 'Pause' : 'Play'); } });
+  playBtn = ctl.button({ label: 'Play', onClick: () => anim.toggle() });
+  ctl.note('largest stretch about 1.84 near t = 0.63; the eigenvalues alone predict none');
+  if (!LT.reducedMotion) anim.play();
+})();
+</script>
+</body>
+</html>

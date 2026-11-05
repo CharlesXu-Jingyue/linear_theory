@@ -1,0 +1,1028 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>4 Symmetric matrices and the SVD · Linear Theory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap">
+<link rel="stylesheet" href="assets/lt.css">
+<script src="assets/toc.js"></script>
+<script src="assets/lt.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+</head>
+<body>
+<div class="topbar"><button class="btn" id="lt-menu" type="button" aria-controls="lt-side" aria-expanded="false">Contents</button><span class="topbar-title">4 · Symmetric matrices, quadratic forms and the SVD</span></div>
+<div class="shell">
+<nav class="side" id="lt-side" aria-label="Chapters"></nav>
+<main class="page" id="main" data-chapter="4">
+<div class="content">
+
+<header class="ch-head">
+  <div class="eyebrow">Part I · Refresher · Chapter 4</div>
+  <h1 class="ch-title">Symmetric matrices, quadratic forms and the SVD</h1>
+  <p class="ch-lead">Symmetric matrices are exactly the real matrices that a rotation of coordinates makes diagonal, and their quadratic forms are the energy functions of linear algebra. The singular value decomposition (SVD) extends the same picture to every matrix, square or not: rotate, stretch along orthogonal axes, rotate again. Keeping the largest stretches gives a best low-rank approximation, with an exactly known error.</p>
+  <p class="ch-meta"><span><b>Prerequisites</b> chapters 1–3: four subspaces, orthogonality, eigenvalues and the Schur form</span><span><b>Leads to</b> chapters 6, 7, 9, 12 and 13</span><span><b>Visuals</b> 3</span></p>
+  <ol class="core-q">
+    <li>Which matrices can be diagonalized by an orthonormal change of basis, and why are their eigenvalues real?</li>
+    <li>What does an arbitrary rectangular matrix do to the unit sphere?</li>
+    <li>What is the best approximation of a matrix by one of lower rank, and how large is the error?</li>
+  </ol>
+  <details class="notation">
+    <summary>Notation introduced in this chapter</summary>
+    <div class="tbl-wrap"><table class="tbl">
+      <thead><tr><th>Symbol</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td>$A^*$</td><td>adjoint (conjugate transpose) of $A$; equal to $A^\T$ for real $A$</td></tr>
+        <tr><td>$Q$, $U$, $V$</td><td>orthogonal ($Q^\T Q = I$) or unitary ($U^*U = I$) matrices</td></tr>
+        <tr><td>$\Lambda = \diag(\lambda_1,\dots,\lambda_n)$</td><td>diagonal matrix of eigenvalues; $\Lambda(A)$ alone is the spectrum (chapter 3)</td></tr>
+        <tr><td>$\lambda_1 \ge \dots \ge \lambda_n$</td><td>eigenvalues of a Hermitian matrix in decreasing order; $\lambda_k(A)$ is the $k$-th</td></tr>
+        <tr><td>$q(x) = x^\T A x$</td><td>quadratic form of a symmetric matrix $A$</td></tr>
+        <tr><td>$A \succ 0$, $A \succeq 0$, $A \succeq B$</td><td>positive definite, positive semidefinite, Loewner order ($A - B \succeq 0$)</td></tr>
+        <tr><td>$M_s$</td><td>symmetric part $\tfrac12(M + M^\T)$ of a real square matrix $M$</td></tr>
+        <tr><td>$A^{(k)}$, $\Delta_k$</td><td>upper-left $k\times k$ submatrix of $A$ and its determinant, the $k$-th leading principal minor</td></tr>
+        <tr><td>$A_{II}$</td><td>principal submatrix of $A$ with rows and columns indexed by the same set $I$; $\det A_{II}$ is a principal minor</td></tr>
+        <tr><td>$(n_+, n_-, n_0)$</td><td>inertia: numbers of positive, negative and zero eigenvalues</td></tr>
+        <tr><td>$R_A(x)$</td><td>Rayleigh quotient $x^*Ax/x^*x$</td></tr>
+        <tr><td>$\sigma_1 \ge \dots \ge \sigma_p \ge 0$</td><td>singular values, $p = \min(m,n)$; $u_i$, $v_i$ left and right singular vectors</td></tr>
+        <tr><td>$\Sigma$</td><td>the $m\times n$ diagonal matrix of singular values</td></tr>
+        <tr><td>$A_k$</td><td>truncated SVD $\sum_{i\le k}\sigma_i u_i v_i^\T$, a best approximation of rank at most $k$</td></tr>
+        <tr><td>$\norm{A}_2$, $\norm{A}_F$</td><td>spectral norm (largest stretch), Frobenius norm (root of the sum of squared entries)</td></tr>
+        <tr><td>$\kappa(A) = \sigma_1/\sigma_n$</td><td>condition number of a square invertible matrix</td></tr>
+        <tr><td>$H(A)$</td><td>Hermitian dilation $\begin{bmatrix}0 & A\\ A^* & 0\end{bmatrix}$, with eigenvalues $\pm\sigma_j(A)$</td></tr>
+        <tr><td>$A^+$</td><td>Moore–Penrose pseudoinverse</td></tr>
+        <tr><td>$\rho(A)$</td><td>spectral radius $\max\abs{\lambda}$ over $\Lambda(A)$ (chapter 3)</td></tr>
+      </tbody>
+    </table></div>
+  </details>
+</header>
+
+<section class="sec" id="s-adjoint">
+<h2>Adjoints and the normal family</h2>
+
+<div class="blk prob"><p>Chapter 3 diagonalizes a matrix as $A = V\Lambda V^{-1}$, with $\Lambda$ the diagonal matrix of eigenvalues and an arbitrary invertible $V$, which may be nearly singular. Identify the matrices that can be diagonalized by a change of basis that preserves lengths and angles.</p></div>
+
+<div class="blk setting"><p>Work in $\F^n$, where $\F$ is $\R$ or $\C$ (real or complex scalars), with the inner product $\inner{x}{y} = y^*x$, where $y^*$ is the conjugate transpose of $y$ (on $\R^n$ this is $x^\T y$, with $x^\T$ the transpose of $x$), and the norm $\norm{x} = \sqrt{\inner{x}{x}}$. A matrix $U$ with orthonormal columns, $U^*U = I$, preserves inner products: $\inner{Ux}{Uy} = y^*U^*Ux = y^*x = \inner{x}{y}$ (for square $U$ see <a href="ch02_least_squares.html#prop-unitary">the proposition on unitary matrices</a>, chapter 2). A change of basis by such a $U$ is the "rigid" change of coordinates we are after.</p></div>
+
+<div class="blk def" id="def-adjoint" data-name="Adjoint">
+<p>For $A \in \F^{m\times n}$ the <dfn>adjoint</dfn> $A^*$ is the conjugate transpose, $(A^*)_{ij} = \overline{a_{ji}}$. For real $A$, $A^* = A^\T$.</p>
+</div>
+
+<div class="blk def" id="def-classes" data-name="Hermitian, skew-Hermitian, unitary, normal">
+<p>A square matrix $A \in \C^{n\times n}$ is</p>
+<ul>
+<li><dfn>Hermitian</dfn> if $A^* = A$; a real Hermitian matrix is <dfn>symmetric</dfn>, $A^\T = A$;</li>
+<li><dfn>skew-Hermitian</dfn> if $A^* = -A$ (real case: <dfn>skew-symmetric</dfn>);</li>
+<li><dfn>unitary</dfn> if $A^*A = I$ (real case: <dfn>orthogonal</dfn>);</li>
+<li><dfn>normal</dfn> if $A^*A = AA^*$.</li>
+</ul>
+</div>
+
+<div class="blk prop" id="prop-adjoint" data-name="Adjoint identity and the normal family">
+<p>Let $A \in \F^{m\times n}$. (i) $A^*$ is the only matrix $M \in \F^{n\times m}$ with</p>
+<div class="eq">$$\inner{Ax}{y} = \inner{x}{My}\qquad\text{for all } x \in \F^n,\ y \in \F^m.$$</div>
+<p>(ii) $(AB)^* = B^*A^*$ for every $B \in \F^{n\times k}$, and $(A^*)^* = A$. (iii) Hermitian, skew-Hermitian and unitary matrices are normal; a unitary $A$ also satisfies $AA^* = I$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (i) Both $\inner{Ax}{y} = y^*Ax$ and $\inner{x}{A^*y}$ equal $\sum_{i,j}\overline{y_i}\,a_{ij}x_j$, because $(A^*y)_j = \sum_i\overline{a_{ij}}\,y_i$. If $M$ and $M'$ both satisfy the identity, then $\inner{x}{(M - M')y} = 0$ for all $x$; taking $x = (M - M')y$ gives $(M - M')y = 0$ for every $y$. (ii) $\inner{ABx}{y} = \inner{Bx}{A^*y} = \inner{x}{B^*A^*y}$, and $\inner{A^*y}{x} = \overline{\inner{x}{A^*y}} = \overline{\inner{Ax}{y}} = \inner{y}{Ax}$; both claims follow from the uniqueness in (i). (iii) If $A^* = \pm A$, then $A^*$ commutes with $A$. If $A^*A = I$, the square matrix $A$ has the left inverse $A^*$, so it is invertible with $A^{-1} = A^*$ (<a href="ch02_least_squares.html#prop-unitary">chapter 2</a>), and $AA^* = I = A^*A$.</p>
+</div>
+
+<div class="blk probe">
+<p>Probes in the plane. Every symmetric $\begin{bmatrix}a & b\\ b & c\end{bmatrix}$, every rotation $R_\theta$ (angle $\theta$) and the skew-symmetric generator $\begin{bmatrix}0 & -1\\ 1 & 0\end{bmatrix}$ of rotations are normal (<a class="xref" href="#prop-adjoint"></a>). So is the scaled rotation $\begin{bmatrix}a & -b\\ b & a\end{bmatrix}$, which is neither symmetric nor skew unless $a = 0$ or $b = 0$: normality is a strictly larger class. The shear $S = \begin{bmatrix}1 & 1\\ 0 & 1\end{bmatrix}$ is not normal: $S^\T S = \begin{bmatrix}1 & 1\\ 1 & 2\end{bmatrix}$ while $SS^\T = \begin{bmatrix}2 & 1\\ 1 & 1\end{bmatrix}$.</p>
+</div>
+
+<p>Normality can be tested on lengths alone. The test rests on a fact about the forms $x^*Mx$.</p>
+
+<div class="blk lem" id="lem-forms" data-name="Forms that vanish identically">
+<p>Let $M \in \F^{n\times n}$. (i) If $M$ is real, then $x^\T Mx = x^\T M_s x$ for every $x \in \R^n$, where $M_s = \tfrac12(M + M^\T)$ is the symmetric part of $M$. (ii) If $M$ is Hermitian (symmetric when $\F = \R$) and $x^*Mx = 0$ for every $x \in \F^n$, then $M = 0$. So a Hermitian matrix is determined by its form $x \mapsto x^*Mx$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (i) The number $x^\T Mx$ equals its transpose $x^\T M^\T x$; average the two. (ii) Testing $x = e_j$ gives $m_{jj} = 0$, testing $x = e_j + e_k$ gives $m_{jk} + m_{kj} = 2\Re m_{jk} = 0$, and, when $\F = \C$, testing $x = e_j + i\,e_k$ gives $i(m_{jk} - m_{kj}) = -2\Im m_{jk} = 0$; in the real case the first two tests suffice. Here $e_j$ is the $j$-th standard basis vector and $i$ the imaginary unit (engineering texts write $j$).</p>
+</div>
+
+<div class="blk prop" id="prop-normal-norm" data-name="A metric test for normality">
+<p>$A \in \F^{n\times n}$ is normal if and only if $\norm{Ax} = \norm{A^*x}$ for every $x \in \F^n$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> $\norm{Ax}^2 - \norm{A^*x}^2 = x^*(A^*A - AA^*)x$, and $H = A^*A - AA^*$ is Hermitian. So the two lengths agree for every $x$ exactly when the form of $H$ vanishes identically, that is, by <a class="xref" href="#lem-forms"></a>, when $H = 0$.</p>
+</div>
+</section>
+
+<section class="sec" id="s-spectral">
+<h2>The spectral theorem</h2>
+
+<div class="blk probe">
+<p>By <a href="ch03_eigenvalues.html#thm-2x2">the $2\times 2$ eigenvalue formula</a> of chapter 3, the symmetric matrix $\begin{bmatrix}a & b\\ b & c\end{bmatrix}$ has eigenvalues</p>
+<div class="eq">$$\lambda_\pm = \frac{a+c}{2} \pm \sqrt{\Big(\frac{a-c}{2}\Big)^2 + b^2}.$$</div>
+<p>The discriminant is a sum of squares, so both eigenvalues are real, and they coincide only when $a = c$ and $b = 0$, that is, for a multiple of $I$. For $\begin{bmatrix}2 & 1\\ 1 & 2\end{bmatrix}$ the eigenvalues are $3$ and $1$ with eigenvectors $(1, 1)$ and $(1, -1)$: perpendicular. Contrast $\begin{bmatrix}1 & 1\\ 0 & 2\end{bmatrix}$, with eigenvalues $1, 2$ and eigenvectors $(1, 0)$ and $(1, 1)$ at $45^\circ$.</p>
+</div>
+
+<div class="blk conj"><p>Every real symmetric matrix has real eigenvalues and an orthonormal basis of eigenvectors.</p></div>
+
+<div class="blk lem" id="lem-herm" data-name="Hermitian basics">
+<p>Let $A \in \C^{n\times n}$ be Hermitian. Then (i) $x^*Ax$ is real for every $x$; (ii) every eigenvalue of $A$ is real; (iii) eigenvectors for distinct eigenvalues are orthogonal; (iv) if a subspace $S$ is invariant ($AS \subseteq S$), then so is its orthogonal complement $S^\perp$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (i) $\overline{x^*Ax} = (x^*Ax)^* = x^*A^*x = x^*Ax$. (ii) If $Ax = \lambda x$ with $x \ne 0$, then $\lambda = x^*Ax / x^*x$ is real by (i). (iii) If $Ax = \lambda x$ and $Ay = \mu y$, then $\lambda\inner{x}{y} = \inner{Ax}{y} = \inner{x}{Ay} = \mu\inner{x}{y}$, using that $\mu$ is real; so $\lambda \ne \mu$ forces $\inner{x}{y} = 0$. (iv) For $y \in S^\perp$ and $s \in S$, $\inner{Ay}{s} = \inner{y}{As} = 0$ because $As \in S$.</p>
+</div>
+
+<div class="blk thm" id="thm-spectral" data-name="Spectral theorem, real symmetric case">
+<p>Let $A \in \R^{n\times n}$ be symmetric. There are an orthogonal matrix $Q = [q_1\ \cdots\ q_n]$ and real numbers $\lambda_1,\dots,\lambda_n$ such that</p>
+<div class="eq">$$A = Q\Lambda Q^\T = \sum_{i=1}^n \lambda_i\, q_i q_i^\T, \qquad \Lambda = \diag(\lambda_1,\dots,\lambda_n).$$</div>
+</div>
+<dl class="where">
+  <dt>$q_i \in \R^n$</dt><dd>orthonormal eigenvectors, $Aq_i = \lambda_i q_i$, $q_i^\T q_j = 0$ for $i \ne j$</dd>
+  <dt>$q_i q_i^\T$</dt><dd>the orthogonal projector onto the line $\spn(q_i)$ (<a href="ch02_least_squares.html#prop-projformulas">chapter 2</a>)</dd>
+</dl>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Induction on $n$; $n = 1$ is trivial. The characteristic polynomial has a root $\lambda_1 \in \C$, which is real by <a class="xref" href="#lem-herm"></a>. The real matrix $A - \lambda_1 I$ is singular, so it has a real unit null vector $q_1$ (<a href="ch01_linear_maps.html#cor-square">chapter 1</a>). Complete $q_1$ to an orthonormal basis (<a href="ch02_least_squares.html#thm-gs">Gram–Schmidt</a>, chapter 2) and put the other vectors in the columns of $W \in \R^{n\times(n-1)}$. Then</p>
+<div class="eq">$$[q_1\ W]^\T A\, [q_1\ W] = \begin{bmatrix}\lambda_1 & q_1^\T A W\\ W^\T A q_1 & W^\T A W\end{bmatrix} = \begin{bmatrix}\lambda_1 & 0\\ 0 & A'\end{bmatrix},$$</div>
+<p>because $W^\T A q_1 = \lambda_1 W^\T q_1 = 0$ and the matrix is symmetric. The block $A' = W^\T A W$ is symmetric of size $n - 1$; by induction $A' = Q'\Lambda'Q'^\T$, and $Q = [q_1\ W]\diag(1, Q')$ does the job.</p>
+</div>
+<div class="blk rem"><p>The proof is <a href="ch03_eigenvalues.html#thm-schur">the Schur triangularization</a> of chapter 3 run over $\R$, which is possible because every eigenvalue is real: in <a href="ch03_eigenvalues.html#thm-realschur">the real Schur form</a> all diagonal blocks then have size $1$. The triangular factor $Q^\T A Q$ is also symmetric, so it is diagonal.</p></div>
+
+<div class="blk cor" id="cor-calculus" data-name="Functions of a symmetric matrix">
+<p>If $A = Q\Lambda Q^\T$ is symmetric and $f$ is a real function defined on its eigenvalues, put $f(A) = Q\, f(\Lambda)\, Q^\T$ with $f(\Lambda) = \diag(f(\lambda_1),\dots,f(\lambda_n))$. This does not depend on the choice of $Q$, agrees with polynomials in $A$ and with power series in $A$ that converge at every eigenvalue, gives $A^k = Q\Lambda^kQ^\T$ and $e^{tA} = Qe^{t\Lambda}Q^\T$, and for $A$ with nonnegative eigenvalues defines the unique symmetric square root with nonnegative eigenvalues, $A^{1/2} = Q\Lambda^{1/2}Q^\T$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Grouping equal eigenvalues, $Qf(\Lambda)Q^\T = \sum_\mu f(\mu)P_\mu$, where $\mu$ runs over the distinct eigenvalues and $P_\mu = \sum_{\lambda_i = \mu}q_iq_i^\T$ is the orthogonal projector onto the eigenspace $E_\mu = \Null(A - \mu I)$, which does not depend on $Q$. Since $Q^\T Q = I$, $A^k = Q\Lambda^kQ^\T$, which gives polynomials; for a power series $\sum_k c_kz^k$ converging at every $\lambda_i$, the partial sums $\sum_{k\le K}c_kA^k = Q\big(\sum_{k \le K}c_k\Lambda^k\big)Q^\T$ converge to $Qf(\Lambda)Q^\T$. For the square root, let $B$ be symmetric with nonnegative eigenvalues and $B^2 = A$. Then $B$ commutes with $A$, so it maps each $E_\mu$ into itself, and its restriction to $E_\mu$ is symmetric with nonnegative eigenvalues $\nu$ satisfying $\nu^2 = \mu$. By <a class="xref" href="#thm-spectral"></a> applied on $E_\mu$, $B = \sqrt\mu\, I$ there. The eigenspaces span $\R^n$, so $B = \sum_\mu\sqrt\mu\,P_\mu = A^{1/2}$.</p>
+</div>
+<p class="src">Square roots of positive semidefinite matrices: Horn and Johnson, <i>Matrix Analysis</i> (2nd ed.), ch. 7; Axler, <i>Linear Algebra Done Right</i> (4th ed.), ch. 7 (positive operators), open access.</p>
+
+<div class="blk thm" id="thm-normal" data-name="Normal matrices">
+<p>$A \in \C^{n\times n}$ is normal if and only if $A = U\Lambda U^*$ for some unitary $U$ and diagonal $\Lambda$ (with complex entries, the eigenvalues).</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> If $A = U\Lambda U^*$, then $A^*A = U\bar\Lambda\Lambda U^* = U\Lambda\bar\Lambda U^* = AA^*$, where $\bar\Lambda$ is the entrywise conjugate. Conversely, take the Schur form $A = UTU^*$ (chapter 3), with $U$ unitary and $T$ upper triangular; $T = U^*AU$ is normal because $A$ is: $T^*T = U^*A^*AU = U^*AA^*U = TT^*$. Comparing the $(1,1)$ entries of $T^*T$ and $TT^*$ gives $\abs{t_{11}}^2 = \sum_j \abs{t_{1j}}^2$, so the first row of $T$ is zero off the diagonal. Then $T = \diag(t_{11}, T')$ with $T'$ normal and triangular, and induction makes $T$ diagonal.</p>
+</div>
+
+<div class="blk cex" id="cex-symmetry">
+<p>Two hypotheses cannot be weakened. Real eigenvalues and diagonalizability do not give an orthonormal eigenbasis: $\begin{bmatrix}1 & 1\\ 0 & 2\end{bmatrix}$ has the eigenvectors $(1, 0)$ and $(1, 1)$. And over $\C$, the transpose symmetry $A^\T = A$ is the wrong condition: $A = \begin{bmatrix}1 & i\\ i & -1\end{bmatrix}$ satisfies $A^\T = A$ and $A^2 = 0$ with $A \ne 0$, so it is nilpotent and not diagonalizable at all: its only eigenvalue is $0$, and $A = V\,0\,V^{-1}$ would force $A = 0$. What matters is symmetry with respect to the inner product, $A^* = A$.</p>
+</div>
+
+<div class="blk pattern">
+<p>Equivalences and invariants. The spectral theorem has a trivial converse, and a complex matrix is normal exactly when it is unitarily diagonalizable (<a class="xref" href="#thm-normal"></a>). So the eigenvalues, which unitary similarity $A \mapsto U^*AU$ preserves, should be all that distinguishes one normal matrix from another, and the special classes should be the normal matrices whose eigenvalues lie in special subsets of $\C$. Geometrically, a symmetric matrix is a set of independent scalings $\lambda_i$ along perpendicular axes $q_i$.</p>
+</div>
+
+<div class="blk prop" id="prop-normal-classes" data-name="Eigenvalues classify normal matrices">
+<p>(i) A real $A \in \R^{n\times n}$ is symmetric if and only if $A = Q\Lambda Q^\T$ with $Q$ real orthogonal and $\Lambda$ real diagonal. (ii) Two real symmetric matrices are orthogonally similar ($B = Q^\T AQ$ with $Q$ real orthogonal) if and only if they have the same eigenvalues counted with multiplicity; likewise two normal matrices are unitarily similar if and only if they have the same eigenvalues counted with multiplicity. (iii) A normal $A \in \C^{n\times n}$ is Hermitian, positive semidefinite (Hermitian with $x^*Ax \ge 0$ for all $x$), skew-Hermitian, unitary, or an orthogonal projector ($A^2 = A = A^*$) if and only if all its eigenvalues lie, respectively, in $\R$, in $[0, \infty)$, on the imaginary axis $i\R$, on the unit circle $\{z : \abs{z} = 1\}$, or in $\{0, 1\}$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (i) One direction is <a class="xref" href="#thm-spectral"></a>; conversely $(Q\Lambda Q^\T)^\T = Q\Lambda^\T Q^\T = Q\Lambda Q^\T$. (ii) Similar matrices have the same eigenvalues with multiplicity (<a href="ch03_eigenvalues.html#prop-similar">chapter 3</a>). Conversely, write $A = U\Lambda U^*$ and $B = WMW^*$ with $U, W$ unitary (<a class="xref" href="#thm-normal"></a>) and $M = P^\T\Lambda P$ a reordering of $\Lambda$ by a permutation matrix $P$. Then $B = V^*AV$ with the unitary $V = UPW^*$; for real symmetric $A$ and $B$, <a class="xref" href="#thm-spectral"></a> makes $U$, $W$ and hence $V$ real orthogonal. (iii) Write $A = U\Lambda U^*$. Then $A^* = U\bar\Lambda U^*$, $A^*A = U\abs{\Lambda}^2U^*$ and $A^2 = U\Lambda^2U^*$, where $\bar\Lambda$ and $\abs{\Lambda}^2$ are taken entrywise, and $UDU^*$ with $D$ diagonal vanishes only if $D = 0$. So $A^* = A$, $A^* = -A$, $A^*A = I$ and $A^2 = A = A^*$ hold if and only if, for every $i$, $\bar\lambda_i = \lambda_i$, $\bar\lambda_i = -\lambda_i$, $\abs{\lambda_i} = 1$ and $\lambda_i^2 = \lambda_i = \bar\lambda_i$, the last meaning $\lambda_i \in \{0, 1\}$. Finally, for Hermitian $A$, $x^*Ax = \sum_i\lambda_i\abs{y_i}^2$ with $y = U^*x$ ranging over $\C^n$, which is $\ge 0$ for all $y$ exactly when every $\lambda_i \ge 0$ (test $y = e_i$).</p>
+</div>
+<p>The table lists the classes, with a general matrix for contrast.</p>
+<div class="tbl-wrap"><table class="tbl">
+  <thead><tr><th>Class</th><th>Defining identity</th><th>Eigenvalues</th><th>Eigenvectors</th><th>Singular values</th><th>Example</th></tr></thead>
+  <tbody>
+    <tr><td>Hermitian (symmetric)</td><td>$A^* = A$</td><td>real</td><td>orthonormal basis</td><td>$\abs{\lambda_i}$</td><td>$\begin{bmatrix}2 & 1\\ 1 & 2\end{bmatrix}$</td></tr>
+    <tr><td>Positive semidefinite</td><td>$A^* = A$, $x^*Ax \ge 0$</td><td>$\lambda_i \ge 0$</td><td>orthonormal basis</td><td>$\lambda_i$</td><td>$\begin{bmatrix}1 & 1\\ 1 & 1\end{bmatrix}$</td></tr>
+    <tr><td>Skew-Hermitian</td><td>$A^* = -A$</td><td>purely imaginary</td><td>orthonormal basis (complex)</td><td>$\abs{\lambda_i}$</td><td>$\begin{bmatrix}0 & -1\\ 1 & 0\end{bmatrix}$</td></tr>
+    <tr><td>Unitary (orthogonal)</td><td>$A^*A = I$</td><td>$\abs{\lambda_i} = 1$</td><td>orthonormal basis (complex)</td><td>all equal to $1$</td><td>$R_\theta$</td></tr>
+    <tr><td>Orthogonal projector</td><td>$P^2 = P = P^*$</td><td>$0$ or $1$</td><td>orthonormal basis</td><td>$0$ or $1$</td><td>$\begin{bmatrix}1 & 0\\ 0 & 0\end{bmatrix}$</td></tr>
+    <tr><td>Normal</td><td>$A^*A = AA^*$</td><td>anywhere in $\C$</td><td>orthonormal basis (complex)</td><td>$\abs{\lambda_i}$</td><td>$\begin{bmatrix}a & -b\\ b & a\end{bmatrix}$</td></tr>
+    <tr><td>General</td><td>none</td><td>anywhere in $\C$</td><td>possibly ill-conditioned or incomplete</td><td>related by inequalities and $\prod\abs{\lambda_i} = \prod\sigma_i$</td><td>the shear $S$</td></tr>
+  </tbody>
+</table></div>
+<p>Every class above the last row is normal (<a class="xref" href="#prop-adjoint"></a>; positive semidefinite matrices and orthogonal projectors are Hermitian), so it has an orthonormal eigenbasis (<a class="xref" href="#thm-normal"></a>), and its eigenvalue column is <a class="xref" href="#prop-normal-classes"></a>. The singular-value column anticipates <a class="xref" href="#s-eigsv"></a>: it is part (4) of <a class="xref" href="#thm-eigsv"></a>, and the last row is parts (1) to (3) of that theorem and <a class="xref" href="#thm-weyl-major"></a>. "Orthonormal basis (complex)" means that the eigenvectors are complex for real matrices with non-real eigenvalues.</p>
+</section>
+
+<section class="sec" id="s-quadratic">
+<h2>Quadratic forms and definiteness</h2>
+
+<div class="blk prob"><p>A symmetric matrix $A \in \R^{n\times n}$ defines the function $q(x) = x^\T A x$: energies, variances, quadratic costs and Lyapunov functions all have this form. Decide from $A$ whether $q$ is positive away from the origin, and describe its level sets.</p></div>
+
+<div class="blk setting"><p>For any real square $M$, $x^\T M x = x^\T \tfrac12(M + M^\T)\, x$, so only the symmetric part of a matrix enters its quadratic form, and the form determines that part (<a class="xref" href="#lem-forms"></a>); we assume $A^\T = A$ throughout this section.</p></div>
+
+<div class="blk deduce">
+<p>Principal axes. In the rotated coordinates $y = Q^\T x$ given by the spectral theorem, $A = Q\Lambda Q^\T$ becomes diagonal, the cross terms of $q$ disappear, and the shape of each level set can be read off from the signs of the eigenvalues: this is <a class="xref" href="#prop-axes"></a>.</p>
+</div>
+
+<div class="blk prop" id="prop-axes" data-name="Principal axes">
+<p>Let $A \in \R^{n\times n}$ be symmetric, $A = Q\Lambda Q^\T$ as in <a class="xref" href="#thm-spectral"></a>, and $y = Q^\T x$. Then</p>
+<div class="eq">$$q(x) = y^\T \Lambda y = \sum_{i=1}^n \lambda_i\, y_i^2 .$$</div>
+<p>If every $\lambda_i &gt; 0$, the level set $q = 1$ is the ellipsoid with semi-axes of lengths $1/\sqrt{\lambda_i}$ along the $q_i$. For $n = 2$ and $\lambda_1 \ge \lambda_2$, the level set $q = 1$ is an ellipse if $\lambda_2 &gt; 0$; a hyperbola whose asymptotes are the two lines that form the zero set $q = 0$ if $\lambda_1 &gt; 0 &gt; \lambda_2$; the pair of parallel lines $y_1 = \pm 1/\sqrt{\lambda_1}$ if $\lambda_1 &gt; 0 = \lambda_2$; and empty if $\lambda_1 \le 0$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> $x^\T Ax = (Q^\T x)^\T\Lambda(Q^\T x)$. The orthogonal map $x \mapsto y$ preserves lengths and sends $q_i$ to $e_i$, so a set described in $y$ along the coordinate axes has the same shape along the $q_i$ in $x$. If all $\lambda_i &gt; 0$, $\sum_i\lambda_iy_i^2 = 1$ is the ellipsoid with semi-axes $1/\sqrt{\lambda_i}$. For $n = 2$ with $\lambda_1 &gt; 0 &gt; \lambda_2$, $\lambda_1y_1^2 - \abs{\lambda_2}y_2^2 = 1$ is a hyperbola with asymptotes $y_2 = \pm\sqrt{\lambda_1/\abs{\lambda_2}}\,y_1$, which are exactly the solutions of $q = 0$. If $\lambda_1 &gt; 0 = \lambda_2$ the equation is $\lambda_1y_1^2 = 1$, and if $\lambda_1 \le 0$ then $q \le 0$ everywhere.</p>
+</div>
+
+<div class="blk def" id="def-definite" data-name="Definiteness">
+<p>A symmetric $A$ is <dfn>positive definite</dfn>, written $A \succ 0$, if $x^\T A x &gt; 0$ for every $x \ne 0$, and <dfn>positive semidefinite</dfn>, $A \succeq 0$, if $x^\T Ax \ge 0$ for every $x$. It is negative (semi)definite if $-A$ is positive (semi)definite, and <dfn>indefinite</dfn> if $q$ takes both signs. For complex Hermitian $A$ the same definitions use $x^*Ax$.</p>
+</div>
+
+<div class="tbl-wrap"><table class="tbl">
+  <thead><tr><th>Class</th><th>Eigenvalues</th><th>Level set $q = 1$ in $\R^2$</th><th>Example</th><th>Leading minors $\Delta_1, \Delta_2$</th></tr></thead>
+  <tbody>
+    <tr><td>Positive definite</td><td>all $&gt; 0$</td><td>ellipse</td><td>$\begin{bmatrix}2 & -1\\ -1 & 2\end{bmatrix}$</td><td>both $&gt; 0$</td></tr>
+    <tr><td>Positive semidefinite, singular</td><td>$\ge 0$, some $= 0$</td><td>two parallel lines (empty if $A = 0$)</td><td>$\begin{bmatrix}1 & 1\\ 1 & 1\end{bmatrix}$</td><td>$\Delta_2 = 0$; leading minors alone do not decide</td></tr>
+    <tr><td>Indefinite</td><td>both signs</td><td>hyperbola, asymptotes $q = 0$</td><td>$\begin{bmatrix}1 & 2\\ 2 & 1\end{bmatrix}$</td><td>$\Delta_2 &lt; 0$ (in $\R^2$)</td></tr>
+    <tr><td>Negative definite</td><td>all $&lt; 0$</td><td>empty</td><td>$-I$</td><td>$\Delta_1 &lt; 0 &lt; \Delta_2$ (signs alternate)</td></tr>
+  </tbody>
+</table></div>
+<p>Here $\Delta_k = \det A^{(k)}$ is the determinant of the upper-left $k\times k$ submatrix $A^{(k)}$, the $k$-th leading principal minor. The level-set column is <a class="xref" href="#prop-axes"></a>; the eigenvalue and minor columns are <a class="xref" href="#thm-pd"></a>, <a class="xref" href="#cor-minors"></a> and <a class="xref" href="#prop-psd"></a> below, and <a class="xref" href="#cex-minors"></a> shows why the minors cannot decide the singular row.</p>
+
+<div class="blk thm" id="thm-pd" data-name="Tests for positive definiteness">
+<p>For symmetric $A \in \R^{n\times n}$ the following are equivalent:</p>
+<ol>
+<li>$A \succ 0$;</li>
+<li>every eigenvalue of $A$ is positive;</li>
+<li>$A = B^\T B$ for some matrix $B$ with linearly independent columns (a Gram or energy form);</li>
+<li>$A = LL^\T$ with $L$ lower triangular with positive diagonal (the Cholesky factorization);</li>
+<li>$\Delta_k &gt; 0$ for $k = 1,\dots,n$ (Sylvester's criterion).</li>
+</ol>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (1)⇔(2): $q(x) = \sum_i\lambda_i y_i^2$ with $y = Q^\T x$ ranging over $\R^n$, and $\lambda_i = q(q_i)$. (2)⇒(3): $B = \Lambda^{1/2}Q^\T$ is invertible. (3)⇒(1): $x^\T B^\T Bx = \norm{Bx}^2 &gt; 0$ because $Bx \ne 0$ for $x \ne 0$. (4)⇒(3): take $B = L^\T$. (1)⇒(5): $A^{(k)}$ is the matrix of $q$ restricted to $\spn(e_1,\dots,e_k)$, so it is positive definite and $\Delta_k$ is a product of positive eigenvalues. (5)⇒(4), by induction on $n$: write $A = \begin{bmatrix}a & b^\T\\ b & C\end{bmatrix}$ with $a = \Delta_1 &gt; 0$. Then</p>
+<div class="eq">$$A = \begin{bmatrix}\sqrt a & 0\\ b/\sqrt a & I\end{bmatrix}\begin{bmatrix}1 & 0\\ 0 & S\end{bmatrix}\begin{bmatrix}\sqrt a & b^\T/\sqrt a\\ 0 & I\end{bmatrix},\qquad S = C - \frac{bb^\T}{a}.$$</div>
+<p>The same identity for the leading blocks gives $\Delta_{k+1}(A) = a\,\Delta_k(S)$, so the Schur complement $S$ satisfies (5), hence $S = L'L'^\T$ by induction, and $L = \begin{bmatrix}\sqrt a & 0\\ b/\sqrt a & L'\end{bmatrix}$ works.</p>
+</div>
+
+<div class="blk cor" id="cor-minors" data-name="Sign patterns of leading minors">
+<p>Let $A \in \R^{n\times n}$ be symmetric. (i) $A$ is negative definite if and only if $(-1)^k\Delta_k &gt; 0$ for $k = 1, \dots, n$: the leading minors alternate in sign, starting negative. (ii) For $n = 2$: $A \succ 0$ if and only if $\Delta_1 &gt; 0$ and $\Delta_2 &gt; 0$; $A$ is negative definite if and only if $\Delta_1 &lt; 0 &lt; \Delta_2$; and $A$ is indefinite if and only if $\Delta_2 &lt; 0$. So when $\det A \ne 0$ the leading minors decide the class.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (i) $A$ is negative definite when $-A \succ 0$, and the $k$-th leading minor of $-A$ is $(-1)^k\Delta_k$; apply <a class="xref" href="#thm-pd"></a> to $-A$. (ii) The first two statements are <a class="xref" href="#thm-pd"></a> and (i) for $n = 2$. For the third, $\Delta_2 = \det A = \lambda_1\lambda_2$ (<a href="ch03_eigenvalues.html#prop-trdet">chapter 3</a>) is negative exactly when the eigenvalues have strictly opposite signs, that is, when $q$ takes both signs. If $\Delta_2 \ne 0$, then either $\Delta_2 &lt; 0$, or $\Delta_2 &gt; 0$ and then $\Delta_1 = a_{11} \ne 0$, because $a_{11}a_{22} &gt; a_{12}^2 \ge 0$; so exactly one of the three cases occurs.</p>
+</div>
+
+<div class="blk prop" id="prop-psd" data-name="Tests for positive semidefiniteness">
+<p>For symmetric $A \in \R^{n\times n}$ the following are equivalent:</p>
+<ol>
+<li>$A \succeq 0$;</li>
+<li>every eigenvalue of $A$ is $\ge 0$;</li>
+<li>$A = B^\T B$ for some matrix $B$;</li>
+<li>every principal minor $\det A_{II}$ is $\ge 0$, where $A_{II}$ is the submatrix with rows and columns indexed by the same nonempty set $I \subseteq \{1, \dots, n\}$.</li>
+</ol>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (1)⇔(2) as in <a class="xref" href="#thm-pd"></a>, since $q(x) = \sum_i\lambda_iy_i^2$. (2)⇒(3): $B = \Lambda^{1/2}Q^\T$. (3)⇒(1): $x^\T B^\T Bx = \norm{Bx}^2 \ge 0$. (1)⇒(4): $A_{II}$ is the matrix of $q$ restricted to $\spn\{e_i : i \in I\}$, so it is positive semidefinite and its determinant is a product of nonnegative eigenvalues. (4)⇒(2): write column $j$ of $tI + A$ as $te_j + a_j$, with $a_j$ the $j$-th column of $A$, and expand the determinant by linearity in each column. The terms that take $a_j$ exactly for $j \in I$ contribute $t^{\,n - \abs{I}}\det A_{II}$, so</p>
+<div class="eq">$$\det(tI + A) = t^n + \sum_{I \ne \emptyset} t^{\,n - \abs{I}}\det A_{II} \ge t^n &gt; 0 \qquad\text{for } t &gt; 0,$$</div>
+<p>and no negative number $-t$ is an eigenvalue of $A$.</p>
+</div>
+<p class="src">Horn and Johnson, <i>Matrix Analysis</i>, ch. 7 (positive definite and semidefinite matrices). Cholesky as an algorithm: Trefethen and Bau, <i>Numerical Linear Algebra</i>, Lecture 23.</p>
+
+<div class="blk cex" id="cex-minors">
+<p>Nonnegative leading minors do not give semidefiniteness: $A = \diag(0, -1)$ has $\Delta_1 = \Delta_2 = 0$, yet $q(e_2) = -1$; the principal minor $a_{22} = -1$ of <a class="xref" href="#prop-psd"></a> detects this. Positive entries do not give definiteness: $\begin{bmatrix}1 & 2\\ 2 & 1\end{bmatrix}$ has eigenvalues $3$ and $-1$, and $q(1, -1) = -2$. Conversely $\begin{bmatrix}2 & -1\\ -1 & 2\end{bmatrix} \succ 0$ despite its negative entries.</p>
+</div>
+
+<div class="blk def" id="def-loewner" data-name="Loewner order">
+<p>For symmetric $A, B$ of the same size, $A \succeq B$ means $A - B \succeq 0$, and $A \succ B$ means $A - B \succ 0$.</p>
+</div>
+<div class="blk prop" id="prop-loewner" data-name="Properties of the Loewner order">
+<p>(i) $\succeq$ is a partial order on symmetric $n\times n$ matrices, and it is not total: $\diag(1, 0)$ and $\diag(0, 1)$ are not comparable. (ii) Congruence preserves it: $A \succeq B$ implies $S^\T A S \succeq S^\T B S$ for every $S \in \R^{n\times k}$. (iii) $A \succeq B$ implies $\lambda_k(A) \ge \lambda_k(B)$ for every $k$, where $\lambda_k(\cdot)$ is the $k$-th largest eigenvalue.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (i) Transitivity holds because a sum of positive semidefinite matrices is positive semidefinite; antisymmetry because a symmetric matrix whose quadratic form vanishes identically is zero (<a class="xref" href="#lem-forms"></a>). For the two diagonal matrices, the difference has eigenvalues $1$ and $-1$. (ii) $x^\T S^\T(A - B)Sx = (Sx)^\T(A - B)(Sx) \ge 0$. (iii) is <a class="xref" href="#cor-weyl"></a> below.</p>
+</div>
+
+<div class="blk cex" id="cex-square">
+<p>Order is not preserved by squaring. Take $A = \begin{bmatrix}2 & 1\\ 1 & 1\end{bmatrix}$ and $B = \begin{bmatrix}1 & 0\\ 0 & 0\end{bmatrix}$. Then $A - B = \begin{bmatrix}1 & 1\\ 1 & 1\end{bmatrix} \succeq 0$ and $B \succeq 0$, but $A^2 - B^2 = \begin{bmatrix}4 & 3\\ 3 & 2\end{bmatrix}$ has determinant $-1$, so it is indefinite. The square root, by contrast, is monotone (<a class="xref" href="#prop-sqrt-monotone"></a>).</p>
+</div>
+
+<div class="blk prop" id="prop-sqrt-monotone" data-name="The square root is monotone">
+<p>Let $A, B \in \R^{n\times n}$ be symmetric with $A \succeq B \succeq 0$. Then $A^{1/2} \succeq B^{1/2}$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Let $X = A^{1/2}$ and $Y = B^{1/2}$ (<a class="xref" href="#cor-calculus"></a>; $A \succeq 0$ because $A - B$ and $B$ are), and let $v$ be a unit eigenvector of the symmetric matrix $X - Y$, with eigenvalue $\mu$, so that $(X - Y)v = \mu v$ and $v^\T(X - Y) = \mu v^\T$. From the identity</p>
+<div class="eq">$$X^2 - Y^2 = \tfrac12\big[(X - Y)(X + Y) + (X + Y)(X - Y)\big]$$</div>
+<p>we get</p>
+<div class="eq">$$0 \le v^\T(A - B)v = v^\T(X^2 - Y^2)v = \mu\, v^\T(X + Y)v.$$</div>
+<p>If $v^\T(X + Y)v &gt; 0$, then $\mu \ge 0$. Otherwise $v^\T Xv = v^\T Yv = 0$, since both are $\ge 0$, and $\mu = v^\T(X - Y)v = 0$. So every eigenvalue of $X - Y$ is $\ge 0$, and $X \succeq Y$ by <a class="xref" href="#prop-psd"></a>.</p>
+</div>
+<p class="src">This is the case $p = \tfrac12$ of the Loewner–Heinz theorem on the powers $A^p$, $0 \le p \le 1$: Bhatia, <i>Matrix Analysis</i>, ch. V.</p>
+
+<div class="blk thm" id="thm-inertia" data-name="Sylvester's law of inertia">
+<p>Let $A \in \R^{n\times n}$ be symmetric with $n_+$ positive, $n_-$ negative and $n_0$ zero eigenvalues, counted with multiplicity. For every invertible $S$, the matrix $S^\T A S$ has the same triple $(n_+, n_-, n_0)$, the <dfn>inertia</dfn> of $A$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> First, $n_+(A)$ is the largest dimension of a subspace $U$ on which $q(x) = x^\T Ax$ is positive for all $x \ne 0$. The span of the eigenvectors with positive eigenvalues is such a subspace. If $\dim U &gt; n_+$, then $U$ meets the span of the remaining eigenvectors, of dimension $n - n_+$, in some $x \ne 0$, because the dimensions add to more than $n$; there $q(x) \le 0$. Second, since $x^\T S^\T A Sx = (Sx)^\T A(Sx)$, the map $x \mapsto Sx$ carries subspaces on which the form of $S^\T AS$ is positive onto subspaces of the same dimension on which $q$ is positive, and $S^{-1}$ carries them back. So $n_+$ is unchanged. Apply this to $-A$ for $n_-$; finally $n_0 = n - \rank A$, and rank is unchanged by invertible factors.</p>
+</div>
+
+<div class="blk cor" id="cor-congruence" data-name="Congruence normal form">
+<p>Every symmetric $A$ is congruent to $\diag(I_{n_+}, -I_{n_-}, 0_{n_0})$, and two symmetric matrices of the same size are congruent if and only if they have the same inertia.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Let $d_i = \abs{\lambda_i}^{1/2}$ when $\lambda_i \ne 0$ and $d_i = 1$ otherwise, $D = \diag(d_i)$ and $J = \diag(\operatorname{sign}\lambda_i)$ with $\operatorname{sign} 0 = 0$. Then $DJD = \Lambda$, so $A = (DQ^\T)^\T J(DQ^\T)$ with $DQ^\T$ invertible; a permutation orders the diagonal of $J$. Congruence is an equivalence relation ($A = S^\T BS$ gives $B = S^{-\T}AS^{-1}$, and two congruences compose to one), so two symmetric matrices with the same inertia, being congruent to the same normal form, are congruent to each other. Conversely, congruent matrices have the same inertia by <a class="xref" href="#thm-inertia"></a>.</p>
+</div>
+
+<div class="blk pattern">
+<p>Two group actions on the same symmetric matrices keep different invariants. Orthogonal similarity $A \mapsto Q^\T AQ$ keeps every eigenvalue, and the eigenvalues classify its orbits (<a class="xref" href="#prop-normal-classes"></a>). Congruence $A \mapsto S^\T AS$ keeps only their signs (<a class="xref" href="#thm-inertia"></a>, <a class="xref" href="#cor-congruence"></a>): $S = 2I$ multiplies every eigenvalue by $4$. This is the congruence row of <a href="ch01_linear_maps.html#s-basis-change">the classification table</a> in chapter 1. In particular positive definiteness is a congruence invariant ($n_+ = n$), which is why a change of state coordinates never destroys a quadratic Lyapunov function $x^\T Px$, $P \succ 0$, of the system $\dot x = Ax$ with $\dot x = \dd x/\dd t$ (<a href="ch07_autonomous_systems.html#thm-lyapunov">chapter 7</a>). Under the substitution $x = Sz$ with $S$ invertible, the form $x^\T Px$ and its rate of change $x^\T(A^\T P + PA)x$ along solutions become $z^\T(S^\T PS)z$ and $z^\T S^\T(A^\T P + PA)Sz$: congruent forms with the same signs, whose ellipsoids are only reshaped.</p>
+</div>
+</section>
+
+<section class="sec" id="s-variational">
+<h2>Variational characterization of eigenvalues</h2>
+
+<div class="blk prob"><p>Eigenvalues are roots of the characteristic polynomial, a poor handle for estimates. Characterize the eigenvalues of a Hermitian matrix as values of optimization problems, which can be compared, restricted and perturbed.</p></div>
+
+<div class="blk def" id="def-rayleigh" data-name="Rayleigh quotient">
+<p>For Hermitian $A \in \C^{n\times n}$ and $x \ne 0$, the <dfn>Rayleigh quotient</dfn> is $R_A(x) = \dfrac{x^*Ax}{x^*x}$. It is real by <a class="xref" href="#lem-herm"></a>, and $R_A(cx) = \abs{c}^2x^*Ax/(\abs{c}^2x^*x) = R_A(x)$ for every scalar $c \ne 0$, so it is a function on the unit sphere.</p>
+</div>
+
+<div class="blk probe">
+<p>In the plane, let $A$ have eigenvalues $\lambda_1 \ge \lambda_2$ with unit eigenvector $q_1 = (\cos\theta, \sin\theta)$. For the unit vector $x = (\cos\varphi, \sin\varphi)$,</p>
+<div class="eq">$$R_A(x) = \lambda_1\cos^2(\varphi - \theta) + \lambda_2\sin^2(\varphi - \theta) = \frac{\lambda_1 + \lambda_2}{2} + \frac{\lambda_1 - \lambda_2}{2}\cos 2(\varphi - \theta).$$</div>
+<p>The maximum $\lambda_1$ is attained at $\varphi = \theta$, the minimum $\lambda_2$ a quarter turn later, and every value in between is attained. In the extreme case $\lambda_1 = \lambda_2$ the quotient is constant: $A = \lambda_1 I$ and every direction is an eigenvector.</p>
+</div>
+
+<div class="blk thm" id="thm-rayleigh" data-name="Rayleigh">
+<p>Let $A$ be Hermitian with eigenvalues $\lambda_1 \ge \dots \ge \lambda_n$. For every $x \ne 0$, $\lambda_n \le R_A(x) \le \lambda_1$, with $R_A(x) = \lambda_1$ if and only if $Ax = \lambda_1 x$, and $R_A(x) = \lambda_n$ if and only if $Ax = \lambda_n x$. For real symmetric $A$ the gradient is $\nabla R_A(x) = \frac{2}{x^\T x}\big(Ax - R_A(x)\,x\big)$, so the critical points of $R_A$ are exactly the eigenvectors, and the critical values are the eigenvalues.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Expand $x = \sum_i c_i q_i$ in an orthonormal eigenbasis. Then $R_A(x) = \sum_i \lambda_i\abs{c_i}^2 / \sum_i\abs{c_i}^2$ is a weighted average of the eigenvalues, with weights $\abs{c_i}^2/\norm{x}^2$. It equals $\lambda_1$ exactly when all the weight sits on indices with $\lambda_i = \lambda_1$, that is, when $x$ lies in the $\lambda_1$-eigenspace; similarly for $\lambda_n$. The gradient follows from the quotient rule with $\nabla(x^\T Ax) = 2Ax$ and $\nabla(x^\T x) = 2x$.</p>
+</div>
+
+<div class="blk thm" id="thm-cf" data-name="Courant–Fischer min–max">
+<p>Let $A \in \C^{n\times n}$ be Hermitian with eigenvalues $\lambda_1 \ge \dots \ge \lambda_n$. For $k = 1, \dots, n$,</p>
+<div class="eq">$$\lambda_k = \max_{\dim S = k}\ \min_{x \in S\setminus\{0\}} R_A(x) = \min_{\dim S = n-k+1}\ \max_{x \in S\setminus\{0\}} R_A(x),$$</div>
+<p>where $S$ ranges over subspaces of $\C^n$ of the indicated dimension.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> For $S = \spn(q_1,\dots,q_k)$ the quotient is a weighted average of $\lambda_1,\dots,\lambda_k$, so its minimum over $S$ is $\lambda_k$. For any $S$ with $\dim S = k$, the subspace $T = \spn(q_k,\dots,q_n)$ has dimension $n-k+1$; the dimensions add to $n+1 &gt; n$, so some $x \ne 0$ lies in $S \cap T$, and there $R_A(x) \le \lambda_k$. This proves the max–min formula. The min–max formula is the max–min formula for $-A$, whose $(n-k+1)$-th eigenvalue is $-\lambda_k$.</p>
+</div>
+
+<div class="blk cor" id="cor-weyl" data-name="Weyl's inequality and monotonicity">
+<p>For Hermitian $A, E \in \C^{n\times n}$ and each $k$,</p>
+<div class="eq">$$\lambda_k(A) + \lambda_n(E) \le \lambda_k(A + E) \le \lambda_k(A) + \lambda_1(E).$$</div>
+<p>Hence</p>
+<div class="eq">$$\abs{\lambda_k(A+E) - \lambda_k(A)} \le \max\big(\abs{\lambda_1(E)}, \abs{\lambda_n(E)}\big) = \norm{E}_2,$$</div>
+<p>and $E \succeq 0$ implies $\lambda_k(A + E) \ge \lambda_k(A)$; this is part (iii) of <a class="xref" href="#prop-loewner"></a>.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> For every $x \ne 0$, $R_{A+E}(x) = R_A(x) + R_E(x)$ and $\lambda_n(E) \le R_E(x) \le \lambda_1(E)$ by <a class="xref" href="#thm-rayleigh"></a>. An inequality between two functions survives taking the minimum over $S$ and then the maximum over $S$ in the max–min formula. The identification with $\norm{E}_2$ uses <a class="xref" href="#thm-norms"></a> and the fact that the singular values of a Hermitian matrix are the moduli of its eigenvalues (<a class="xref" href="#thm-eigsv"></a>).</p>
+</div>
+
+<div class="blk thm" id="thm-interlace" data-name="Cauchy interlacing">
+<p>Let $A \in \C^{n\times n}$ be Hermitian and $B = W^*AW$, where $W \in \C^{n\times(n-1)}$ has orthonormal columns; for example, $B$ is $A$ with row $i$ and column $i$ deleted. Then</p>
+<div class="eq">$$\lambda_1(A) \ge \lambda_1(B) \ge \lambda_2(A) \ge \lambda_2(B) \ge \dots \ge \lambda_{n-1}(B) \ge \lambda_n(A).$$</div>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> $R_B(y) = R_A(Wy)$, so the subspaces that Courant–Fischer offers to $B$ are, through $W$, the subspaces of $\Range(W)$. Restricting the outer maximum in the max–min formula to fewer subspaces gives $\lambda_k(B) \le \lambda_k(A)$; restricting the outer minimum in the min–max formula, over subspaces of dimension $n - k$, gives $\lambda_k(B) \ge \lambda_{k+1}(A)$.</p>
+</div>
+<div class="blk cor" id="cor-compress" data-name="Interlacing for compressions">
+<p>Let $A \in \C^{n\times n}$ be Hermitian, $1 \le k \le n$, and $B = W^*AW$ with $W \in \C^{n\times k}$ having orthonormal columns; for example, $B$ is a principal $k\times k$ submatrix of $A$. Then $\lambda_i(A) \ge \lambda_i(B) \ge \lambda_{i+n-k}(A)$ for $i = 1, \dots, k$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> As for <a class="xref" href="#thm-interlace"></a>: $R_B(y) = R_A(Wy)$, so restricting the outer maximum in the max–min formula to subspaces of $\Range(W)$ gives $\lambda_i(B) \le \lambda_i(A)$, and restricting the outer minimum in the min–max formula to subspaces of $\Range(W)$ of dimension $k - i + 1$ gives $\lambda_i(B) \ge \lambda_j(A)$ with $n - j + 1 = k - i + 1$, that is, $j = i + n - k$.</p>
+</div>
+<p class="src">Horn and Johnson, <i>Matrix Analysis</i>, ch. 4; Bhatia, <i>Matrix Analysis</i>, ch. III.</p>
+
+<div class="blk cex" id="cex-interlace">
+<p>Without symmetry the variational picture collapses. $A = \begin{bmatrix}5 & 1\\ -9 & -1\end{bmatrix}$ has trace $4$ and determinant $4$, hence the double eigenvalue $2$, yet its $1\times 1$ principal submatrix is $[5]$: no interlacing. For Hermitian $A$, by contrast, every diagonal entry $a_{ii} = R_A(e_i)$ lies in $[\lambda_n, \lambda_1]$ (<a class="xref" href="#thm-rayleigh"></a>).</p>
+</div>
+
+<div class="blk pattern">
+<p>Courant–Fischer converts spectral statements into optimization statements, and three properties of Hermitian spectra follow at once: eigenvalues are $1$-Lipschitz functions of the matrix in the spectral norm (<a class="xref" href="#cor-weyl"></a>), monotone in the Loewner order (<a class="xref" href="#prop-loewner"></a>), and interlace under compression to a subspace (<a class="xref" href="#thm-interlace"></a>, <a class="xref" href="#cor-compress"></a>). For a covariance matrix $C$, $R_C(x)$ is the variance of the data along the unit direction $x$, so $\lambda_1(C)$ is the largest variance of any one-dimensional projection and $q_1$ its direction (<a class="xref" href="#thm-rayleigh"></a>; see <a class="xref" href="#prop-pca"></a>). For non-normal matrices the first and the third property can fail badly: <a class="xref" href="#cex-interlace"></a> breaks interlacing, and in chapter 6 <a href="ch06_nonnormality.html#thm-jordan-pert">a Jordan block</a> has eigenvalues that move like $\eps^{1/n}$ under perturbations of size $\eps$, for small $\eps &gt; 0$.</p>
+</div>
+
+<figure class="viz" id="viz-quad">
+  <figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">Quadratic forms and the Rayleigh quotient</span><span class="viz-sub">The form $q(x) = x^\T Ax$ of $A = Q\diag(\lambda_1, \lambda_2)Q^\T$, where $Q$ turns the axes by the angle $\theta$. Left: $q$ as a heat map (red positive, blue negative) with level curves and the unit circle. Right: $R_A(x)$ for unit $x$ at angle $\varphi$. Drag $x$ around the circle.</span></figcaption>
+  <div class="viz-plots cols-2">
+    <div class="plot" id="quad-land"><div class="plot-cap">Level curves $q = \pm\tfrac14, \pm\tfrac12, \pm 1, \pm 2$; the level $q = 1$ is drawn heavier, the zero set dashed</div></div>
+    <div class="plot" id="quad-ray"><div class="plot-cap">Rayleigh quotient on the unit circle (period $180^\circ$); dashed lines at $\lambda_1$ and $\lambda_2$</div></div>
+  </div>
+  <div class="viz-controls" id="quad-controls"></div>
+  <div class="viz-notes">
+    <div><h5>Try this</h5><ol>
+      <li>With the default positive definite form, drag $x$ around the circle. $R_A(x)$ stays between $\lambda_2$ and $\lambda_1$ and touches them exactly where $x$ crosses the eigenvector axes.</li>
+      <li>Move $\lambda_2$ down through $0$. The ellipses open into parallel lines and then into hyperbolas, and the tag, the minor $\Delta_2 = \det A$ and the Cholesky readout change together.</li>
+      <li>Choose <i>Positive entries, indefinite</i>. Every entry of $A$ is positive, yet the form is negative (blue) along the anti-diagonal $x_2 = -x_1$.</li>
+      <li>Set $\lambda_1 = \lambda_2$. The curve on the right goes flat: $A$ is a multiple of $I$ and every direction is an eigenvector.</li>
+    </ol></div>
+    <div><h5>What to notice</h5><p>The right panel is a weighted average of $\lambda_1$ and $\lambda_2$ (<a class="xref" href="#thm-rayleigh"></a>), so its extreme values are eigenvalues attained at eigenvectors. Turning $\theta$ moves the picture rigidly and changes neither the eigenvalues nor the class in the table, while the class itself is read off from the signs of the eigenvalues, or, when $\det A \ne 0$, from the leading minors (<a class="xref" href="#thm-pd"></a>, <a class="xref" href="#cor-minors"></a>).</p></div>
+  </div>
+</figure>
+</section>
+
+<section class="sec" id="s-svd">
+<h2>The singular value decomposition</h2>
+
+<div class="blk prob"><p>A rectangular $A \in \R^{m\times n}$ has no eigenvalues, and a square non-normal one has no orthonormal eigenbasis (<a class="xref" href="#thm-normal"></a>). Find orthonormal bases of the input space and of the output space in which every matrix becomes diagonal.</p></div>
+
+<div class="blk probe">
+<p>Look at images of the unit circle. $\diag(3, 1)$ gives an ellipse with axes $3$ and $1$ on the coordinate axes. A rotation gives the circle back. The shear $S = \begin{bmatrix}1 & 1\\ 0 & 1\end{bmatrix}$ gives a tilted ellipse whose axes are not the images of $e_1$ and $e_2$. A rank-one matrix $uv^\T$ flattens the circle onto a segment of the line through $u$. In each case the image is an ellipse, possibly degenerate, and the longest semi-axis has length $\max_{\norm{x} = 1}\norm{Ax}$.</p>
+</div>
+
+<div class="blk conj"><p>Every matrix maps the unit sphere onto a possibly degenerate ellipsoid, and the vectors that land on its principal semi-axes are mutually orthogonal.</p></div>
+
+<div class="blk thm" id="thm-svd" data-name="Singular value decomposition">
+<p>Let $A \in \R^{m\times n}$, $p = \min(m, n)$ and $r = \rank A$. There are orthogonal $U \in \R^{m\times m}$ and $V \in \R^{n\times n}$ and numbers $\sigma_1 \ge \dots \ge \sigma_p \ge 0$ such that</p>
+<div class="eq">$$A = U\Sigma V^\T = \sum_{i=1}^r \sigma_i\, u_i v_i^\T,\qquad Av_i = \sigma_i u_i,\qquad A^\T u_i = \sigma_i v_i\quad (i \le p),$$</div>
+<p>where $\Sigma \in \R^{m\times n}$ has $\Sigma_{ii} = \sigma_i$ and zeros elsewhere, and exactly $r$ of the $\sigma_i$ are positive. For complex $A$ the same holds with unitary $U, V$ and $A = U\Sigma V^*$.</p>
+</div>
+<dl class="where">
+  <dt>$\sigma_i = \sqrt{\lambda_i(A^\T A)}$</dt><dd>the <dfn>singular values</dfn>, square roots of the eigenvalues of $A^\T A$</dd>
+  <dt>$v_i$ (columns of $V$)</dt><dd><dfn>right singular vectors</dfn>: orthonormal eigenvectors of $A^\T A$, in the input space $\R^n$</dd>
+  <dt>$u_i$ (columns of $U$)</dt><dd><dfn>left singular vectors</dfn>: orthonormal eigenvectors of $AA^\T$, in the output space $\R^m$</dd>
+</dl>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> $A^\T A$ is symmetric and positive semidefinite ($x^\T A^\T Ax = \norm{Ax}^2$), so by <a class="xref" href="#thm-spectral"></a> it has orthonormal eigenvectors $v_1,\dots,v_n$ with eigenvalues $\lambda_1 \ge \dots \ge \lambda_n \ge 0$. Since $\rank A^\T A = \rank A = r$ (<a href="ch01_linear_maps.html#prop-gram">the proposition on the subspaces of $A^\T A$</a>, chapter 1), exactly $r$ of the $\lambda_i$ are positive. Put $\sigma_i = \sqrt{\lambda_i}$ and $u_i = Av_i/\sigma_i$ for $i \le r$. These are orthonormal,</p>
+<div class="eq">$$u_i^\T u_j = \frac{v_i^\T A^\T A v_j}{\sigma_i\sigma_j} = \frac{\lambda_j\, v_i^\T v_j}{\sigma_i\sigma_j} = \delta_{ij},$$</div>
+<p>where the Kronecker delta $\delta_{ij}$ is $1$ for $i = j$ and $0$ otherwise. For $i &gt; r$, $\norm{Av_i}^2 = \lambda_i = 0$. Complete $u_1,\dots,u_r$ to an orthonormal basis of $\R^m$. Then $AV = U\Sigma$ column by column, and $A^\T u_i = A^\T Av_i/\sigma_i = \sigma_i v_i$ for $i \le r$. The vectors $u_1, \dots, u_r$ lie in $\Range(A)$, which has dimension $r$, so they span it; for $r &lt; i \le p$, $u_i$ is orthogonal to $\Range(A)$, hence in $\Null(A^\T)$ (<a href="ch01_linear_maps.html#thm-ftla">chapter 1</a>), and $A^\T u_i = 0 = \sigma_iv_i$. Finally $A^\T A = V\Sigma^\T\Sigma V^\T$ and $AA^\T = U\Sigma\Sigma^\T U^\T$, so the columns of $V$ and $U$ are orthonormal eigenvectors of $A^\T A$ and $AA^\T$. For complex $A$ the same argument runs with $A^*$ in place of $A^\T$, using <a class="xref" href="#thm-normal"></a> and <a class="xref" href="#lem-herm"></a> for the Hermitian matrix $A^*A$.</p>
+</div>
+<div class="blk prop" id="prop-svd-unique" data-name="Uniqueness and invariance of singular values">
+<p>Let $A \in \R^{m\times n}$ and $p = \min(m, n)$. (i) In every SVD $A = U\Sigma V^\T$, the eigenvalues of $A^\T A$ are $\sigma_1^2, \dots, \sigma_p^2$ together with $n - p$ zeros, so the singular values are determined by $A$. (ii) If $\sigma_1 &gt; \dots &gt; \sigma_p &gt; 0$, each pair $(u_i, v_i)$ with $i \le p$ is determined by $A$ up to a common sign. (iii) $A$ and $B \in \R^{m\times n}$ have the same singular values if and only if $B = U'AV'$ for some orthogonal $U' \in \R^{m\times m}$ and $V' \in \R^{n\times n}$; hence every function $f$ on $\R^{m\times n}$ with $f(U'AV') = f(A)$ for all such $U'$, $V'$ depends on $A$ only through its singular values. For complex $A$ the same holds with unitary matrices, and in (ii) up to a common factor of modulus $1$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (i) $A^\T A = V\Sigma^\T\Sigma V^\T$, and $\Sigma^\T\Sigma \in \R^{n\times n}$ is diagonal with entries $\sigma_1^2, \dots, \sigma_p^2, 0, \dots, 0$. (ii) Each $\sigma_i^2$ with $i \le p$ is then a simple eigenvalue of $A^\T A$, so the unit vector $v_i$ is determined up to sign, and $u_i = Av_i/\sigma_i$ carries the same sign. (iii) If $B = U'AV'$, then $B = (U'U)\,\Sigma\,(V'^\T V)^\T$ is an SVD of $B$ with the same $\Sigma$. Conversely, if $A = U_A\Sigma V_A^\T$ and $B = U_B\Sigma V_B^\T$, then $B = (U_BU_A^\T)\,A\,(V_AV_B^\T)$. For such an $f$, $f(A) = f(U^\T AV) = f(\Sigma)$. The complex case is the same computation with $^*$ in place of $^\T$.</p>
+</div>
+<div class="blk rem"><p>The <dfn>reduced</dfn> form keeps only the first $r$ columns: $A = U_r\Sigma_rV_r^\T$ with $\Sigma_r = \diag(\sigma_1, \dots, \sigma_r)$ invertible, which is the sum $\sum_{i\le r}\sigma_iu_iv_i^\T$ of <a class="xref" href="#thm-svd"></a> written as a product.</p></div>
+
+<div class="blk prop" id="prop-ellipsoid" data-name="Geometry of the SVD">
+<p>$A$ maps the unit ball of $\R^n$ onto the solid ellipsoid $\{\sum_{i\le r}\sigma_i c_i u_i : \sum_{i \le r} c_i^2 \le 1\}$ in $\Range(A)$, whose semi-axes are $\sigma_1 u_1,\dots,\sigma_r u_r$. If $r = n$, the unit sphere is mapped onto the boundary of this ellipsoid. In two dimensions: $V^\T$ turns (or reflects) the plane so that $v_1, v_2$ land on the axes, $\Sigma$ stretches the axes by $\sigma_1, \sigma_2$, and $U$ turns (or reflects) the axes onto $u_1, u_2$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Write $x = \sum_i c_i v_i$, so $\norm{x}^2 = \sum_i c_i^2$, and $Ax = \sum_{i\le r}\sigma_i c_i u_i$. The coefficients $c_{r+1},\dots,c_n$ only absorb norm, which fills the interior when $r &lt; n$; when $r = n$, $\norm{x} = 1$ forces $\sum_{i\le r} c_i^2 = 1$.</p>
+</div>
+
+<div class="blk prop" id="prop-svd-subspaces" data-name="Orthonormal bases for the four subspaces">
+<p>With $r = \rank A$: $v_1,\dots,v_r$ is an orthonormal basis of the row space $\Range(A^\T)$; $v_{r+1},\dots,v_n$ of the null space $\Null(A)$; $u_1,\dots,u_r$ of the column space $\Range(A)$; and $u_{r+1},\dots,u_m$ of the left null space $\Null(A^\T)$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> $Av_i = 0$ for $i &gt; r$, and these $n - r$ orthonormal vectors lie in $\Null(A)$, which has dimension $n - r$; so they are a basis. The vectors $u_i = Av_i/\sigma_i$, $i \le r$, lie in $\Range(A)$, of dimension $r$. The other two statements follow by orthogonal complements (<a href="ch01_linear_maps.html#thm-ftla">the fundamental theorem</a>, chapter 1), or by the same argument applied to $A^\T = V\Sigma^\T U^\T$.</p>
+</div>
+
+<figure class="wide" aria-label="Singular vectors as bases for the four fundamental subspaces">
+<svg viewBox="0 0 760 312" role="img" aria-label="The right singular vectors split the input space into row space and null space; the left singular vectors split the output space into column space and left null space; A sends v_i to sigma_i u_i and A transpose sends u_i back to sigma_i v_i" style="width:100%;height:auto;max-width:860px;display:block;margin:6px 0 4px">
+  <defs><marker id="sv-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--ink-2)"/></marker></defs>
+  <text x="160" y="22" text-anchor="middle" font-family="var(--font-ui)" font-size="12" letter-spacing="1.2" fill="var(--muted)">INPUT SPACE ℝⁿ, BASIS V</text>
+  <text x="600" y="22" text-anchor="middle" font-family="var(--font-ui)" font-size="12" letter-spacing="1.2" fill="var(--muted)">OUTPUT SPACE ℝᵐ, BASIS U</text>
+  <rect x="40" y="36" width="240" height="112" rx="4" fill="var(--tint-def)" stroke="var(--c1)" stroke-width="1.5"/>
+  <text x="160" y="66" text-anchor="middle" font-family="var(--font-body)" font-size="16" font-weight="600" fill="var(--ink)">Row space</text>
+  <text x="160" y="92" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="15" fill="var(--ink-2)">v₁, …, vᵣ</text>
+  <text x="160" y="118" text-anchor="middle" font-family="var(--font-body)" font-size="14" fill="var(--ink-2)">first r columns of V</text>
+  <rect x="40" y="176" width="240" height="96" rx="4" fill="none" stroke="var(--c8)" stroke-width="1.5" stroke-dasharray="6 5"/>
+  <text x="160" y="204" text-anchor="middle" font-family="var(--font-body)" font-size="16" font-weight="600" fill="var(--ink)">Null space</text>
+  <text x="160" y="228" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="15" fill="var(--ink-2)">vᵣ₊₁, …, vₙ</text>
+  <text x="160" y="252" text-anchor="middle" font-family="var(--font-body)" font-size="14" fill="var(--ink-2)">last n − r columns of V</text>
+  <rect x="480" y="36" width="240" height="112" rx="4" fill="var(--tint-def)" stroke="var(--c1)" stroke-width="1.5"/>
+  <text x="600" y="66" text-anchor="middle" font-family="var(--font-body)" font-size="16" font-weight="600" fill="var(--ink)">Column space</text>
+  <text x="600" y="92" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="15" fill="var(--ink-2)">u₁, …, uᵣ</text>
+  <text x="600" y="118" text-anchor="middle" font-family="var(--font-body)" font-size="14" fill="var(--ink-2)">first r columns of U</text>
+  <rect x="480" y="176" width="240" height="96" rx="4" fill="none" stroke="var(--c8)" stroke-width="1.5" stroke-dasharray="6 5"/>
+  <text x="600" y="204" text-anchor="middle" font-family="var(--font-body)" font-size="16" font-weight="600" fill="var(--ink)">Left null space</text>
+  <text x="600" y="228" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="15" fill="var(--ink-2)">uᵣ₊₁, …, uₘ</text>
+  <text x="600" y="252" text-anchor="middle" font-family="var(--font-body)" font-size="14" fill="var(--ink-2)">last m − r columns of U</text>
+  <path d="M284 74 H476" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#sv-arrow)"/>
+  <text x="380" y="64" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="15" fill="var(--ink)">A vᵢ = σᵢ uᵢ</text>
+  <path d="M476 112 H284" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#sv-arrow)"/>
+  <text x="380" y="132" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="15" fill="var(--ink)">Aᵀ uᵢ = σᵢ vᵢ</text>
+  <path d="M284 224 H368" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#sv-arrow)"/>
+  <path d="M476 224 H392" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#sv-arrow)"/>
+  <circle cx="380" cy="224" r="4" fill="var(--ink)"/>
+  <text x="380" y="248" text-anchor="middle" font-family="var(--font-body)" font-size="15" fill="var(--ink)">0</text>
+  <text x="326" y="212" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="14" fill="var(--ink)">A vᵢ = 0</text>
+  <text x="434" y="212" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="14" fill="var(--ink)">Aᵀ uᵢ = 0</text>
+  <text x="380" y="296" text-anchor="middle" font-family="var(--font-ui)" font-size="12" fill="var(--muted)">In the bases V and U the matrix of A is the diagonal Σ (top row i ≤ r, bottom row i &gt; r).</text>
+</svg>
+</figure>
+
+<div class="blk ex" id="ex-shear-svd" data-name="SVD of the shear">
+<p>For $S = \begin{bmatrix}1 & 1\\ 0 & 1\end{bmatrix}$, $S^\T S = \begin{bmatrix}1 & 1\\ 1 & 2\end{bmatrix}$ has eigenvalues $\frac{3 \pm \sqrt5}{2} = \phi^{\pm 2}$, where $\phi = \frac{1+\sqrt5}{2} \approx 1.618$ is the golden ratio. So $\sigma_1 = \phi$ and $\sigma_2 = 1/\phi \approx 0.618$, with $\sigma_1\sigma_2 = 1 = \abs{\det S}$. The eigenvector equation $(1 - \phi^2)x_1 + x_2 = 0$ gives $v_1 \propto (1, \phi)$, at about $58.3^\circ$, and $Sv_1 = (1 + \phi, \phi) = \phi\,(\phi, 1)$, so $u_1 \propto (\phi, 1)$, at about $31.7^\circ$. The only eigenvector of $S$ is $e_1$, at $0^\circ$: neither the singular values $\phi^{\pm1}$ nor the singular vectors are eigen-data of $S$, whose only eigenvalue is $1$.</p>
+</div>
+
+<div class="blk prop" id="prop-pinv" data-name="Pseudoinverse from the SVD">
+<p>Let $A = U\Sigma V^\T$ have rank $r$, and let $\Sigma^+ \in \R^{n\times m}$ have diagonal entries $1/\sigma_1, \dots, 1/\sigma_r$ and zeros elsewhere. The <a href="ch02_least_squares.html#def-pinv">Moore–Penrose pseudoinverse</a> of chapter 2 is</p>
+<div class="eq">$$A^+ = V\Sigma^+U^\T = \sum_{i=1}^r \frac{1}{\sigma_i}\, v_i u_i^\T,$$</div>
+<p>and for every $b \in \R^m$, $x^+ = A^+b$ is the least-squares solution of $Ax \approx b$ of smallest norm.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> In the coordinates $y = V^\T x$ and $c = U^\T b$, orthogonal invariance of the norm gives</p>
+<div class="eq">$$\norm{Ax - b}^2 = \norm{\Sigma y - c}^2 = \sum_{i\le r}(\sigma_i y_i - c_i)^2 + \sum_{i &gt; r} c_i^2.$$</div>
+<p>The minimizers are $y_i = c_i/\sigma_i$ for $i \le r$ with $y_{r+1},\dots,y_n$ free, and $\norm{x} = \norm{y}$ is smallest when the free coordinates vanish. That point is $x = V\Sigma^+c = A^+b$, and the matrix $V\Sigma^+U^\T$ satisfies the four <a href="ch02_least_squares.html#def-pinv">Penrose conditions</a> of chapter 2 by direct substitution, so it is the unique pseudoinverse (<a href="ch02_least_squares.html#thm-pinv">chapter 2</a>).</p>
+</div>
+
+<div class="blk thm" id="thm-polar" data-name="Polar decomposition">
+<p>Every square $A \in \R^{n\times n}$ can be written $A = WP$ with $W$ orthogonal and $P = (A^\T A)^{1/2} \succeq 0$. The factor $P$ is unique, and $W$ is unique when $A$ is invertible. Every complex square $A$ can be written in the same way with $W$ unitary and $P \succeq 0$ Hermitian, $P^2 = A^*A$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> From the SVD, $A = (UV^\T)(V\Sigma V^\T)$; $W = UV^\T$ is orthogonal and $P = V\Sigma V^\T$ is the positive semidefinite square root of $A^\T A = V\Sigma^2 V^\T$. Conversely, if $A = WP$ with $W$ orthogonal and $P \succeq 0$, then $A^\T A = PW^\T WP = P^2$, so $P$ is the positive semidefinite square root of $A^\T A$, which is unique by <a class="xref" href="#cor-calculus"></a>. If $A$ is invertible, $P$ is invertible and $W = AP^{-1}$ is forced. For complex $A$, the complex SVD $A = U\Sigma V^*$ gives $A = (UV^*)(V\Sigma V^*)$ in the same way.</p>
+</div>
+<p class="src">Horn and Johnson, ch. 7; Axler, ch. 7. The decomposition says that every linear map of $\R^n$ is a pure stretch along orthogonal axes followed by a rigid motion, the matrix analogue of $z = e^{i\arg z}\abs{z}$.</p>
+
+<div class="blk pattern">
+<p>Five factorizations organize this part of the guide. They differ in what they apply to and in how well conditioned their factors are.</p>
+</div>
+<div class="tbl-wrap"><table class="tbl">
+  <thead><tr><th>Factorization</th><th>Form</th><th>Exists for</th><th>Factors</th><th>Reveals</th><th>Where</th></tr></thead>
+  <tbody>
+    <tr><td>Eigendecomposition</td><td>$A = V\Lambda V^{-1}$</td><td>diagonalizable square $A$</td><td>$V$ invertible, possibly ill-conditioned</td><td>modes, powers, $e^{tA}$ (chapters 3, 7)</td><td><a href="ch03_eigenvalues.html#thm-diag">chapter 3</a></td></tr>
+    <tr><td>Spectral</td><td>$A = Q\Lambda Q^*$</td><td>normal $A$ (real $\Lambda$ iff Hermitian)</td><td>$Q$ unitary</td><td>independent scalings on orthogonal axes</td><td><a class="xref" href="#thm-normal"></a>, <a class="xref" href="#prop-normal-classes"></a></td></tr>
+    <tr><td>Schur</td><td>$A = UTU^*$</td><td>every square $A$</td><td>$U$ unitary, $T$ triangular</td><td>eigenvalues on the diagonal; non-normal part of $T$ (chapter 6)</td><td><a href="ch03_eigenvalues.html#thm-schur">chapter 3</a></td></tr>
+    <tr><td>Singular value</td><td>$A = U\Sigma V^*$</td><td>every $m\times n$ $A$</td><td>$U, V$ unitary, $\Sigma \ge 0$ diagonal</td><td>gains, rank, four subspaces, best approximations</td><td><a class="xref" href="#thm-svd"></a></td></tr>
+    <tr><td>Polar</td><td>$A = WP$</td><td>every square $A$</td><td>$W$ unitary, $P \succeq 0$</td><td>stretch followed by a rigid motion</td><td><a class="xref" href="#thm-polar"></a></td></tr>
+  </tbody>
+</table></div>
+
+<figure class="viz" id="viz-svd">
+  <figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">The SVD: rotate, stretch, rotate</span><span class="viz-sub">Drag the columns $Ae_1$ and $Ae_2$ in the right panel, or pick a preset. The stage slider applies $V^\T$, then $\Sigma$, then $U$ to the unit circle; at the last stage the circle has become the image ellipse with semi-axes $\sigma_1u_1$ and $\sigma_2u_2$.</span></figcaption>
+  <div class="viz-plots cols-2">
+    <div class="plot" id="svd-in"><div class="plot-cap">Input space: unit circle and right singular vectors $v_1, v_2$; real eigenvector directions of $A$ dashed</div></div>
+    <div class="plot" id="svd-out"><div class="plot-cap">Output space: the circle after the chosen stage; round handles are the columns of $A$</div></div>
+  </div>
+  <div class="viz-controls" id="svd-controls"></div>
+  <div class="viz-notes">
+    <div><h5>Try this</h5><ol>
+      <li>Press <i>Play stages</i>. The circle first turns so that $v_1, v_2$ land on the axes, is then stretched by $\sigma_1$ and $\sigma_2$, and is finally turned onto $u_1$ and $u_2$.</li>
+      <li>Choose <i>Symmetric</i>: the dashed eigenvector lines run through $v_1$ and $v_2$. Choose <i>Shear</i>: the only eigenvector is $e_1$, and it is none of the singular directions (<a class="xref" href="#ex-shear-svd"></a>).</li>
+      <li>Choose <i>With a reflection</i> ($\det A &lt; 0$). The last stage has to flip the plane: no rotation reverses orientation.</li>
+      <li>Drag $Ae_2$ onto the line through $Ae_1$. Then $\sigma_2 \to 0$ and the ellipse collapses to a segment: rank one.</li>
+    </ol></div>
+    <div><h5>What to notice</h5><p>The panels are linked by $Av_i = \sigma_iu_i$ (<a class="xref" href="#thm-svd"></a>): every matrix is diagonal between two orthonormal bases, whereas a single orthonormal basis of real eigenvectors does this only for symmetric matrices (<a class="xref" href="#prop-normal-classes"></a>). The readout shows $\abs{\det A} = \sigma_1\sigma_2$ and $\abs{\lambda_i} \le \sigma_1$ holding for every matrix you drag (<a class="xref" href="#thm-eigsv"></a>).</p></div>
+  </div>
+</figure>
+</section>
+
+<section class="sec" id="s-lowrank">
+<h2>Matrix norms and low-rank approximation</h2>
+
+<div class="blk prob"><p>Measure the size of a matrix, and find the matrix of rank at most $k$ that is closest to a given $A$. This is compression, denoising and dimensionality reduction in one question.</p></div>
+
+<div class="blk def" id="def-matnorms" data-name="Spectral and Frobenius norms">
+<p>For $A \in \R^{m\times n}$, the <dfn>spectral norm</dfn> is the largest stretch $\norm{A}_2 = \max_{x\ne 0}\norm{Ax}/\norm{x}$, and the <dfn>Frobenius norm</dfn> is $\norm{A}_F = \big(\sum_{i,j}a_{ij}^2\big)^{1/2} = (\tr A^\T A)^{1/2}$, where $\tr$ is the trace (sum of the diagonal entries); the two expressions agree because the diagonal entries of $A^\T A$ are the squared lengths of the columns of $A$. For complex $A$, use $\abs{a_{ij}}^2$ and $A^*$ in place of $a_{ij}^2$ and $A^\T$. Chapter 5 treats induced norms in general.</p>
+</div>
+
+<div class="blk thm" id="thm-norms" data-name="Norms from singular values">
+<p>$\norm{A}_2 = \sigma_1$ and $\norm{A}_F = \big(\sum_i \sigma_i^2\big)^{1/2}$. Both norms are unitarily invariant: $\norm{U'AV'} = \norm{A}$ for orthogonal $U'$, $V'$. If $A$ is square and invertible, $\norm{A^{-1}}_2 = 1/\sigma_n$. For complex $A$ the same holds with unitary $U'$, $V'$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Orthogonal matrices preserve vector norms, so $\norm{U'AV'x} = \norm{A(V'x)}$ with $\norm{V'x} = \norm{x}$, which gives invariance of $\norm{\cdot}_2$, and</p>
+<div class="eq">$$\tr\big((U'AV')^\T U'AV'\big) = \tr(V'^\T A^\T AV') = \tr(A^\T A)$$</div>
+<p>gives invariance of $\norm{\cdot}_F$, using $\tr(XY) = \tr(YX)$. Hence both norms of $A$ equal those of $\Sigma$. For $\Sigma$, $\norm{\Sigma y}^2 = \sum_i\sigma_i^2y_i^2 \le \sigma_1^2\norm{y}^2$ with equality at $y = e_1$, and $\norm{\Sigma}_F^2 = \sum_i\sigma_i^2$. Finally $A^{-1} = V\Sigma^{-1}U^\T$ has largest singular value $1/\sigma_n$. The complex case is the same argument with $^*$ in place of $^\T$.</p>
+</div>
+
+<div class="blk probe">
+<p>Extreme cases. For nonzero $u$ and $v$, the rank-one matrix $uv^\T = \frac{u}{\norm u}\,\big(\norm u\norm v\big)\,\frac{v^\T}{\norm v}$ has the single nonzero singular value $\norm{u}\norm{v}$, so both norms agree. The identity $I_n$ has $\norm{I}_2 = 1$ but $\norm{I}_F = \sqrt n$. The general comparison sits between these two extremes.</p>
+</div>
+
+<div class="blk cor" id="cor-normcompare" data-name="Comparing the two norms">
+<p>For $A \in \R^{m\times n}$ of rank $r$, $\norm{A}_2 \le \norm{A}_F \le \sqrt{r}\,\norm{A}_2$. Equality holds on the left if and only if $r \le 1$, and on the right if and only if all nonzero singular values of $A$ are equal, for instance for multiples of orthogonal matrices.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> For $A = 0$ all three quantities vanish. Otherwise, by <a class="xref" href="#thm-norms"></a>, $\norm{A}_F^2 = \sum_{i \le r}\sigma_i^2$ is a sum of $r \ge 1$ terms in $(0, \sigma_1^2]$ and $\norm{A}_2^2 = \sigma_1^2$. The sum is at least its first term $\sigma_1^2$, with equality exactly when there are no further terms, and at most $r\sigma_1^2$, with equality exactly when every term equals $\sigma_1^2$.</p>
+</div>
+
+<div class="blk thm" id="thm-ey" data-name="Eckart–Young–Mirsky">
+<p>Let $A \in \R^{m\times n}$ have rank $r$ and SVD $A = \sum_{i\le r}\sigma_iu_iv_i^\T$. For $0 \le k &lt; r$ let $A_k = \sum_{i=1}^k \sigma_iu_iv_i^\T$. Then</p>
+<div class="eq">$$\min_{\rank B \le k}\norm{A - B}_2 = \norm{A - A_k}_2 = \sigma_{k+1},\qquad \min_{\rank B \le k}\norm{A - B}_F = \norm{A - A_k}_F = \Big(\sum_{i=k+1}^r\sigma_i^2\Big)^{1/2}.$$</div>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof for the spectral norm.</span> $A - A_k = \sum_{i&gt;k}\sigma_iu_iv_i^\T$ is an SVD with largest singular value $\sigma_{k+1}$. Now let $\rank B \le k$. Then $\dim\Null(B) \ge n - k$, and $\spn(v_1,\dots,v_{k+1})$ has dimension $k + 1$, so the two subspaces share a unit vector $x = \sum_{i\le k+1}c_iv_i$. For it,</p>
+<div class="eq">$$\norm{(A - B)x} = \norm{Ax} = \Big(\sum_{i \le k+1}\sigma_i^2c_i^2\Big)^{1/2} \ge \sigma_{k+1}.$$</div>
+</div>
+<details class="proof"><summary>Proof for the Frobenius norm</summary><p>Set $\sigma_l(M) = 0$ for $l &gt; \min(m, n)$. The argument above shows $\norm{M - C}_2 \ge \sigma_{l+1}(M)$ for every $M \in \R^{m\times n}$, every $l \ge 0$ and every $C$ with $\rank C \le l$ (trivially when $\sigma_{l+1}(M) = 0$), and $\norm{M - M_l}_2 = \sigma_{l+1}(M)$ for the truncated SVD $M_l$ (with $M_l = M$ when $l \ge \rank M$). This gives Weyl's inequality for singular values: for $X, Y \in \R^{m\times n}$ and $i, j \ge 1$, the matrix $X_{i-1} + Y_{j-1}$ has rank at most $i + j - 2$, so</p>
+<div class="eq">$$\sigma_{i+j-1}(X + Y) \le \norm{(X - X_{i-1}) + (Y - Y_{j-1})}_2 \le \sigma_i(X) + \sigma_j(Y).$$</div>
+<p>With $X = A - B$, $Y = B$ and $j = k+1$, so that $\sigma_{k+1}(B) = 0$, it gives $\sigma_{i+k}(A) \le \sigma_i(A - B)$ for every $i$. Squaring and summing,</p>
+<div class="eq">$$\norm{A - B}_F^2 = \sum_i\sigma_i(A-B)^2 \ge \sum_{i}\sigma_{i+k}(A)^2 = \norm{A - A_k}_F^2.$$</div></details>
+<p class="src">C. Eckart and G. Young, "The approximation of one matrix by another of lower rank", <i>Psychometrika</i> 1 (1936) 211–218; L. Mirsky, <i>Quart. J. Math. Oxford</i> 11 (1960) 50–59, for all unitarily invariant norms. Textbook proofs: Trefethen and Bau, Lecture 5; Golub and Van Loan, <i>Matrix Computations</i> (4th ed.), §2.4. Weyl's singular value inequality: Horn and Johnson, <i>Topics in Matrix Analysis</i>, ch. 3.</p>
+
+<div class="blk cex" id="cex-ey-unique" data-name="Non-unique best approximation">
+<p>In the spectral norm the minimizer of <a class="xref" href="#thm-ey"></a> need not be unique. For $A = \diag(3, 1)$ and $k = 1$, every $B = \diag(3 + t, 0)$ with $\abs{t} \le 1$ has rank one, $A - B = \diag(-t, 1)$, and $\norm{A - B}_2 = \max(\abs t, 1) = 1 = \sigma_2$.</p>
+</div>
+
+<div class="blk cor" id="cor-distance" data-name="Distance to singularity">
+<p>For square $A \in \R^{n\times n}$, $\min\{\norm{E}_2 : A + E \text{ singular}\} = \sigma_n$, attained by $E = -\sigma_nu_nv_n^\T$. If $A$ is invertible, the distance relative to $\norm{A}_2 = \sigma_1$ is $\sigma_n/\sigma_1 = 1/\kappa(A)$, the reciprocal of the condition number of <a class="xref" href="#def-cond"></a>.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> If $A$ is singular, $\sigma_n = 0$ and $E = 0$ works. Otherwise $r = n$, and $A + E$ is singular exactly when $\rank(A + E) \le n - 1$; apply <a class="xref" href="#thm-ey"></a> with $k = n - 1 &lt; r$ and $B = A + E$, whose minimizer $B = A_{n-1}$ gives $E = A_{n-1} - A = -\sigma_nu_nv_n^\T$.</p>
+</div>
+
+<div class="blk def" id="def-cond" data-name="Condition number, numerical rank">
+<p>The <dfn>condition number</dfn> of a square invertible matrix is $\kappa(A) = \norm{A}_2\norm{A^{-1}}_2 = \sigma_1/\sigma_n$ (<a class="xref" href="#thm-norms"></a>). The <dfn>numerical rank</dfn> of $A$ at tolerance $\tau &gt; 0$ is the number of singular values larger than $\tau$.</p>
+</div>
+
+<div class="blk prop" id="prop-numrank" data-name="Numerical rank as a distance">
+<p>Let $A \in \R^{m\times n}$, $\tau &gt; 0$, and let $k$ be the numerical rank of $A$ at tolerance $\tau$. Then $k = \min\{\rank B : \norm{A - B}_2 \le \tau\}$, and the truncated SVD $A_k$ attains the minimum.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> With $\sigma_l = 0$ for $l &gt; \rank A$, $\norm{A - A_k}_2 = \sigma_{k+1} \le \tau$ (<a class="xref" href="#thm-ey"></a>; $A_k = A$ if $k = \rank A$). If $k \ge 1$ and $\rank B \le k - 1$, then $\norm{A - B}_2 \ge \sigma_k &gt; \tau$ by <a class="xref" href="#thm-ey"></a> with $k - 1$ in place of $k$.</p>
+</div>
+
+<div class="blk ex" id="ex-near-singular" data-name="Determinant one, nearly singular">
+<p>For $A = \begin{bmatrix}1 & 10\\ 0 & 1\end{bmatrix}$, $A^\T A = \begin{bmatrix}1 & 10\\ 10 & 101\end{bmatrix}$ has trace $102$ and determinant $1$, so $\sigma_{1,2}^2 = 51 \pm\sqrt{2600}$: $\sigma_1 \approx 10.099$, $\sigma_2 = 1/\sigma_1 \approx 0.0990$ and $\kappa(A) \approx 102$. A perturbation of spectral norm $\sigma_2 \approx 0.099$ makes $A$ singular (<a class="xref" href="#cor-distance"></a>), although $\det A = 1$. Chapter 1 warned that a small determinant does not mean "nearly singular"; this is the converse warning.</p>
+</div>
+
+<div class="blk pattern">
+<p>Invariants and equivalences. Two $m\times n$ matrices are unitarily equivalent, $B = U'AV'$, if and only if they have the same singular values, and every unitarily invariant quantity, including both norms above, is a function of the singular values (<a class="xref" href="#prop-svd-unique"></a>): the SVD is the normal form $\Sigma$ of this action, as in <a href="ch01_linear_maps.html#s-basis-change">the table of chapter 1</a>. For data, the same factorization diagonalizes the covariance: principal components are an SVD.</p>
+</div>
+
+<div class="blk prop" id="prop-pca" data-name="Principal components from the SVD">
+<p>Let $X \in \R^{N\times d}$, with $N \ge 2$, have centred columns ($N$ samples of $d$ variables, each variable with mean zero), let $X = U\Sigma V^\T$ be an SVD, and let $C = X^\T X/(N-1)$ be the sample covariance. Then</p>
+<div class="eq">$$C = V\,\frac{\Sigma^\T\Sigma}{N-1}\,V^\T,$$</div>
+<p>so the right singular vectors $v_i$ are orthonormal eigenvectors of $C$ (the principal axes), with variances $\lambda_i(C) = \sigma_i^2/(N-1)$, where $\sigma_i = 0$ for $i &gt; \min(N, d)$. For a unit vector $x$, the sample variance of the projected data $Xx$ is $R_C(x)$, largest for $x = v_1$, and the coordinates of the samples along $v_i$ (the principal component scores) are $Xv_i = \sigma_iu_i$ for $i \le \min(N, d)$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> $X^\T X = V\Sigma^\T U^\T U\Sigma V^\T = V\Sigma^\T\Sigma V^\T$, and $\Sigma^\T\Sigma$ is diagonal with entries $\sigma_i^2$. The entries of $Xx$ have mean zero because the columns of $X$ do, so their sample variance is $\norm{Xx}^2/(N-1) = x^\T Cx$, which is $R_C(x)$ for unit $x$; its maximum over unit vectors is $\lambda_1(C)$, attained at $v_1$ (<a class="xref" href="#thm-rayleigh"></a>). Finally $XV = U\Sigma$ column by column.</p>
+</div>
+
+<div class="blk rem"><p>Heuristically, a population recording "is low-dimensional" when its singular values fall quickly to a noise floor, so that a few principal components carry most of the variance; <a class="xref" href="#viz-lowrank"></a> makes such a floor visible.</p></div>
+
+<figure class="viz" id="viz-lowrank">
+  <figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">Low-rank approximation of an image</span><span class="viz-sub">An $80\times 80$ greyscale image is a matrix $A$ with entries in $[0, 1]$ (0 is background, 1 is ink). The slider keeps the first $k$ terms of its SVD. The readout computes the errors of $A_k$ directly from $A - A_k$ and compares them with the singular values.</span></figcaption>
+  <div class="viz-plots cols-2">
+    <div class="plot" id="lr-img"><div class="plot-cap">The matrix shown as an image: $A_k$, the original $A$, or the error $A - A_k$ (red positive, blue negative)</div></div>
+    <div class="plot" id="lr-spec"><div class="plot-cap">Singular values $\sigma_i$ on a log scale: kept (filled) and discarded (hollow); dashed line at $\sigma_{k+1}$</div></div>
+  </div>
+  <div class="viz-controls" id="lr-controls"></div>
+  <div class="viz-notes">
+    <div><h5>Try this</h5><ol>
+      <li>Choose <i>Rectangles</i>: three singular values, and all others zero to machine precision (crosses). At $k = 3$ the image is reproduced exactly.</li>
+      <li>Choose <i>Smooth diagonal stripes</i>: it looks busy but has rank 3, because $\cos(a + b) = \cos a\cos b - \sin a\sin b$. The <i>Disk</i>, with its curved edge, needs many more terms.</li>
+      <li>With <i>Shapes and text</i>, raise $k$ and watch the readout: the directly computed $\norm{A - A_k}_2$ equals $\sigma_{k+1}$, and $\norm{A - A_k}_F$ equals the root-sum-square of the discarded tail.</li>
+      <li>Choose <i>Shapes with noise</i>: the tail flattens into a noise floor, and terms below it mostly reconstruct noise.</li>
+    </ol></div>
+    <div><h5>What to notice</h5><p><a class="xref" href="#thm-ey"></a> says that no matrix of rank at most $k$ is closer to $A$ than $A_k$, in either norm, and the readout shows the two error formulas holding exactly. Since the error is the tail of the spectrum, compressibility is decided by how fast the singular values fall, not by how complicated the picture looks: among these images, the patterns aligned with the rows and columns are cheap, and the curved edge of the disk is expensive.</p></div>
+  </div>
+</figure>
+</section>
+
+<section class="sec" id="s-eigsv">
+<h2>Eigenvalues versus singular values</h2>
+
+<div class="blk prob"><p>Eigenvalues decide what $A^k$ and $e^{tA}$ do in the long run; singular values decide how much $A$ can amplify a vector in one application. Determine what each set says about the other.</p></div>
+
+<div class="blk probe">
+<p>Three extreme cases. For a normal matrix the singular values are the moduli of the eigenvalues (part (4) of <a class="xref" href="#thm-eigsv"></a> below). An orthogonal matrix $Q$ has all singular values equal to $1$, since $Q^\T Q = I$, and eigenvalues on the unit circle (<a class="xref" href="#prop-normal-classes"></a>). The nilpotent $N = \begin{bmatrix}0 & M\\ 0 & 0\end{bmatrix}$, with $M &gt; 0$, has both eigenvalues $0$ but $\sigma_1 = M$: arbitrarily large gain with zero spectrum.</p>
+</div>
+
+<div class="blk thm" id="thm-eigsv" data-name="Eigenvalues and singular values">
+<p>Let $A \in \C^{n\times n}$ have eigenvalues ordered so that $\abs{\lambda_1} \ge \dots \ge \abs{\lambda_n}$, and singular values $\sigma_1 \ge \dots \ge \sigma_n$. Then</p>
+<ol>
+<li>$\sigma_n \le \abs{\lambda_j} \le \sigma_1$ for every $j$; in particular the spectral radius $\rho(A) = \abs{\lambda_1}$ satisfies $\rho(A) \le \norm{A}_2$;</li>
+<li>$\prod_j\abs{\lambda_j} = \abs{\det A} = \prod_j\sigma_j$;</li>
+<li>$\sum_j\abs{\lambda_j}^2 \le \sum_j\sigma_j^2 = \norm{A}_F^2$ (Schur's inequality), with equality if and only if $A$ is normal;</li>
+<li>$A$ is normal if and only if $\sigma_j = \abs{\lambda_j}$ for every $j$.</li>
+</ol>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (1) For a unit eigenvector $x$, $\abs{\lambda} = \norm{Ax}$, and $\sigma_n \le \norm{Ax} \le \sigma_1$ for every unit $x$, by expanding $x$ in the right singular vectors. (2) $\det A = \prod_j\lambda_j$, and $\abs{\det A} = \abs{\det U}\,\det\Sigma\,\abs{\det V^*} = \prod_j\sigma_j$. (3) With the Schur form $A = UTU^*$, $\norm{A}_F^2 = \norm{T}_F^2 = \sum_j\abs{\lambda_j}^2 + \sum_{j&lt;k}\abs{t_{jk}}^2$ (as in <a href="ch03_eigenvalues.html#prop-henrici">the departure-from-normality proposition</a> of chapter 3), with equality exactly when $T$ is diagonal, that is, when $A$ is normal (<a class="xref" href="#thm-normal"></a>). (4) If $A = Q\Lambda Q^*$ is normal, write $\lambda_j = \abs{\lambda_j}e^{i\theta_j}$ and $D = \diag(e^{i\theta_j})$ (with $\theta_j = 0$ when $\lambda_j = 0$); then $A = (QD)\,\abs{\Lambda}\,Q^*$ is an SVD after reordering, so the singular values are the $\abs{\lambda_j}$. Conversely, equal lists give equality in (3).</p>
+</div>
+
+<div class="blk thm" id="thm-weyl-major" data-name="Weyl's majorant theorem">
+<p>With the orderings of <a class="xref" href="#thm-eigsv"></a>, $\prod_{j=1}^k\abs{\lambda_j} \le \prod_{j=1}^k\sigma_j$ for $k = 1,\dots,n$, with equality for $k = n$.</p>
+</div>
+<p class="src">Idea: apply part (1) of <a class="xref" href="#thm-eigsv"></a> to the $k$-th compound matrix (the action of $A$ on $k$-dimensional volumes), whose eigenvalues are products of $k$ eigenvalues of $A$ and whose largest singular value is $\sigma_1\cdots\sigma_k$. H. Weyl, "Inequalities between the two kinds of eigenvalues of a linear transformation", <i>Proc. Natl. Acad. Sci. USA</i> 35 (1949) 408–411; Horn and Johnson, <i>Topics in Matrix Analysis</i>, ch. 3.</p>
+
+<div class="blk cex" id="cex-gain">
+<p>Eigenvalues do not measure gain. $A = \begin{bmatrix}1 & 10\\ 0 & 1\end{bmatrix}$ has eigenvalues $1, 1$ and singular values $\approx 10.1$ and $0.099$ (<a class="xref" href="#ex-near-singular"></a>): the products agree, as part (2) of <a class="xref" href="#thm-eigsv"></a> requires, while the singular values differ from the eigenvalues by a factor of about $10$ in each direction. Its powers $A^k = \begin{bmatrix}1 & 10k\\ 0 & 1\end{bmatrix}$ have $\norm{A^k}_2 \ge \abs{e_1^\T A^ke_2} = 10k$, unbounded although $\rho(A) = 1$. For the transient behaviour of $e^{tA}$, chapter 6 replaces eigenvalues by pseudospectra and by the numerical abscissa.</p>
+</div>
+
+<p>Eigenvalues of non-normal matrices can be very sensitive (<a href="ch06_nonnormality.html#thm-jordan-pert">chapter 6</a>). Singular values behave better, for a reason that the next proposition makes precise: they are the eigenvalues of a Hermitian matrix built from $A$, to which Weyl's inequality applies.</p>
+
+<div class="blk prop" id="prop-dilation" data-name="Singular values are well conditioned">
+<p>Let $A \in \F^{m\times n}$, $p = \min(m, n)$, and let $H(A) = \begin{bmatrix}0 & A\\ A^* & 0\end{bmatrix} \in \F^{(m+n)\times(m+n)}$ be its <dfn>Hermitian dilation</dfn>. (i) $H(A)$ is Hermitian with eigenvalues $\pm\sigma_1(A), \dots, \pm\sigma_p(A)$ and $\abs{m - n}$ zeros, and the stacked vector $(u_j, \pm v_j)/\sqrt2 \in \F^{m+n}$ is a unit eigenvector for $\pm\sigma_j(A)$, $j \le p$. (ii) For every $E \in \F^{m\times n}$ and every $j \le p$, $\abs{\sigma_j(A + E) - \sigma_j(A)} \le \norm{E}_2$, whether or not $A$ is normal.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (i) From $Av_j = \sigma_ju_j$ and $A^*u_j = \sigma_jv_j$, $H(A)(u_j, \pm v_j) = \pm\sigma_j(u_j, \pm v_j)$. If $m &gt; n$, the vectors $(u_j, 0)$ with $j &gt; n$ are null vectors of $H(A)$, because $\norm{A^*u_j}^2 = u_j^*AA^*u_j = (\Sigma\Sigma^\T)_{jj} = 0$; if $n &gt; m$, so are the $(0, v_j)$ with $j &gt; m$, because $\norm{Av_j}^2 = (\Sigma^\T\Sigma)_{jj} = 0$. These $m + n$ vectors are orthonormal, so they form a complete eigenbasis and the list of eigenvalues is complete. (ii) By (i), the $j$-th largest eigenvalue of $H(A)$ is $\sigma_j(A)$ for $j \le p$, and $\norm{H(E)}_2 = \sigma_1(E) = \norm{E}_2$ by <a class="xref" href="#thm-eigsv"></a> and <a class="xref" href="#thm-norms"></a>. Since $H(A + E) = H(A) + H(E)$, <a class="xref" href="#cor-weyl"></a> gives the bound.</p>
+</div>
+
+<div class="blk pattern">
+<p>The two spectra answer different questions and are invariant under different actions.</p>
+</div>
+<div class="tbl-wrap"><table class="tbl">
+  <thead><tr><th>Property</th><th>Eigenvalues $\lambda_j$</th><th>Singular values $\sigma_j$</th></tr></thead>
+  <tbody>
+    <tr><td>Defined for</td><td>square matrices</td><td>every $m\times n$ matrix</td></tr>
+    <tr><td>Invariant under</td><td>similarity $S^{-1}AS$ (<a href="ch03_eigenvalues.html#prop-similar">chapter 3</a>)</td><td>unitary equivalence $U'AV'$ (<a class="xref" href="#prop-svd-unique"></a>)</td></tr>
+    <tr><td>Basis</td><td>eigenvectors: possibly ill-conditioned or incomplete</td><td>singular vectors: orthonormal, always complete (<a class="xref" href="#thm-svd"></a>)</td></tr>
+    <tr><td>Governs</td><td>long-run behaviour of $A^k$ and $e^{tA}$ (chapters 3, 7)</td><td>gain $\norm{Ax}/\norm{x}$, rank, conditioning, approximation (<a class="xref" href="#thm-norms"></a>, <a class="xref" href="#thm-ey"></a>)</td></tr>
+    <tr><td>Perturbation</td><td>Lipschitz for Hermitian $A$ (<a class="xref" href="#cor-weyl"></a>); for non-normal $A$ they can move like $\norm{E}^{1/n}$ (<a href="ch06_nonnormality.html#thm-jordan-pert">chapter 6</a>)</td><td>always Lipschitz with constant $1$ (<a class="xref" href="#prop-dilation"></a>)</td></tr>
+    <tr><td>Coincide in modulus</td><td colspan="2">if and only if $A$ is normal (<a class="xref" href="#thm-eigsv"></a>)</td></tr>
+  </tbody>
+</table></div>
+</section>
+
+<section class="selfcheck" id="s-selfcheck">
+<h2>Self-check</h2>
+<ol>
+<li><p>Show that a real skew-symmetric matrix $K$ has purely imaginary eigenvalues and that $e^{tK}$ is orthogonal for every real $t$.</p>
+<details><summary>Answer</summary><p>$iK$ is Hermitian: $(iK)^* = -iK^\T = iK$. Its eigenvalues are real by <a class="xref" href="#lem-herm"></a>, so those of $K$ are $-i$ times real numbers (as <a class="xref" href="#prop-normal-classes"></a> predicts for skew-Hermitian matrices). Transposing the exponential series term by term gives $(e^{tK})^\T = e^{tK^\T} = e^{-tK}$, and since $-tK$ commutes with $tK$, $(e^{tK})^\T e^{tK} = e^{-tK}e^{tK} = I$ (<a href="ch07_autonomous_systems.html#thm-expm">chapter 7</a>). Moreover $\det e^{tK} = e^{t\tr K} = 1$, because the diagonal of $K$ is zero, so skew-symmetric generators produce rotations.</p></details></li>
+<li><p>Is $A = \begin{bmatrix}2 & 3\\ 3 & 4\end{bmatrix}$ positive definite? Answer with Sylvester's criterion, then check with the eigenvalues.</p>
+<details><summary>Answer</summary><p>No: $\Delta_1 = 2 &gt; 0$ but $\Delta_2 = 8 - 9 = -1 &lt; 0$, so $A$ is indefinite (<a class="xref" href="#cor-minors"></a>). The eigenvalues are $3 \pm\sqrt{10} \approx 6.16$ and $-0.16$, with product $-1$.</p></details></li>
+<li><p>Find the singular values of $A = \begin{bmatrix}3 & 0\\ 4 & 5\end{bmatrix}$, then $\norm{A}_2$, $\norm{A}_F$, $\kappa(A)$ and the distance from $A$ to the nearest singular matrix.</p>
+<details><summary>Answer</summary><p>$A^\T A = \begin{bmatrix}25 & 20\\ 20 & 25\end{bmatrix}$ has eigenvalues $45$ and $5$, with $v_1 = (1,1)/\sqrt2$ and $v_2 = (1,-1)/\sqrt2$. So $\sigma_1 = 3\sqrt5 \approx 6.71$, $\sigma_2 = \sqrt5 \approx 2.24$, $\norm{A}_2 = 3\sqrt5$, $\norm{A}_F = \sqrt{50}$ (also $\sqrt{9 + 16 + 25}$), $\kappa(A) = 3$, and the distance to singularity is $\sigma_2 = \sqrt5$ (<a class="xref" href="#cor-distance"></a>). Check: $\sigma_1\sigma_2 = 15 = \det A$, and $u_1 = Av_1/\sigma_1 = (1, 3)/\sqrt{10}$, $u_2 = (3, -1)/\sqrt{10}$.</p></details></li>
+<li><p>A symmetric $3\times 3$ matrix has eigenvalues $5$, $-7$ and $2$. Give its singular values, $\norm{A}_2$, a best rank-one approximation, and the errors of that approximation in both norms.</p>
+<details><summary>Answer</summary><p>Singular values $7, 5, 2$ (moduli, reordered; <a class="xref" href="#thm-eigsv"></a>), so $\norm{A}_2 = 7$. A best rank-one approximation in both norms (<a class="xref" href="#thm-ey"></a>) is $-7\,qq^\T$ with $q$ the unit eigenvector for $-7$: ordering is by $\abs{\lambda}$, not by $\lambda$. Errors: $\sigma_2 = 5$ in the spectral norm and $\sqrt{25 + 4} = \sqrt{29}$ in the Frobenius norm.</p></details></li>
+<li><p>A real symmetric $3\times 3$ matrix has eigenvalues $4, 1, -2$. Where can the eigenvalues of its upper-left $2\times 2$ block lie? Can its $(1,1)$ entry be $5$?</p>
+<details><summary>Answer</summary><p>By <a class="xref" href="#thm-interlace"></a>, the block's eigenvalues $\mu_1 \ge \mu_2$ satisfy $\mu_1 \in [1, 4]$ and $\mu_2 \in [-2, 1]$. The $(1,1)$ entry is $R_A(e_1) \in [-2, 4]$ (<a class="xref" href="#thm-rayleigh"></a>), so it cannot be $5$; a non-symmetric matrix can violate this, as <a class="xref" href="#cex-interlace"></a> shows.</p></details></li>
+</ol>
+</section>
+
+<section class="refs" id="s-refs">
+<h2>Sources and further reading</h2>
+<ul>
+<li>S. Axler, <i>Linear Algebra Done Right</i>, 4th ed. (Springer, 2024), ch. 7: self-adjoint and normal operators, the spectral theorem, positive operators, polar decomposition and singular values. <a href="https://linear.axler.net/">linear.axler.net</a><span class="free">Open access</span></li>
+<li>S. Treil, <i>Linear Algebra Done Wrong</i>, ch. 6 (structure of operators in inner product spaces, the SVD) and ch. 7 (quadratic forms, Sylvester's criterion, inertia, min–max). <a href="https://sites.google.com/a/brown.edu/sergei-treil-homepage/linear-algebra-done-wrong">author page</a><span class="free">Free</span></li>
+<li>L. N. Trefethen and D. Bau, <i>Numerical Linear Algebra</i> (SIAM, 1997), Lectures 4–5 (the SVD and its properties, low-rank approximation) and Lecture 23 (Cholesky factorization).</li>
+<li>R. A. Horn and C. R. Johnson, <i>Matrix Analysis</i>, 2nd ed. (Cambridge, 2013), ch. 2 (unitary similarity, normal matrices), ch. 4 (Hermitian matrices, variational characterizations, interlacing, Weyl's inequalities) and ch. 7 (positive definite matrices, polar decomposition and SVD); and <i>Topics in Matrix Analysis</i> (Cambridge, 1991), ch. 3 (singular value inequalities).</li>
+<li>R. Bhatia, <i>Matrix Analysis</i> (Springer, 1997), ch. III (variational principles for eigenvalues) and ch. V (operator monotone functions, the Loewner order).</li>
+<li>G. H. Golub and C. F. Van Loan, <i>Matrix Computations</i>, 4th ed. (Johns Hopkins, 2013), §2.4 (the SVD and best low-rank approximation).</li>
+<li>S. L. Brunton and J. N. Kutz, <i>Data-Driven Science and Engineering</i>, 2nd ed. (Cambridge, 2022), ch. 1: the SVD in data analysis, including image compression and principal components.</li>
+<li>G. Strang, <i>Introduction to Linear Algebra</i>, 6th ed. (Wellesley-Cambridge, 2023), chapter on the singular value decomposition.</li>
+<li>S. Boyd, EE263 course reader (Stanford), lectures on symmetric matrices, quadratic forms, matrix norms and the SVD. <a href="https://web.stanford.edu/class/archive/ee/ee263/ee263.1082/notes/ee263coursereader.pdf">PDF</a><span class="free">Free</span></li>
+<li>C. Eckart and G. Young, "The approximation of one matrix by another of lower rank", <i>Psychometrika</i> 1 (1936) 211–218; H. Weyl, <i>Proc. Natl. Acad. Sci. USA</i> 35 (1949) 408–411.</li>
+</ul>
+</section>
+
+</div>
+</main>
+</div>
+<script>LT.page.init();</script>
+<script>
+(function () {
+  'use strict';
+  const { Plot, ui, mat: M, fmt, fmtC, fmtSig } = LT;
+  const deg = Math.PI / 180;
+  const neg = v => v.map(x => -x);
+
+  /* ---------------- Visual 4.1: quadratic forms and the Rayleigh quotient ---------------- */
+  (function () {
+    const st = { l1: 2, l2: 0.6, th: 30, phi: 75 };
+    const presets = { pd: [2, 0.6, 30], psd: [1.8, 0, 30], indef: [1.6, -1.2, 30], nd: [-0.8, -2, 30], posent: [3, -1, 45], iso: [1.2, 1.2, 30] };
+    const land = new Plot('#quad-land', { xlim: [-2.2, 2.2], ylim: [-2.2, 2.2], equal: true, clip: true, maxH: 420, label: 'Heat map and level curves of the quadratic form, eigenvector axes, unit circle and the test vector x' });
+    const ray = new Plot('#quad-ray', { xlim: [0, 180], ylim: [-3.4, 3.4], frame: true, aspect: 0.86, maxH: 420, xlabel: 'angle φ of x (degrees)', ylabel: 'R(x)', label: 'Rayleigh quotient of A along the unit circle' });
+    land.el.insertBefore(land.canvas, land.el.firstChild); ray.el.insertBefore(ray.canvas, ray.el.firstChild);
+    const panel = ui.panel('#quad-controls');
+    const sel = panel.select({ id: 'quad-preset', label: 'Preset', value: 'pd', options: [
+      ['pd', 'Positive definite'], ['psd', 'Positive semidefinite, singular'], ['indef', 'Indefinite (saddle)'], ['nd', 'Negative definite'],
+      ['posent', 'Positive entries, indefinite'], ['iso', 'Multiple of the identity'], ['custom', 'Custom']],
+      onChange: v => { const P = presets[v]; if (!P) return; st.l1 = P[0]; st.l2 = P[1]; st.th = P[2]; s1.set(st.l1); s2.set(st.l2); s3.set(st.th); update(); } });
+    const s1 = panel.slider({ id: 'quad-l1', label: '$\\lambda_1$ (along $q_1$)', min: -3, max: 3, step: 0.05, value: st.l1, onInput: v => { st.l1 = v; sel.set('custom'); update(); } });
+    const s2 = panel.slider({ id: 'quad-l2', label: '$\\lambda_2$ (along $q_2$)', min: -3, max: 3, step: 0.05, value: st.l2, onInput: v => { st.l2 = v; sel.set('custom'); update(); } });
+    const s3 = panel.slider({ id: 'quad-th', label: 'Axis angle $\\theta$', min: 0, max: 180, step: 1, value: st.th, fmt: v => fmt(v, 0) + '°', onInput: v => { st.th = v; sel.set('custom'); update(); } });
+    panel.note(ui.legend([{ color: 'c1', label: 'axis q₁' }, { color: 'c2', label: 'axis q₂' }, { color: 'c7', label: 'unit circle and x', kind: 'dash' }, { color: 'ink', label: 'level q = 1' }, { color: 'ink', label: 'zero set q = 0', kind: 'dash' }]));
+    const out = panel.readout({});
+    const axes = () => { const c = Math.cos(st.th * deg), s = Math.sin(st.th * deg); return { q1: [c, s], q2: [-s, c] }; };
+    const Amat = () => { const { q1, q2 } = axes(); return M.add(M.scale(M.outer(q1, q1), st.l1), M.scale(M.outer(q2, q2), st.l2)); };
+    const R = phi => { const { q1, q2 } = axes(), x = [Math.cos(phi * deg), Math.sin(phi * deg)], a = M.dot(x, q1), b = M.dot(x, q2); return st.l1 * a * a + st.l2 * b * b; };
+    land.draw = g => {
+      const A = Amat(), a = A[0][0], b = A[0][1], d = A[1][1];
+      const q = (x, y) => a * x * x + 2 * b * x * y + d * y * y;
+      const L = 4.84 * Math.max(Math.abs(st.l1), Math.abs(st.l2), 0.25);
+      g.heat(q, { range: [-L, L], cmap: 'div', res: 4, alpha: 0.6 });
+      g.contour(q, [-2, -1, -0.5, -0.25, 0.25, 0.5, 2], { color: 'ink-2', width: 1, alpha: 0.75, n: 120 });
+      g.contour(q, [1], { color: 'ink', width: 2.2, n: 120 });
+      const { q1, q2 } = axes(), zs = { color: 'ink', width: 1.5, dash: [7, 5] }, z1 = Math.abs(st.l1) < 1e-9, z2 = Math.abs(st.l2) < 1e-9;
+      if (z1 && !z2) g.ray([0, 0], q1, zs);
+      else if (z2 && !z1) g.ray([0, 0], q2, zs);
+      else if (!z1 && !z2 && st.l1 * st.l2 < 0) { const t = Math.sqrt(-st.l1 / st.l2); g.ray([0, 0], M.vadd(q1, M.vscale(q2, t)), zs); g.ray([0, 0], M.vsub(q1, M.vscale(q2, t)), zs); }
+      g.ray([0, 0], q1, { color: 'c1', width: 1.75 });
+      g.ray([0, 0], q2, { color: 'c2', width: 1.75 });
+      g.circle([0, 0], 1, { color: 'c7', width: 1.4, dash: [3, 4] });
+      g.text(M.vscale(q1, 1.9), 'q₁', { size: 15, dx: 10, dy: -10 });
+      g.text(M.vscale(q2, 1.9), 'q₂', { size: 15, dx: 10, dy: -10 });
+      g.arrow([0, 0], [Math.cos(st.phi * deg), Math.sin(st.phi * deg)], { color: 'c7', width: 2.5, label: 'x' });
+    };
+    land.addHandle({ get: () => [Math.cos(st.phi * deg), Math.sin(st.phi * deg)], set: (x, y) => { st.phi = Math.atan2(y, x) / deg; update(); }, color: 'c7', r: 7 });
+    ray.draw = g => {
+      const t1 = ((st.th % 180) + 180) % 180, t2 = (t1 + 90) % 180;
+      g.vline(t1, { color: 'c1', width: 1, alpha: 0.55 });
+      g.vline(t2, { color: 'c2', width: 1, alpha: 0.55 });
+      g.hline(st.l1, { color: 'c1', width: 1.4, dash: [6, 4] });
+      g.hline(st.l2, { color: 'c2', width: 1.4, dash: [6, 4] });
+      g.fn(R, { color: 'c7', width: 2.25 });
+      const close = Math.abs(st.l1 - st.l2) < 0.6, top = st.l1 >= st.l2;
+      g.text([177, st.l1], 'λ₁', { align: 'right', size: 14, dy: close ? (top ? -11 : 12) : -11, color: 'ink' });
+      g.text([177, st.l2], 'λ₂', { align: 'right', size: 14, dy: close ? (top ? 12 : -11) : -11, color: 'ink' });
+      const ph = ((st.phi % 180) + 180) % 180;
+      g.dot([ph, R(st.phi)], { color: 'c7', r: 5.5 });
+    };
+    function update() {
+      const A = Amat(), hi = Math.max(st.l1, st.l2), lo = Math.min(st.l1, st.l2), tol = 1e-9;
+      const L = M.chol(A), r = R(st.phi);
+      let tag;
+      if (lo > tol) tag = '<span class="tag good">positive definite</span>';
+      else if (hi > tol && Math.abs(lo) <= tol) tag = '<span class="tag">positive semidefinite, singular</span>';
+      else if (hi > tol && lo < -tol) tag = '<span class="tag bad">indefinite</span>';
+      else if (hi < -tol) tag = '<span class="tag">negative definite</span>';
+      else if (Math.abs(hi) <= tol && lo < -tol) tag = '<span class="tag">negative semidefinite</span>';
+      else tag = '<span class="tag">zero form</span>';
+      out.set(`${ui.mat(A, 2, { name: 'A' })}` +
+        `<span>eigenvalues <span class="num">${fmt(hi, 2)}</span>, <span class="num">${fmt(lo, 2)}</span></span>` +
+        `<span><i>R</i>(<i>x</i>) <span class="num">${fmt(r, 3)}</span> in [<span class="num">${fmt(lo, 2)}</span>, <span class="num">${fmt(hi, 2)}</span>]</span>` +
+        `<span>Δ<sub>1</sub> = <i>a</i><sub>11</sub> <span class="num">${fmt(A[0][0], 2)}</span>, Δ<sub>2</sub> = det <i>A</i> <span class="num">${fmt(M.det(A), 3)}</span></span>` +
+        `<span>Cholesky ${L ? '<span class="tag good">exists</span>' : '<span class="tag bad">fails</span>'}</span>${tag}`);
+      land.redraw(); ray.redraw();
+    }
+    update();
+  })();
+
+  /* ---------------- Visual 4.2: the SVD as rotate, stretch, rotate ---------------- */
+  (function () {
+    const st = { a1: [1.6, 0.3], a2: [0.9, 1.0], t: 3, eig: true };
+    const presets = { generic: [[1.6, 0.9], [0.3, 1.0]], symmetric: [[2.0, 0.8], [0.8, 1.0]], shear: [[1, 1], [0, 1]], diagonal: [[2.2, 0], [0, 0.7]],
+      rotation: M.scale(M.rot(35 * deg), 1.4), reflection: [[1.4, 0.6], [0.9, -0.8]], rankone: [[1.2, 0.6], [0.8, 0.4]] };
+    const opts = { xlim: [-2.9, 2.9], ylim: [-2.5, 2.5], equal: true, maxH: 400 };
+    const pin = new Plot('#svd-in', Object.assign({ label: 'Input space with the unit circle, right singular vectors and eigenvector directions' }, opts));
+    const pout = new Plot('#svd-out', Object.assign({ label: 'Output space with the transformed circle at the chosen stage and the columns of A' }, opts));
+    pin.el.insertBefore(pin.canvas, pin.el.firstChild); pout.el.insertBefore(pout.canvas, pout.el.firstChild);
+    const panel = ui.panel('#svd-controls');
+    const sel = panel.select({ id: 'svd-preset', label: 'Preset', value: 'generic', options: [
+      ['generic', 'Generic'], ['symmetric', 'Symmetric'], ['shear', 'Shear'], ['diagonal', 'Diagonal'], ['rotation', 'Scaled rotation (normal)'],
+      ['reflection', 'With a reflection (det < 0)'], ['rankone', 'Rank one'], ['custom', 'Drag the columns']],
+      onChange: v => { const A = presets[v]; if (!A) return; st.a1 = [A[0][0], A[1][0]]; st.a2 = [A[0][1], A[1][1]]; setT(3); update(); } });
+    const stageName = v => (v < 0.005 ? 'x' : v <= 1 ? 'Vᵀx' : v <= 2 ? 'ΣVᵀx' : 'UΣVᵀx');
+    const tsl = panel.slider({ id: 'svd-stage', label: 'Stage', min: 0, max: 3, step: 0.01, value: st.t, fmt: stageName, onInput: v => { st.t = v; anim.pause(); redraw(); } });
+    panel.toggle({ id: 'svd-eig', label: 'Show eigenvector directions', value: st.eig, onChange: v => { st.eig = v; redraw(); } });
+    const [play] = panel.buttons([{ label: 'Play stages', kind: 'primary', onClick: () => { if (anim.running) anim.pause(); else { if (st.t >= 3) setT(0); anim.play(); } } }]);
+    panel.note(ui.legend([{ color: 'c1', label: 'v₁ and its images' }, { color: 'c2', label: 'v₂ and its images' }, { color: 'c3', label: 'circle at this stage', kind: 'area' }, { color: 'c5', label: 'columns Ae₁, Ae₂', kind: 'dot' }, { color: 'muted', label: 'eigenvector directions', kind: 'dash' }]));
+    const out = panel.readout({});
+    const anim = LT.animate(dt => { setT(Math.min(3, st.t + 0.9 * dt)); redraw(); if (st.t >= 3) anim.pause(); },
+      { el: '#viz-svd', onState: on => play.setLabel(on ? 'Pause' : 'Play stages') });
+    function setT(v) { st.t = v; tsl.set(v); }
+    const Amat = () => [[st.a1[0], st.a2[0]], [st.a1[1], st.a2[1]]];
+    function dec() {
+      const A = Amat(), F = M.svd(A);
+      let v1 = M.col(F.V, 0), v2 = M.col(F.V, 1), u1 = M.col(F.U, 0), u2 = M.col(F.U, 1);
+      if (v1[0] * v2[1] - v1[1] * v2[0] < 0) { v2 = neg(v2); u2 = neg(u2); }
+      if (v1[0] < -1e-12 || (Math.abs(v1[0]) <= 1e-12 && v1[1] < 0)) { v1 = neg(v1); v2 = neg(v2); u1 = neg(u1); u2 = neg(u2); }
+      const e = M.eig2(A);
+      return { A, s1: F.S[0], s2: F.S[1], v1, v2, u1, u2, alpha: Math.atan2(v1[1], v1[0]), beta: Math.atan2(u1[1], u1[0]),
+        detU: u1[0] * u2[1] - u1[1] * u2[0], eig: e, evecs: e.real ? e.vectors.filter(Boolean) : [] };
+    }
+    function stageMat(t, D) {
+      const VT = M.rot(-D.alpha);
+      if (t <= 1) return M.rot(-D.alpha * t);
+      const S = s => [[1 + s * (D.s1 - 1), 0], [0, 1 + s * (D.s2 - 1)]];
+      if (t <= 2) return M.mul(S(t - 1), VT);
+      const SV = M.mul(S(1), VT), s = t - 2;
+      if (D.detU > 0) return M.mul(M.rot(D.beta * s), SV);
+      if (s <= 0.5) return M.mul([[1, 0], [0, 1 - 4 * s]], SV);
+      return M.mul(M.mul(M.rot(D.beta * (2 * s - 1)), [[1, 0], [0, -1]]), SV);
+    }
+    pin.draw = g => {
+      const D = dec();
+      g.circle([0, 0], 1, { color: 'ink-2', width: 1.5 });
+      if (st.eig) D.evecs.forEach(e => g.ray([0, 0], e, { color: 'muted', width: 1.25, dash: [6, 5] }));
+      g.arrow([0, 0], D.v1, { color: 'c1', width: 2.5, label: 'v₁' });
+      g.arrow([0, 0], D.v2, { color: 'c2', width: 2.5, label: 'v₂' });
+      g.dot([1, 0], { color: 'ink', r: 3.5 });
+      g.text([1, 0], 'e₁', { size: 13, dx: 9, dy: 11, color: 'ink-2' });
+    };
+    pout.draw = g => {
+      const D = dec(), T = stageMat(st.t, D), fin = st.t >= 2.995;
+      g.ellipse([0, 0], D.A, { color: 'ink-2', width: 1, dash: [3, 4] });
+      if (st.eig && fin) D.evecs.forEach(e => g.ray([0, 0], e, { color: 'muted', width: 1.25, dash: [6, 5] }));
+      g.line(0, 0, st.a1[0], st.a1[1], { color: 'c5', width: 1.25, alpha: 0.8 });
+      g.line(0, 0, st.a2[0], st.a2[1], { color: 'c5', width: 1.25, alpha: 0.8 });
+      g.ellipse([0, 0], T, { fill: 'c3', fillAlpha: 0.13, color: 'c3', width: 2 });
+      const lab = st.t < 0.005 ? ['v₁', 'v₂'] : Math.abs(st.t - 1) < 0.005 ? ['e₁', 'e₂'] : Math.abs(st.t - 2) < 0.005 ? ['σ₁e₁', 'σ₂e₂'] : fin ? ['σ₁u₁', 'σ₂u₂'] : ['', ''];
+      g.arrow([0, 0], M.mv(T, D.v1), { color: 'c1', width: 2.5, label: lab[0] });
+      g.arrow([0, 0], M.mv(T, D.v2), { color: 'c2', width: 2.5, label: lab[1] });
+      g.dot(M.mv(T, [1, 0]), { color: 'ink', r: 3.5 });
+    };
+    pout.addHandle({ get: () => st.a1, set: (x, y) => { st.a1 = [x, y]; sel.set('custom'); setT(3); anim.pause(); update(); }, color: 'c5', r: 6, snap: 0.05, label: 'Ae₁' });
+    pout.addHandle({ get: () => st.a2, set: (x, y) => { st.a2 = [x, y]; sel.set('custom'); setT(3); anim.pause(); update(); }, color: 'c5', r: 6, snap: 0.05, label: 'Ae₂' });
+    function redraw() { pin.redraw(); pout.redraw(); }
+    function update() {
+      const D = dec(), A = D.A, ev = D.eig.values, rho = Math.max(Math.hypot(ev[0].re, ev[0].im), Math.hypot(ev[1].re, ev[1].im));
+      const scale = Math.max(1e-12, Math.abs(A[0][0]), Math.abs(A[0][1]), Math.abs(A[1][0]), Math.abs(A[1][1]));
+      let tag;
+      const lc = s => `<span style="text-transform:none">${s}</span>`;
+      if (D.s1 < 1e-12) tag = `<span class="tag bad">zero matrix: ${lc('σ₁ = σ₂ = 0')}</span>`;
+      else if (D.s2 < 1e-9 * Math.max(1, D.s1)) tag = `<span class="tag bad">rank one: ${lc('σ₂ = 0')}</span>`;
+      else if (D.s1 - D.s2 < 1e-9 * D.s1) tag = `<span class="tag">${lc('σ₁ = σ₂')}: any orthonormal pair can serve as ${lc('v₁, v₂')}</span>`;
+      else if (Math.abs(A[0][1] - A[1][0]) < 1e-9 * scale) tag = '<span class="tag good">symmetric: singular vectors are eigenvectors</span>';
+      else tag = '<span class="tag">not symmetric: singular and eigen directions differ</span>';
+      out.set(`${ui.mat(A, 2, { name: 'A' })}` +
+        `<span>σ<sub>1</sub> <span class="num">${fmt(D.s1, 3)}</span>, σ<sub>2</sub> <span class="num">${fmt(D.s2, 3)}</span></span>` +
+        `<span>eigenvalues <span class="num">${fmtC(ev[0], 3)}</span>, <span class="num">${fmtC(ev[1], 3)}</span></span>` +
+        `<span>|det <i>A</i>| <span class="num">${fmt(Math.abs(M.det(A)), 3)}</span> = σ<sub>1</sub>σ<sub>2</sub> <span class="num">${fmt(D.s1 * D.s2, 3)}</span></span>` +
+        `<span>ρ(<i>A</i>) <span class="num">${fmt(rho, 3)}</span> ≤ σ<sub>1</sub></span>${tag}`);
+      redraw();
+    }
+    update();
+  })();
+
+  /* ---------------- Visual 4.3: low-rank approximation of an image ---------------- */
+  (function () {
+    const N = 80, st = { img: 'shapes', view: 'approx', k: 6 }, cache = {};
+    /* One-sided Jacobi SVD on column arrays (same method as LT.mat.svd, laid out for speed on an 80 x 80 image). */
+    function svdCols(A, m, n) {
+      const U = [], V = []; let fro = 0;
+      for (let k = 0; k < m * n; k++) fro += A[k] * A[k];
+      for (let j = 0; j < n; j++) { const c = new Float64Array(m); for (let i = 0; i < m; i++) c[i] = A[i * n + j]; U.push(c); const v = new Float64Array(n); v[j] = 1; V.push(v); }
+      const tiny = 1e-32 * fro;
+      for (let sweep = 0; sweep < 60; sweep++) {
+        let rotated = false;
+        for (let p = 0; p < n - 1; p++) for (let q = p + 1; q < n; q++) {
+          const up = U[p], uq = U[q]; let a = 0, b = 0, g = 0;
+          for (let i = 0; i < m; i++) { const x = up[i], y = uq[i]; a += x * x; b += y * y; g += x * y; }
+          if (a <= tiny || b <= tiny || Math.abs(g) <= 1e-15 * Math.sqrt(a * b)) continue;
+          rotated = true;
+          const z = (b - a) / (2 * g), t = (z >= 0 ? 1 : -1) / (Math.abs(z) + Math.sqrt(1 + z * z)), c = 1 / Math.sqrt(1 + t * t), s = c * t;
+          for (let i = 0; i < m; i++) { const x = up[i], y = uq[i]; up[i] = c * x - s * y; uq[i] = s * x + c * y; }
+          const vp = V[p], vq = V[q];
+          for (let i = 0; i < n; i++) { const x = vp[i], y = vq[i]; vp[i] = c * x - s * y; vq[i] = s * x + c * y; }
+        }
+        if (!rotated) break;
+      }
+      const S0 = U.map(c => { let s = 0; for (let i = 0; i < m; i++) s += c[i] * c[i]; return Math.sqrt(s); });
+      const idx = S0.map((_, j) => j).sort((a, b) => S0[b] - S0[a]);
+      return { S: idx.map(j => S0[j]), U: idx.map(j => (S0[j] > 0 ? U[j].map(x => x / S0[j]) : U[j])), V: idx.map(j => V[j]) };
+    }
+    const grid = f => { const a = new Float64Array(N * N); for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) a[i * N + j] = f(i, j); return a; };
+    function drawn() {
+      const c = document.createElement('canvas'); c.width = N; c.height = N; const x = c.getContext('2d');
+      x.fillStyle = '#ffffff'; x.fillRect(0, 0, N, N);
+      x.fillStyle = '#000000'; x.beginPath(); x.arc(20, 20, 13, 0, 2 * Math.PI); x.fill();
+      x.fillStyle = '#666666'; x.fillRect(44, 8, 28, 22);
+      x.fillStyle = '#000000'; x.beginPath(); x.moveTo(5, 75); x.lineTo(23, 41); x.lineTo(41, 75); x.closePath(); x.fill();
+      x.font = 'italic 44px serif'; x.textBaseline = 'alphabetic'; x.fillText('λ', 50, 72);
+      const d = x.getImageData(0, 0, N, N).data;
+      return grid((i, j) => 1 - (d[4 * (i * N + j)] + d[4 * (i * N + j) + 1] + d[4 * (i * N + j) + 2]) / 765);
+    }
+    const makers = {
+      shapes: drawn,
+      noisy: () => { const a = drawn(), g = M.randn(7); return a.map(v => v + 0.12 * g()); },
+      rects: () => grid((i, j) => (i >= 8 && i < 34 && j >= 6 && j < 58 ? 0.6 : 0) + (i >= 28 && i < 72 && j >= 42 && j < 74 ? 0.4 : 0) + (i >= 50 && i < 76 && j >= 4 && j < 30 ? 0.3 : 0)),
+      checker: () => grid((i, j) => (1 + (Math.floor(i / 10) % 2 ? -1 : 1) * (Math.floor(j / 10) % 2 ? -1 : 1)) / 2),
+      stripes: () => grid((i, j) => (1 + Math.cos(2 * Math.PI * (i + j) / 16)) / 2),
+      disk: () => grid((i, j) => ((i - 39.5) * (i - 39.5) + (j - 39.5) * (j - 39.5) <= 900 ? 1 : 0))
+    };
+    function get(name) {
+      if (!cache[name]) { const A = makers[name](); const F = svdCols(A, N, N); let fro = 0; for (const v of A) fro += v * v; cache[name] = { A, S: F.S, U: F.U, V: F.V, fro: Math.sqrt(fro) }; }
+      return cache[name];
+    }
+    const img = new Plot('#lr-img', { xlim: [0, N], ylim: [0, N], equal: true, axes: false, maxH: 400, label: 'The image matrix: approximation, original or error' });
+    const spec = new Plot('#lr-spec', { xlim: [0, 81], ylim: [1e-3, 100], logy: true, frame: true, aspect: 0.9, maxH: 400, xlabel: 'index i', ylabel: 'σᵢ', label: 'Singular values of the image on a logarithmic axis' });
+    img.el.insertBefore(img.canvas, img.el.firstChild); spec.el.insertBefore(spec.canvas, spec.el.firstChild);
+    const panel = ui.panel('#lr-controls');
+    panel.select({ id: 'lr-image', label: 'Image', value: st.img, options: [['shapes', 'Shapes and text'], ['noisy', 'Shapes with noise'], ['rects', 'Rectangles'], ['checker', 'Checkerboard'], ['stripes', 'Smooth diagonal stripes'], ['disk', 'Disk']],
+      onChange: v => { st.img = v; limits(); update(); } });
+    panel.select({ id: 'lr-view', label: 'Show', value: st.view, options: [['approx', 'Approximation Aₖ'], ['orig', 'Original A'], ['err', 'Error A − Aₖ']], onChange: v => { st.view = v; update(); } });
+    const ks = panel.slider({ id: 'lr-k', label: 'Rank $k$', min: 0, max: 60, step: 1, value: st.k, fmt: v => fmt(v, 0), onInput: LT.throttle(v => { st.k = Math.round(v); update(); }) });
+    panel.note(ui.legend([{ color: 'c1', label: 'kept σᵢ (i ≤ k)', kind: 'dot' }, { color: 'c8', label: 'σₖ₊₁ = ‖A − Aₖ‖₂', kind: 'dash' }, { color: 'muted', label: 'zero to machine precision (×)', kind: 'dot' }]));
+    const out = panel.readout({});
+    let view = null;
+    const hex = c => { c = LT.color(c).replace('#', ''); if (c.length === 3) c = c.split('').map(h => h + h).join(''); return [0, 2, 4].map(i => parseInt(c.slice(i, i + 2), 16)); };
+    const off = document.createElement('canvas'); off.width = N; off.height = N; const octx = off.getContext('2d');
+    img.draw = g => {
+      if (!view) return;
+      const id = octx.createImageData(N, N), bg = hex('plot-bg'), ink = hex('ink');
+      g.ctx.fillStyle = LT.color('plot-bg'); g.ctx.fillRect(0, 0, img.W, img.H);
+      for (let k = 0; k < N * N; k++) {
+        let rgb;
+        if (view.err) rgb = LT.cmap('div', 0.5 + 0.5 * Math.max(-1, Math.min(1, view.F[k] / view.emax)));
+        else { const v = Math.max(0, Math.min(1, view.F[k])); rgb = [0, 1, 2].map(c => bg[c] + v * (ink[c] - bg[c])); }
+        id.data[4 * k] = rgb[0]; id.data[4 * k + 1] = rgb[1]; id.data[4 * k + 2] = rgb[2]; id.data[4 * k + 3] = 255;
+      }
+      octx.putImageData(id, 0, 0);
+      const ctx = g.ctx, x0 = img.X(0), y0 = img.Y(N);
+      ctx.save(); ctx.imageSmoothingEnabled = false; ctx.drawImage(off, x0, y0, img.X(N) - x0, img.Y(0) - y0); ctx.restore();
+      g.poly([[0, 0], [N, 0], [N, N], [0, N]], { color: 'rule-strong', width: 1 });
+    };
+    function limits() {
+      const S = get(st.img).S, s0 = S[0], sig = S.filter(s => s > 1e-12 * s0);
+      const lo = Math.pow(10, Math.floor(Math.log10(Math.max(1e-8 * s0, 0.3 * sig[sig.length - 1]))));
+      spec.setLimits(null, [lo, Math.pow(10, Math.ceil(Math.log10(s0 * 1.5)))]);
+    }
+    spec.draw = g => {
+      const S = get(st.img).S, k = st.k, lo = spec.ylim[0] * 1.0001;
+      if (k < N) g.hline(Math.max(S[k], lo), { color: 'c8', width: 1.25, dash: [6, 4] });
+      S.forEach((s, i) => {
+        const p = [i + 1, Math.max(s, lo)];
+        if (s <= 1e-12 * S[0]) g.marker(p, { shape: 'x', size: 3.5, color: 'muted', width: 1.5 });
+        else if (i < k) g.dot(p, { color: 'c1', r: 3.5 });
+        else g.dot(p, { color: 'c1', r: 3.2, hollow: true, width: 1.4 });
+      });
+      if (k < N) { g.dot([k + 1, Math.max(S[k], lo)], { color: 'c8', r: 5.5, hollow: true, width: 2 }); g.text([79, Math.max(S[k], lo)], 'σ' + LT.sub(k + 1), { align: 'right', size: 14, dy: -11 }); }
+    };
+    function norm2(E) {
+      let x = new Float64Array(N); for (let i = 0; i < N; i++) x[i] = 1 + 0.37 * Math.sin(1.3 * i + 0.4);
+      const y = new Float64Array(N); let s = 0;
+      for (let it = 0; it < 300; it++) {
+        let nx = 0; for (let i = 0; i < N; i++) nx += x[i] * x[i]; nx = Math.sqrt(nx); if (!(nx > 0)) return 0;
+        for (let i = 0; i < N; i++) x[i] /= nx;
+        for (let i = 0; i < N; i++) { let t = 0; for (let j = 0; j < N; j++) t += E[i * N + j] * x[j]; y[i] = t; }
+        let ny = 0; for (let i = 0; i < N; i++) ny += y[i] * y[i]; s = Math.sqrt(ny);
+        const z = new Float64Array(N); for (let i = 0; i < N; i++) { const yi = y[i]; if (yi === 0) continue; for (let j = 0; j < N; j++) z[j] += E[i * N + j] * yi; }
+        x = z;
+      }
+      return s;
+    }
+    function update() {
+      const D = get(st.img), k = Math.min(st.k, N), Ak = new Float64Array(N * N);
+      for (let l = 0; l < k; l++) { const s = D.S[l], u = D.U[l], v = D.V[l]; if (s === 0) continue; for (let i = 0; i < N; i++) { const su = s * u[i]; for (let j = 0; j < N; j++) Ak[i * N + j] += su * v[j]; } }
+      const E = new Float64Array(N * N); let ef = 0, emax = 0;
+      for (let q = 0; q < N * N; q++) { E[q] = D.A[q] - Ak[q]; ef += E[q] * E[q]; emax = Math.max(emax, Math.abs(E[q])); }
+      ef = Math.sqrt(ef);
+      const e2 = norm2(E), sk1 = k < N ? D.S[k] : 0; let tail = 0; for (let i = k; i < N; i++) tail += D.S[i] * D.S[i]; tail = Math.sqrt(tail);
+      view = st.view === 'err' ? { F: E, err: true, emax: Math.max(emax, 1e-12) } : { F: st.view === 'orig' ? D.A : Ak, err: false };
+      const store = k * (N + N + 1);
+      const exact = sk1 <= 1e-12 * D.S[0];
+      out.set(`<span>storage <span class="num">${store}</span> numbers, <span class="num">${fmt(100 * store / (N * N), 0)}%</span> of <span class="num">${N * N}</span></span>` +
+        (exact ? `<span>‖<i>A</i> − <i>A</i><sub>k</sub>‖<sub>2</sub> computed <span class="num">${fmtSig(e2, 2)}</span>, ‖<i>A</i> − <i>A</i><sub>k</sub>‖<sub>F</sub> computed <span class="num">${fmtSig(ef, 2)}</span></span><span class="tag good">rank <span style="text-transform:none"><i>A</i> ≤ <i>k</i></span>: exact up to rounding</span>` :
+        `<span>‖<i>A</i> − <i>A</i><sub>k</sub>‖<sub>2</sub> computed <span class="num">${fmtSig(e2, 4)}</span>, σ<sub>k+1</sub> <span class="num">${fmtSig(sk1, 4)}</span></span>` +
+        `<span>‖<i>A</i> − <i>A</i><sub>k</sub>‖<sub>F</sub> computed <span class="num">${fmtSig(ef, 4)}</span>, (Σ<sub>i&gt;k</sub> σ<sub>i</sub>²)<sup>1/2</sup> <span class="num">${fmtSig(tail, 4)}</span></span>`) +
+        `<span>relative error <span class="num">${fmtSig(100 * ef / D.fro, 3)}%</span></span>`);
+      img.redraw(); spec.redraw();
+      void ks;
+    }
+    limits(); update();
+  })();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1037 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>2 Inner products, projections and least squares · Linear Theory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap">
+<link rel="stylesheet" href="assets/lt.css">
+<script src="assets/toc.js"></script>
+<script src="assets/lt.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+<style>
+  /* chapter 2: keep the diagram legible on phones by scrolling it sideways instead of shrinking it */
+  #fig-pinv { overflow-x: auto; }
+  #fig-pinv svg { min-width: 600px; }
+</style>
+</head>
+<body>
+<div class="topbar"><button class="btn" id="lt-menu" type="button" aria-controls="lt-side" aria-expanded="false">Contents</button><span class="topbar-title">2 · Inner products, projections and least squares</span></div>
+<div class="shell">
+<nav class="side" id="lt-side" aria-label="Chapters"></nav>
+<main class="page" id="main" data-chapter="2">
+<div class="content">
+
+<header class="ch-head">
+<div class="eyebrow">Part I · Refresher · Chapter 2</div>
+<h1 class="ch-title">Inner products, projections and least squares</h1>
+<p class="ch-lead">An inner product gives a vector space lengths and angles, and with them a notion of the closest point. Orthogonal projection then answers the two questions chapter 1 left open about a linear system $Ax = b$, with matrix $A \in \R^{m\times n}$, unknown $x \in \R^n$ and right-hand side $b \in \R^m$: which $x$ comes closest when there is no solution, and which solution is smallest when there are many. Measure size with a different norm and the answers change, sometimes to sparse ones.</p>
+<p class="ch-meta"><span><b>Prerequisites</b> chapter 1</span><span><b>Leads to</b> chapters 4, 5, 9 and 13</span><span><b>Visuals</b> 3</span></p>
+<ol class="core-q">
+<li>When $Ax = b$ has no solution, which $x$ makes $Ax$ closest to $b$, and is it unique?</li>
+<li>When $Ax = b$ has many solutions, which one is smallest?</li>
+<li>How do these answers depend on the norm used to measure size?</li>
+</ol>
+<details class="notation">
+<summary>Notation introduced in this chapter</summary>
+<div class="tbl-wrap"><table class="tbl">
+<thead><tr><th>Symbol</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>$\spn$, $\rank$, $\Null(A)$, $\Range(A)$, $\oplus$, $\diag$</td><td>carried over from chapter 1: span, rank, null space, range (column space), direct sum, diagonal matrix with the given entries</td></tr>
+<tr><td>$\inner{x}{y}$</td><td>inner product, linear in the first slot; on $\C^n$ the standard one is $y^*x$, on $\R^n$ it is $x^\T y$</td></tr>
+<tr><td>$\bar z$, $y^*$</td><td>complex conjugate; conjugate transpose $y^* = \bar y^\T$</td></tr>
+<tr><td>$\norm{x}$, $\norm{x}_p$</td><td>norm induced by the inner product (Euclidean on $\F^n$); the $p$-norm, $1 \le p \le \infty$</td></tr>
+<tr><td>$q$</td><td>dual exponent of $p$, defined by $1/p + 1/q = 1$</td></tr>
+<tr><td>$W \succ 0$</td><td>positive definite: $W = W^*$ and $x^*Wx &gt; 0$ for every $x \ne 0$</td></tr>
+<tr><td>$\inner{A}{B}$, $\norm{A}_F$</td><td>Frobenius inner product $\tr(B^*A)$ of two matrices, and the Frobenius norm it induces</td></tr>
+<tr><td>$\mathbf 1$, $e_k$</td><td>all-ones vector; $k$-th standard basis vector</td></tr>
+<tr><td>$\delta_{ij}$</td><td>Kronecker delta: $1$ if $i = j$, $0$ otherwise</td></tr>
+<tr><td>$\mathcal S^\perp$</td><td>orthogonal complement of a subspace $\mathcal S$</td></tr>
+<tr><td>$\hat Q\hat R$, $QR$</td><td>reduced and full QR factorizations (orthonormal columns times upper triangular)</td></tr>
+<tr><td>$P_{\mathcal S}$</td><td>orthogonal projector onto the subspace $\mathcal S$</td></tr>
+<tr><td>$\norm{M}$</td><td>induced 2-norm of a matrix, $\max_{x \ne 0}\norm{Mx}/\norm{x}$</td></tr>
+<tr><td>$\hat x$, $r$</td><td>a least-squares solution and its residual $r = b - A\hat x$</td></tr>
+<tr><td>$\kappa(A)$</td><td>condition number $\sigma_{\max}(A)/\sigma_{\min}(A)$ of a matrix with full column rank</td></tr>
+<tr><td>$A^+$</td><td>Moore–Penrose pseudoinverse of $A$, computed in chapter 4 from the singular value decomposition (SVD)</td></tr>
+<tr><td>$x_\mu$</td><td>ridge (Tikhonov) solution with regularization parameter $\mu &gt; 0$</td></tr>
+<tr><td>$f_\delta$, $w_i$</td><td>smoothed $\ell_1$ cost and weights of iteratively reweighted least squares (IRLS)</td></tr>
+<tr><td>$X$, $X'$</td><td>snapshot matrices of dynamic mode decomposition (DMD), which fits dynamics $A \approx X'X^+$</td></tr>
+</tbody>
+</table></div>
+</details>
+</header>
+
+<section class="sec" id="s-inner">
+<h2>Inner products and norms</h2>
+
+<div class="blk prob"><p>Add lengths and angles to a vector space in a way that is compatible with linearity, so that "perpendicular" and "closest" make sense.</p></div>
+
+<div class="blk def" id="def-inner" data-name="Inner product">
+<p>Let $V$ be a vector space over $\F$, where $\F$ is $\R$ (the real numbers) or $\C$ (the complex numbers). An <dfn>inner product</dfn> on $V$ is a map $V\times V \to \F$, $(x, y) \mapsto \inner{x}{y}$, such that for all $x, y, z \in V$ and $\alpha \in \F$</p>
+<div class="eq">$$\inner{\alpha x + y}{z} = \alpha\inner{x}{z} + \inner{y}{z},\qquad \inner{y}{x} = \overline{\inner{x}{y}},\qquad \inner{x}{x} &gt; 0 \ \text{ for } x \ne 0,$$</div>
+<p>where the bar denotes complex conjugation (no effect on real numbers). The first two rules give conjugate linearity in the second slot: $\inner{x}{\alpha y} = \overline{\inner{\alpha y}{x}} = \bar\alpha\,\overline{\inner{y}{x}} = \bar\alpha\inner{x}{y}$, and in the same way $\inner{x}{y + z} = \inner{x}{y} + \inner{x}{z}$. The <dfn>standard inner products</dfn> are $\inner{x}{y} = y^\T x = \sum_i x_i y_i$ on $\R^n$ and $\inner{x}{y} = y^* x = \sum_i x_i\bar y_i$ on $\C^n$, where $y^\T$ is the transpose and $y^* = \bar y^\T$ the conjugate transpose.</p>
+</div>
+
+<p>Three more inner products recur in the guide.</p>
+
+<div class="blk prop" id="prop-inner-examples" data-name="Three more inner products">
+<p>(i) Let $W \in \C^{n\times n}$ be <dfn>positive definite</dfn>, meaning $W = W^*$ and $x^*Wx &gt; 0$ for every $x \ne 0$, written $W \succ 0$. Then $\inner{x}{y}_W = y^*Wx$ is an inner product on $\C^n$, and for real $W \succ 0$ its restriction $y^\T Wx$ is an inner product on $\R^n$. (ii) On the space $C[a, b]$ of continuous functions $[a, b] \to \F$, with $a &lt; b$, $\inner{f}{g} = \int_a^b f(t)\overline{g(t)}\,\dd t$ is an inner product, the starting point of chapter 5. (iii) On $\F^{m\times n}$, the <dfn>Frobenius inner product</dfn> $\inner{A}{B} = \tr(B^*A) = \sum_{ij} a_{ij}\bar b_{ij}$, where $\tr$ is the trace, is an inner product; it induces the <dfn>Frobenius norm</dfn> $\norm{A}_F = (\sum_{ij}\abs{a_{ij}}^2)^{1/2}$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (i) $y^*W(\alpha x + x') = \alpha\,y^*Wx + y^*Wx'$; $\overline{x^*Wy} = (x^*Wy)^* = y^*W^*x = y^*Wx$, which is conjugate symmetry; and positivity is the hypothesis. With $W = I$ this covers the standard inner products, since $x^*x = \sum_i\abs{x_i}^2$. (ii) Linearity and conjugate symmetry hold because the integral is linear. If $f \ne 0$, then $\abs{f}^2$ is continuous, nonnegative and positive at some point, hence on an interval of positive length, so $\int_a^b\abs{f(t)}^2\,\dd t &gt; 0$. (iii) $\tr(B^*A) = \sum_j\sum_i \bar b_{ij}a_{ij}$ is the standard inner product of the vectors in $\F^{mn}$ obtained by stacking the columns of $A$ and of $B$.</p>
+</div>
+
+<div class="blk probe">
+<p>Over $\C$ the conjugate cannot be dropped: the nonzero vector $x = (1, i)^\T$, with $i$ the imaginary unit (engineering texts write $j$), has $x^\T x = 1 + i^2 = 0$ but $x^* x = 2$, so the form $y^\T x$ violates positivity on $\C^2$.</p>
+</div>
+
+<div class="blk def" id="def-norm" data-name="Norm">
+<p>A <dfn>norm</dfn> on $V$ is a map $\norm{\cdot}: V \to [0, \infty)$ such that $\norm{x} = 0$ only for $x = 0$, $\norm{\alpha x} = \abs{\alpha}\norm{x}$, and $\norm{x + y} \le \norm{x} + \norm{y}$ (the triangle inequality). An inner product <dfn>induces</dfn> the norm $\norm{x} = \sqrt{\inner{x}{x}}$; for the standard inner product on $\F^n$ this is the Euclidean norm $\norm{x} = (\sum_i \abs{x_i}^2)^{1/2}$. That this is indeed a norm is <a class="xref" href="#cor-triangle"></a>.</p>
+</div>
+
+<div class="blk thm" id="thm-cs" data-name="Cauchy–Schwarz inequality">
+<p>In an inner product space, $\abs{\inner{x}{y}} \le \norm{x}\norm{y}$ for all $x, y$, with equality if and only if $x$ and $y$ are linearly dependent.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> If $y = 0$ both sides vanish. Otherwise let $c = \inner{x}{y}/\norm{y}^2$ and expand, using linearity in the first slot and conjugate linearity in the second:</p>
+<div class="eq">$$0 \le \norm{x - cy}^2 = \norm{x}^2 - \bar c\inner{x}{y} - c\inner{y}{x} + \abs{c}^2\norm{y}^2 = \norm{x}^2 - \frac{\abs{\inner{x}{y}}^2}{\norm{y}^2}.$$</div>
+<p>Equality holds exactly when $x = cy$. The vector $cy$ is the projection of $x$ onto the line through $y$ (<a class="xref" href="#thm-proj"></a>), so the inequality says that a projection is never longer than the vector it came from; <a class="xref" href="#cor-projector-norm"></a> extends this to every subspace.</p>
+</div>
+
+<div class="blk cor" id="cor-triangle" data-name="Triangle inequality and angles">
+<p>The induced map $x \mapsto \norm{x} = \sqrt{\inner{x}{x}}$ is a norm; in particular $\norm{x + y} \le \norm{x} + \norm{y}$. In a real inner product space the angle $\theta \in [0, \pi]$ between nonzero $x$ and $y$ is defined by $\cos\theta = \inner{x}{y}/(\norm{x}\norm{y})$, a number in $[-1, 1]$ by Cauchy–Schwarz.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> $\norm{x} = 0$ only for $x = 0$ by positivity, and $\norm{\alpha x}^2 = \alpha\bar\alpha\inner{x}{x} = \abs{\alpha}^2\norm{x}^2$. For the triangle inequality, expand and apply Cauchy–Schwarz, writing $\Re$ for the real part:</p>
+<div class="eq">$$\norm{x + y}^2 = \norm{x}^2 + 2\Re\inner{x}{y} + \norm{y}^2 \le \norm{x}^2 + 2\norm{x}\norm{y} + \norm{y}^2 = (\norm{x} + \norm{y})^2.$$</div>
+</div>
+
+<div class="blk probe">
+<p>The <dfn>$p$-norms</dfn> on $\F^n$ are $\norm{x}_p = (\sum_i \abs{x_i}^p)^{1/p}$ for $1 \le p &lt; \infty$ and $\norm{x}_\infty = \max_i \abs{x_i}$. Their unit balls in $\R^2$ are a diamond for $p = 1$, the disk for $p = 2$ and a square for $p = \infty$, each inside the next (part (iii) of <a class="xref" href="#prop-pnorms"></a>). The extreme case $0 &lt; p &lt; 1$ fails to be a norm: with $e_k$ the $k$-th standard basis vector, $\norm{e_1 + e_2}_p = 2^{1/p} &gt; 2 = \norm{e_1}_p + \norm{e_2}_p$, so the midpoint $\tfrac12(e_1 + e_2)$ of two points of the "unit ball" lies outside it, and the "unit ball" is not convex.</p>
+</div>
+
+<div class="blk prop" id="prop-pnorms" data-name="The $p$-norms">
+<p>Let $1 \le p \le \infty$, and define the <dfn>dual exponent</dfn> $q \in [1, \infty]$ by $1/p + 1/q = 1$, with $q = \infty$ for $p = 1$ and $q = 1$ for $p = \infty$. For all $x, y \in \F^n$: (i) <dfn>Hölder's inequality</dfn> $\abs{\sum_i x_iy_i} \le \norm{x}_p\norm{y}_q$ holds; for $p = q = 2$, applied to $x$ and $\bar y$, it is Cauchy–Schwarz for the standard inner product. (ii) <dfn>Minkowski's inequality</dfn> $\norm{x + y}_p \le \norm{x}_p + \norm{y}_p$ holds, so $\norm{\cdot}_p$ is a norm. (iii) With $\mathbf 1 = (1, \dots, 1)^\T$ the all-ones vector,</p>
+<div class="eq">$$\norm{x}_\infty \le \norm{x}_2 \le \norm{x}_1 \le \sqrt{n}\,\norm{x}_2 \le n\norm{x}_\infty,$$</div>
+<p>and no constant can be improved: $x = e_1$ gives equality in the first two inequalities and $x = \mathbf 1$ in the last two.</p>
+</div>
+<details class="proof"><summary>Proof</summary>
+<p>(i) For $p = 1$, $\abs{\sum_i x_iy_i} \le \sum_i\abs{x_i}\abs{y_i} \le \max_i\abs{y_i}\sum_i\abs{x_i}$, and $p = \infty$ is the same with the roles of $x$ and $y$ exchanged. Let $1 &lt; p &lt; \infty$. By homogeneity, and as the case $x = 0$ or $y = 0$ is trivial, we may assume $\norm{x}_p = \norm{y}_q = 1$. For $s, t &gt; 0$, concavity of the logarithm gives $\log(\tfrac1p s^p + \tfrac1q t^q) \ge \tfrac1p\log s^p + \tfrac1q\log t^q = \log(st)$, that is, Young's inequality $st \le s^p/p + t^q/q$, which also holds when $s$ or $t$ is $0$. Summing it over $i$,</p>
+<div class="eq">$$\sum_i\abs{x_i}\abs{y_i} \le \sum_i\Big(\frac{\abs{x_i}^p}{p} + \frac{\abs{y_i}^q}{q}\Big) = \frac1p + \frac1q = 1.$$</div>
+<p>(ii) For $p = 1$ and $p = \infty$ this follows from $\abs{x_i + y_i} \le \abs{x_i} + \abs{y_i}$. For $1 &lt; p &lt; \infty$ let $s_i = \abs{x_i + y_i}^{p-1}$. Since $(p - 1)q = p$, $\norm{s}_q = \norm{x + y}_p^{p-1}$, and (i), applied to $(\abs{x_i})$ and $(s_i)$ and to $(\abs{y_i})$ and $(s_i)$, gives</p>
+<div class="eq">$$\begin{aligned}\norm{x + y}_p^p = \sum_i s_i\abs{x_i + y_i} &amp;\le \sum_i s_i\abs{x_i} + \sum_i s_i\abs{y_i}\\ &amp;\le \norm{x + y}_p^{p-1}\big(\norm{x}_p + \norm{y}_p\big);\end{aligned}$$</div>
+<p>divide by $\norm{x + y}_p^{p-1}$ when it is nonzero. Definiteness and $\norm{\alpha x}_p = \abs{\alpha}\norm{x}_p$ are clear.</p>
+<p>(iii) $\max_i\abs{x_i}^2 \le \sum_i\abs{x_i}^2 \le (\sum_i\abs{x_i})^2$ gives the first two inequalities; the third is (i) with $p = 2$ for $(\abs{x_1}, \dots, \abs{x_n})$ and $\mathbf 1$; the fourth is $\sum_i\abs{x_i}^2 \le n\max_i\abs{x_i}^2$. Finally $\norm{e_1}_p = 1$ for every $p$, and $\norm{\mathbf 1}_1 = n$, $\norm{\mathbf 1}_2 = \sqrt n$, $\norm{\mathbf 1}_\infty = 1$.</p>
+</details>
+
+<div class="blk thm" id="thm-parallelogram" data-name="Parallelogram law; Jordan–von Neumann">
+<p>A norm induced by an inner product satisfies</p>
+<div class="eq">$$\norm{x + y}^2 + \norm{x - y}^2 = 2\norm{x}^2 + 2\norm{y}^2 \qquad \text{for all } x, y.$$</div>
+<p>Conversely, every norm satisfying this identity is induced by exactly one inner product, recovered by the polarization identity $\inner{x}{y} = \tfrac14(\norm{x + y}^2 - \norm{x - y}^2)$ in the real case, plus $\tfrac{i}{4}(\norm{x + iy}^2 - \norm{x - iy}^2)$ in the complex case.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Expanding $\norm{x \pm y}^2 = \norm{x}^2 \pm 2\Re\inner{x}{y} + \norm{y}^2$ and adding gives the law; subtracting gives $\norm{x + y}^2 - \norm{x - y}^2 = 4\Re\inner{x}{y}$, so the norm determines the inner product (in the complex case apply this also to $iy$, using $\Re\inner{x}{iy} = \Im\inner{x}{y}$, where $\Im$ is the imaginary part). That the polarization formula defines an inner product whenever the law holds is the substantial direction, proved in P. Jordan and J. von Neumann, "On inner products in linear, metric spaces", <i>Ann. of Math.</i> 36 (1935) 719–723.</p>
+</div>
+
+<div class="blk cex" id="cex-l1-not-inner">
+<p>The $\ell_1$ and $\ell_\infty$ norms (the $p$-norms with $p = 1$ and $p = \infty$) come from no inner product. With $x = e_1$ and $y = e_2$ in $\R^2$, $\norm{x \pm y}_1 = 2$, so the left side of the law is $8$ while the right side is $4$; and $\norm{x \pm y}_\infty = 1$ makes the left side $2$. In general $\norm{e_1 \pm e_2}_p = 2^{1/p}$, and $2\cdot 2^{2/p} = 4$ only for $p = 2$: among the $p$-norms, the Euclidean norm is the only one with an inner product behind it.</p>
+</div>
+
+<div class="blk thm" id="thm-equiv" data-name="Equivalence of norms in finite dimension">
+<p>For any two norms $\norm{\cdot}_a$ and $\norm{\cdot}_b$ on $\F^n$ there are constants $0 &lt; c \le C$ with $c\norm{x}_a \le \norm{x}_b \le C\norm{x}_a$ for all $x \in \F^n$.</p>
+</div>
+<p class="src">Idea: every norm is continuous, and the unit sphere of $\norm{\cdot}_2$ is compact, so $\norm{x}_b$ attains a positive minimum and a finite maximum on it. Proof: E. Kreyszig, <i>Introductory Functional Analysis with Applications</i>, §2.4; Horn and Johnson, <i>Matrix Analysis</i>, ch. 5.</p>
+
+<div class="blk cor" id="cor-equiv-topology" data-name="Convergence does not depend on the norm">
+<p>Let $\norm{\cdot}_a$ and $\norm{\cdot}_b$ be norms on $\F^n$. A sequence $(x_k)$ in $\F^n$ converges to $x$, and a subset of $\F^n$ is bounded, in $\norm{\cdot}_a$ if and only if in $\norm{\cdot}_b$. Hence continuity of a map from $\F^n$ into a normed space, or from a normed space into $\F^n$, does not depend on the norm on $\F^n$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Apply the two bounds of <a class="xref" href="#thm-equiv"></a> to $x_k - x$ and to the elements of the set; continuity between normed spaces is sequential continuity.</p>
+</div>
+
+<div class="blk rem">
+<p>Equivalence does not make the norms interchangeable. The constants depend on $n$: by part (iii) of <a class="xref" href="#prop-pnorms"></a>, the best constant in $\norm{x}_1 \le C\norm{x}_2$ is $\sqrt n$. And the minimizers of a problem depend on the norm, as <a class="xref" href="#s-norms"></a> shows. In infinite dimension equivalence fails outright (<a href="ch05_hilbert_spaces.html#s-normed">chapter 5, normed spaces</a>).</p>
+</div>
+</section>
+
+<section class="sec" id="s-orth">
+<h2>Orthogonality, Gram–Schmidt and QR</h2>
+
+<div class="blk prob"><p>Find bases in which coordinates are computed by inner products alone, and factor a matrix so that such a basis for its column space becomes visible.</p></div>
+
+<div class="blk def" id="def-orth" data-name="Orthogonality">
+<p>Vectors $x$ and $y$ are <dfn>orthogonal</dfn>, $x \perp y$, if $\inner{x}{y} = 0$. A list $q_1, \dots, q_k$ is <dfn>orthonormal</dfn> if $\inner{q_i}{q_j} = \delta_{ij}$, where the Kronecker delta $\delta_{ij}$ is $1$ for $i = j$ and $0$ otherwise. The <dfn>orthogonal complement</dfn> of a subspace $\mathcal S$ is $\mathcal S^\perp = \{x : \inner{x}{s} = 0 \text{ for all } s \in \mathcal S\}$, again a subspace (<a class="xref" href="#prop-complement"></a>).</p>
+</div>
+
+<div class="blk prop" id="prop-orthonormal" data-name="Pythagoras and orthonormal expansions">
+<p>(i) If $x \perp y$ then $\norm{x + y}^2 = \norm{x}^2 + \norm{y}^2$. (ii) Orthonormal lists are linearly independent. (iii) If $q_1, \dots, q_n$ is an orthonormal basis of $V$, then for every $x \in V$</p>
+<div class="eq">$$x = \sum_{i=1}^n \inner{x}{q_i}\,q_i, \qquad \norm{x}^2 = \sum_{i=1}^n \abs{\inner{x}{q_i}}^2.$$</div>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (i) The cross terms in $\norm{x + y}^2$ are $2\Re\inner{x}{y} = 0$. (ii) If $\sum_j c_j q_j = 0$, the inner product with $q_i$ gives $c_i = 0$. (iii) Write $x = \sum_j c_j q_j$; the inner product with $q_i$ gives $c_i = \inner{x}{q_i}$, and (i) applied term by term gives the norm.</p>
+</div>
+
+<div class="blk thm" id="thm-gs" data-name="Gram–Schmidt">
+<p>Let $a_1, \dots, a_n$ be linearly independent vectors in an inner product space. Define recursively, for $k = 1, \dots, n$,</p>
+<div class="eq">$$v_k = a_k - \sum_{j=1}^{k-1}\inner{a_k}{q_j}\,q_j, \qquad q_k = \frac{v_k}{\norm{v_k}}.$$</div>
+<p>Then $q_1, \dots, q_n$ is orthonormal and $\spn(q_1, \dots, q_k) = \spn(a_1, \dots, a_k)$ for every $k$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Induction on $k$; assume the claims for $k - 1$. Then $v_k \ne 0$, for otherwise $a_k$ would lie in $\spn(q_1, \dots, q_{k-1}) = \spn(a_1, \dots, a_{k-1})$. For $i &lt; k$, $\inner{v_k}{q_i} = \inner{a_k}{q_i} - \inner{a_k}{q_i} = 0$ by orthonormality of $q_1, \dots, q_{k-1}$. The recursion shows $q_k \in \spn(a_1, \dots, a_k)$ and $a_k \in \spn(q_1, \dots, q_k)$, so the spans agree.</p>
+</div>
+
+<div class="blk thm" id="thm-qr" data-name="QR factorization">
+<p>Let $A \in \F^{m\times n}$, $m \ge n$, have full column rank. Then $A = \hat Q\hat R$, where $\hat Q \in \F^{m\times n}$ has orthonormal columns ($\hat Q^*\hat Q = I_n$, the $n\times n$ identity) and $\hat R \in \F^{n\times n}$ is upper triangular with positive diagonal; this <dfn>reduced QR factorization</dfn> is unique. Appending $m - n$ further orthonormal columns gives a <dfn>full QR factorization</dfn> $A = QR$ with $Q \in \F^{m\times m}$ unitary ($Q^*Q = QQ^* = I_m$) and $R = \begin{bmatrix}\hat R\\ 0\end{bmatrix}$. A full QR factorization exists for every $A$ with $m \ge n$, whatever its rank.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Apply Gram–Schmidt to the columns $a_k$ of $A$. The recursion rearranges to $a_k = \sum_{j &lt; k}\inner{a_k}{q_j}\,q_j + \norm{v_k}\,q_k$, which is column $k$ of $\hat Q\hat R$ with $r_{jk} = \inner{a_k}{q_j}$ for $j &lt; k$ and $r_{kk} = \norm{v_k} &gt; 0$. The extra columns come from extending $q_1, \dots, q_n$ to an orthonormal basis of $\F^m$ (run Gram–Schmidt on $q_1, \dots, q_n, e_1, \dots, e_m$ and skip every vector whose $v_k$ vanishes). Uniqueness and the rank-deficient case: Trefethen and Bau, <i>Numerical Linear Algebra</i>, Lecture 7.</p>
+</div>
+
+<div class="blk rem">
+<p>A rule of thumb from numerical practice: in floating point the recursion as written (classical Gram–Schmidt) loses orthogonality when the columns are nearly dependent. Modified Gram–Schmidt and Householder reflections, which in exact arithmetic compute the same factors (Householder up to factors of modulus $1$, signs in the real case, on the columns of $\hat Q$ and the rows of $\hat R$), behave far better, and numerical libraries use Householder QR (Trefethen and Bau, Lectures 8–10 and 16; Golub and Van Loan, ch. 5).</p>
+</div>
+
+<div class="blk prop" id="prop-unitary" data-name="Unitary matrices preserve geometry">
+<p>For $Q \in \F^{m\times m}$ the following are equivalent: (i) $Q^*Q = I$; (ii) $\inner{Qx}{Qy} = \inner{x}{y}$ for all $x, y$; (iii) $\norm{Qx} = \norm{x}$ for all $x$. Such a $Q$ is <dfn>unitary</dfn> (<dfn>orthogonal</dfn> when real), and $Q^{-1} = Q^*$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (i) $\Rightarrow$ (ii): $\inner{Qx}{Qy} = y^*Q^*Qx = y^*x$. (ii) $\Rightarrow$ (iii): take $y = x$. (iii) $\Rightarrow$ (ii): polarization (<a class="xref" href="#thm-parallelogram"></a>) writes $\inner{x}{y}$ in terms of norms of $x \pm y$ and $x \pm iy$, which $Q$ preserves. (ii) $\Rightarrow$ (i): the $(j, i)$ entry of $Q^*Q - I$ is $\inner{Qe_i}{Qe_j} - \inner{e_i}{e_j} = 0$. Finally $Q^*Q = I$ makes $Q$ injective ($Qx = 0$ gives $x = Q^*Qx = 0$), hence invertible by <a href="ch01_linear_maps.html#cor-square">the corollary on square matrices</a> (chapter 1), and $Q^{-1} = Q^*$.</p>
+</div>
+
+<div class="blk prop" id="prop-complement" data-name="Orthogonal complements">
+<p>Let $\mathcal S$ be a subspace of an inner product space $V$. Then $\mathcal S^\perp$ is a subspace and $\mathcal S \cap \mathcal S^\perp = \{0\}$. If $\dim V = n$ is finite (for instance $V = \F^n$), then moreover $V = \mathcal S \oplus \mathcal S^\perp$, $\dim\mathcal S + \dim\mathcal S^\perp = n$, and $(\mathcal S^\perp)^\perp = \mathcal S$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> $\mathcal S^\perp$ is a subspace because $x \mapsto \inner{x}{s}$ is linear for each $s$, and a vector $x \in \mathcal S \cap \mathcal S^\perp$ has $\inner{x}{x} = 0$, so $x = 0$. Now let $\dim V = n$. Take an orthonormal basis $q_1, \dots, q_k$ of $\mathcal S$ (Gram–Schmidt on any basis), extend it to a basis of $V$, and apply Gram–Schmidt again; this leaves $q_1, \dots, q_k$ unchanged and gives an orthonormal basis $q_1, \dots, q_n$ of $V$. By <a class="xref" href="#prop-orthonormal"></a>, $x = \sum_i c_i q_i$ is orthogonal to $\mathcal S$ exactly when $c_i = \inner{x}{q_i} = 0$ for $i \le k$. So $\mathcal S^\perp = \spn(q_{k+1}, \dots, q_n)$, which gives the direct sum and the dimension count, and the same argument with the two halves of the basis exchanged gives $(\mathcal S^\perp)^\perp = \spn(q_1, \dots, q_k) = \mathcal S$. These are the facts chapter 1 used to prove <a href="ch01_linear_maps.html#thm-ftla">the fundamental theorem of linear algebra</a>.</p>
+</div>
+
+<div class="blk cex" id="cex-orth">
+<p>Two warnings. Orthogonality belongs to the inner product, not to the vectors: $e_1 \perp e_2$ for the standard inner product on $\R^2$, but with $W = \begin{bmatrix}2 & 1\\ 1 & 2\end{bmatrix} \succ 0$ we get $\inner{e_1}{e_2}_W = e_2^\T W e_1 = 1$. And for a tall matrix with orthonormal columns, $\hat Q^\T$ is a left inverse but not a right inverse: $\hat Q = \tfrac{1}{\sqrt2}\begin{bmatrix}1\\ 1\end{bmatrix}$ has $\hat Q^\T\hat Q = 1$, yet $\hat Q\hat Q^\T = \tfrac12\begin{bmatrix}1 & 1\\ 1 & 1\end{bmatrix} \ne I$. That product is the orthogonal projector onto the line $x_1 = x_2$, the subject of the next section.</p>
+</div>
+</section>
+
+<section class="sec" id="s-proj">
+<h2>Orthogonal and oblique projection</h2>
+
+<div class="blk prob"><p>Given a subspace $\mathcal S$ of an inner product space $V$ and a point $b \in V$, find the point of $\mathcal S$ closest to $b$.</p></div>
+
+<div class="blk setting"><p>$V$ is finite-dimensional with an inner product and its induced norm, for instance $\F^m$ with $\inner{x}{y} = y^*x$, and $\mathcal S$ is a subspace with an orthonormal basis $q_1, \dots, q_k$, which exists by <a class="xref" href="#thm-gs"></a>.</p></div>
+
+<div class="blk probe">
+<p>Take a line, $\mathcal S = \spn(a)$ in $\R^m$ with $a \ne 0$. The function $f(t) = \norm{b - ta}^2$, which expands to $\norm{b}^2 - 2t\,a^\T b + t^2\norm{a}^2$, is minimized at $t^\star = a^\T b/\norm{a}^2$, and then $a^\T(b - t^\star a) = 0$: the error is perpendicular to the line. Extreme cases: if $b \in \mathcal S$ the closest point is $b$ itself, and if $b \perp \mathcal S$ it is $0$.</p>
+</div>
+
+<div class="blk conj"><p>The closest point $p \in \mathcal S$ exists, is unique, and is characterized by $b - p \perp \mathcal S$.</p></div>
+
+<div class="blk thm" id="thm-proj" data-name="Projection theorem">
+<p>For every $b \in V$ there is a unique $p \in \mathcal S$ with $\norm{b - p} \le \norm{b - s}$ for all $s \in \mathcal S$. It is the unique $p \in \mathcal S$ with $b - p \in \mathcal S^\perp$, and</p>
+<div class="eq">$$p = \sum_{i=1}^k \inner{b}{q_i}\,q_i, \qquad \norm{b - s}^2 = \norm{b - p}^2 + \norm{p - s}^2 \quad \text{for all } s \in \mathcal S.$$</div>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Define $p$ by the formula. For each $j$, $\inner{b - p}{q_j} = \inner{b}{q_j} - \inner{b}{q_j} = 0$, so $b - p \perp \mathcal S$. For $s \in \mathcal S$ write $b - s = (b - p) + (p - s)$; the second term lies in $\mathcal S$ and is therefore orthogonal to the first, and Pythagoras gives the identity. Hence $\norm{b - s} \ge \norm{b - p}$, with equality only for $s = p$. If $p' \in \mathcal S$ also has $b - p' \perp \mathcal S$, then $p - p' = (b - p') - (b - p)$ lies in $\mathcal S \cap \mathcal S^\perp = \{0\}$ (<a class="xref" href="#prop-complement"></a>).</p>
+</div>
+
+<div class="blk def" id="def-projector" data-name="Orthogonal projector">
+<p>The map $b \mapsto p$ of <a class="xref" href="#thm-proj"></a> is the <dfn>orthogonal projector</dfn> onto $\mathcal S$, written $P_{\mathcal S}$.</p>
+</div>
+
+<div class="blk prop" id="prop-projformulas" data-name="Formulas for the projector">
+<p>(i) $P_{\mathcal S}$ is linear, its range is $\mathcal S$, $P_{\mathcal S}s = s$ for every $s \in \mathcal S$, and $P_{\mathcal S}^2 = P_{\mathcal S}$. Now let $V = \F^m$ with the standard inner product. (ii) If the columns of $\hat Q \in \F^{m\times k}$ are an orthonormal basis of $\mathcal S$, then $P_{\mathcal S} = \hat Q\hat Q^*$. (iii) If $A \in \F^{m\times k}$ has full column rank and $\Range(A) = \mathcal S$, where $\Range(A)$ is the range (column space), then $A^*A$ is invertible and $P_{\mathcal S} = A(A^*A)^{-1}A^*$. (iv) $I - P_{\mathcal S} = P_{\mathcal S^\perp}$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (i) The formula of <a class="xref" href="#thm-proj"></a> is linear in $b$, because the inner product is linear in its first slot, and takes values in $\mathcal S$. For $s \in \mathcal S$ the point $p = s$ has $s - p = 0 \in \mathcal S^\perp$, so $P_{\mathcal S}s = s$ by the uniqueness in the theorem; hence the range is all of $\mathcal S$, and $P_{\mathcal S}(P_{\mathcal S}b) = P_{\mathcal S}b$. (ii) is the formula of the theorem in matrix form, $\sum_i q_i(q_i^* b) = \hat Q\hat Q^* b$. (iii) If $A^*Ax = 0$ then $\norm{Ax}^2 = x^*A^*Ax = 0$, so $x = 0$, and the square matrix $A^*A$ is invertible. Writing $p = Ay$, the condition $b - p \perp \Range(A)$ reads $A^*(b - Ay) = 0$, so $y = (A^*A)^{-1}A^*b$. (iv) $b - P_{\mathcal S}b$ lies in $\mathcal S^\perp$ and $b - (b - P_{\mathcal S}b) = P_{\mathcal S}b$ lies in $\mathcal S = (\mathcal S^\perp)^\perp$ (<a class="xref" href="#prop-complement"></a>), so the characterization in the theorem, applied to $\mathcal S^\perp$, identifies $b - P_{\mathcal S}b$ with $P_{\mathcal S^\perp}b$.</p>
+</div>
+
+<div class="blk thm" id="thm-projchar" data-name="Algebraic characterization">
+<p>A matrix $P \in \F^{m\times m}$ is an orthogonal projector (onto $\Range(P)$) if and only if $P^2 = P$ and $P^* = P$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> An orthogonal projector has the form $P = \hat Q\hat Q^*$ (<a class="xref" href="#prop-projformulas"></a>), so $P^* = P$ and $P^2 = \hat Q(\hat Q^*\hat Q)\hat Q^* = P$. Conversely let $P^2 = P = P^*$ and $\mathcal S = \Range(P)$. For any $b$ and any $s = Py \in \mathcal S$,</p>
+<div class="eq">$$\inner{b - Pb}{Py} = y^*P^*(I - P)\,b = y^*(P - P^2)\,b = 0,$$</div>
+<p>so $Pb \in \mathcal S$ and $b - Pb \perp \mathcal S$, and <a class="xref" href="#thm-proj"></a> gives $Pb = P_{\mathcal S}b$.</p>
+</div>
+
+<div class="blk probe">
+<p>Simple checks. $P = 0$ and $P = I$ project onto $\{0\}$ and onto the whole space. For a unit vector $u$, $uu^*$ is Hermitian and idempotent, $(uu^*)^2 = u(u^*u)u^* = uu^*$, so by <a class="xref" href="#thm-projchar"></a> it is the orthogonal projector onto its range, the line $\spn(u)$. None of these lengthens a vector, and this holds in general:</p>
+</div>
+
+<div class="blk cor" id="cor-projector-norm" data-name="Orthogonal projectors do not lengthen">
+<p>Let $\mathcal S$ be a subspace of $V$ and $P = P_{\mathcal S}$. Then $\norm{Pb}^2 + \norm{b - Pb}^2 = \norm{b}^2$ for every $b \in V$, so $\norm{Pb} \le \norm{b}$, with equality exactly for $b \in \mathcal S$. In particular, for the induced 2-norm $\norm{M} = \max_{x \ne 0}\norm{Mx}/\norm{x}$ of a matrix $M$, every orthogonal projector $P \ne 0$ on $\F^m$ has $\norm{P} = 1$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Take $s = 0$ in the identity of <a class="xref" href="#thm-proj"></a>. Equality $\norm{Pb} = \norm{b}$ means $b - Pb = 0$, that is, $b = Pb \in \mathcal S$, and every $s \in \mathcal S$ has $Ps = s$ (<a class="xref" href="#prop-projformulas"></a>). If $P \ne 0$ then $\mathcal S \ne \{0\}$, and a nonzero $s \in \mathcal S$ attains the ratio $\norm{Ps}/\norm{s} = 1$.</p>
+</div>
+
+<div class="blk def" id="def-oblique" data-name="Projector, oblique projector">
+<p>Any $P \in \F^{m\times m}$ with $P^2 = P$ (an <dfn>idempotent</dfn>) is called a <dfn>projector</dfn>. A projector with $P^* \ne P$ is <dfn>oblique</dfn>.</p>
+</div>
+
+<div class="blk prop" id="prop-idempotent" data-name="Range and null space of a projector">
+<p>Let $P \in \F^{m\times m}$ satisfy $P^2 = P$. Then $\F^m = \Range(P) \oplus \Null(P)$, where $\Null(P)$ is the null space; $P$ is the identity on $\Range(P)$ and zero on $\Null(P)$, so it <dfn>projects onto $\Range(P)$ along $\Null(P)$</dfn>, and $I - P$ projects onto $\Null(P)$ along $\Range(P)$. Conversely, for every splitting $\F^m = \mathcal U \oplus \mathcal K$ into two subspaces there is exactly one projector with range $\mathcal U$ and null space $\mathcal K$. In a basis adapted to the splitting, $P = S\begin{bmatrix}I_r & 0\\ 0 & 0\end{bmatrix}S^{-1}$ with $r = \rank P$ and $S$ invertible. Hence two projectors on $\F^m$ are similar if and only if they have the same rank, $\tr P = \rank P$, and every eigenvalue of $P$ is $0$ or $1$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> $b = Pb + (I - P)b$, where $Pb \in \Range(P)$ and $P(I - P)b = (P - P^2)b = 0$. If $b = Py$ also lies in $\Null(P)$, then $b = P^2y = Pb = 0$. On the range, $P(Py) = Py$. Likewise $I - P$ is the identity on $\Null(P)$ and vanishes on $\Range(P)$, since $(I - P)Py = Py - P^2y = 0$. For the converse, write each $b$ uniquely as $b_{\mathcal U} + b_{\mathcal K}$ with $b_{\mathcal U} \in \mathcal U$ and $b_{\mathcal K} \in \mathcal K$: the map $b \mapsto b_{\mathcal U}$ is linear and idempotent with range $\mathcal U$ and null space $\mathcal K$, and by the first part every projector with this range and null space acts in the same way. Taking as columns of $S$ a basis of $\Range(P)$ followed by a basis of $\Null(P)$ gives the block form. Similar matrices have the same trace and rank (<a href="ch03_eigenvalues.html#prop-similar">the similarity-invariants proposition</a>, chapter 3), so $\tr P = r$, and two projectors of rank $r$ are both similar to $\diag(I_r, 0)$, hence to each other. If $Px = \lambda x$ with $x \ne 0$, then $\lambda x = P^2x = \lambda^2x$, so $\lambda \in \{0, 1\}$.</p>
+</div>
+
+<div class="blk lem" id="lem-rankone" data-name="Norm of a rank-one matrix">
+<p>For $u \in \F^m$ and $v \in \F^n$, the matrix $uv^* \in \F^{m\times n}$ has induced 2-norm $\norm{uv^*} = \norm{u}\,\norm{v}$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> $\norm{uv^*x} = \norm{u}\,\abs{v^*x} \le \norm{u}\,\norm{v}\,\norm{x}$ by Cauchy–Schwarz, with equality at $x = v$; the case $v = 0$ is trivial.</p>
+</div>
+
+<div class="blk cex" id="cex-oblique">
+<p>An oblique projector is not a closest-point map. $P = \begin{bmatrix}1 & c\\ 0 & 0\end{bmatrix}$ with $c \ne 0$ satisfies $P^2 = P$, has range $\spn(e_1)$ and null space $\spn\big((-c, 1)^\T\big)$, and $P^\T \ne P$. For $b = e_2$ it returns $Pb = (c, 0)^\T$, at distance $\sqrt{1 + c^2}$ from $b$, while the orthogonal projection $0$ is at distance $1$. Moreover $P = e_1(1, c)$ has rank one, so by <a class="xref" href="#lem-rankone"></a> $\norm{P} = \norm{e_1}\,\norm{(1, c)} = \sqrt{1 + c^2} &gt; 1$: an oblique projector can lengthen vectors, by an arbitrarily large factor.</p>
+</div>
+
+<div class="blk prop" id="prop-projnorm" data-name="Norm of a projector">
+<p>Let $P \ne 0$ be a projector. Then $\norm{P} \ge 1$, with equality if and only if $P$ is an orthogonal projector. In $\R^2$, the projector onto $\spn(a)$ along $\spn(d)$, for independent $a$ and $d$, is $P = a\,w^\T/(w^\T a)$ with nonzero $w \perp d$, and</p>
+<div class="eq">$$\norm{P} = \frac{1}{\sin\gamma},$$</div>
+<p>where $\gamma \in (0, \pi/2]$ is the angle between the lines $\spn(a)$ and $\spn(d)$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> $Px = x$ on the range, so $\norm{P} \ge 1$, and <a class="xref" href="#cor-projector-norm"></a> gives $\norm{P} = 1$ for orthogonal projectors. Conversely suppose $\norm{P} = 1$; take $x \in \Range(P)$ and $y \in \Null(P)$, $y \ne 0$. For every scalar $t$, $P(x + ty) = x$, so $\norm{x} \le \norm{x + ty}$. Minimizing the right side over $t$ as in the proof of <a class="xref" href="#thm-cs"></a> gives $\norm{x}^2 \le \norm{x}^2 - \abs{\inner{x}{y}}^2/\norm{y}^2$, hence $\inner{x}{y} = 0$. So $\Null(P) \perp \Range(P)$, every $b - Pb \in \Null(P)$ is orthogonal to the range, and $P = P_{\Range(P)}$ by <a class="xref" href="#thm-proj"></a>. For the planar formula, $w^\T a \ne 0$ because $w \ne 0$, $w \perp d$ and $a \notin \spn(d)$; then $Pa = a$, $Pd = 0$, and $P$ has rank one, so <a class="xref" href="#lem-rankone"></a> gives</p>
+<div class="eq">$$\norm{P} = \frac{\norm{a}\norm{w}}{\abs{w^\T a}} = \frac{1}{\abs{\cos\angle(a, w)}} = \frac{1}{\sin\gamma},$$</div>
+<p>because $w \perp d$ makes the angle between $a$ and $w$ complementary to $\gamma$.</p>
+</div>
+
+<div class="blk pattern">
+<p>A projector is fixed by two complementary subspaces, its range and its null space, and every such pair occurs; projectors of equal rank are similar (<a class="xref" href="#prop-idempotent"></a>), so similarity invariants such as the eigenvalues, the subject of <a href="ch03_eigenvalues.html">chapter 3</a>, cannot tell oblique from orthogonal. What separates them is metric: the symmetry $P^* = P$ (<a class="xref" href="#thm-projchar"></a>) and, in the plane, the angle $\gamma$ between range and null space, visible in $\norm{P} = 1/\sin\gamma$ (<a class="xref" href="#prop-projnorm"></a>). This is a first sighting of a theme of <a href="ch06_nonnormality.html">chapter 6</a>: similarity preserves eigenvalues, not geometry.</p>
+</div>
+
+<figure class="viz" id="viz-proj">
+  <figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">Orthogonal versus oblique projection</span><span class="viz-sub">The line $\mathcal S = \spn(a)$ and a point $b$. Drag $b$, and the round handle on the dashed circle to turn $a$. The dotted circle around $b$ passes through the orthogonal projection $p$. Switch on the oblique projector $P_d$, which projects onto $\mathcal S$ along a direction $d$ and gives the point $p' = P_d b$ (drag the handle $d$).</span></figcaption>
+  <div class="viz-plots cols-1"><div class="plot" id="proj-plot"></div></div>
+  <div class="viz-controls" id="proj-controls"></div>
+  <div class="viz-notes">
+    <div><h5>Try this</h5><ol>
+      <li>Drag $b$ anywhere. The red residual $b - p$ always meets the line at a right angle, and the dotted circle around $b$ touches the line only at $p$.</li>
+      <li>Choose <i>Oblique, 60° between d and a</i>. The point $p'$ lies on the line but outside the circle, so $\norm{b - p'} &gt; \norm{b - p}$; the readout shows $\norm{P_d} = 1/\sin\gamma \approx 1.15$.</li>
+      <li>Choose <i>Oblique, d nearly parallel to a</i>, then turn $d$ slowly toward $a$: $p'$ runs off along the line and $\norm{P_d}$ grows without bound.</li>
+      <li>Choose <i>Oblique with d perpendicular to a</i>: $p'$ and $p$ coincide and the projector becomes symmetric.</li>
+    </ol></div>
+    <div><h5>What to notice</h5><p>Both maps are projectors, $P^2 = P$, with the same range. Only the one whose null space is perpendicular to its range finds the closest point (<a class="xref" href="#thm-proj"></a>) and has norm $1$ (<a class="xref" href="#prop-projnorm"></a>). Least squares is this picture with $\mathcal S$ the column space of a matrix.</p></div>
+  </div>
+</figure>
+</section>
+
+<section class="sec" id="s-ls">
+<h2>Least squares</h2>
+
+<div class="blk prob"><p>Given $A \in \R^{m\times n}$ and $b \in \R^m$ with $b \notin \Range(A)$, typically because $m &gt; n$ (more measurements than unknowns), find $x$ making the residual $b - Ax$ as small as possible.</p></div>
+<div class="blk setting"><p>Real data for definiteness; for complex $A$ replace $A^\T$ by $A^*$. The residual is measured in the Euclidean norm; <a class="xref" href="#s-norms"></a> changes that choice.</p></div>
+<div class="blk goal"><p>Characterize the minimizers, decide when the minimizer is unique, and compute it in a numerically stable way.</p></div>
+
+<div class="blk probe">
+<p>(i) One unknown, $A = a \in \R^m$: $\hat x = a^\T b/a^\T a$, the projection coefficient of <a class="xref" href="#s-proj"></a>. (ii) Fitting a constant, $a = \mathbf 1 = (1, \dots, 1)^\T$: $\hat x = \frac1m\sum_i b_i$, the mean. (iii) Square invertible $A$: $\hat x = A^{-1}b$ with zero residual. (iv) Fitting a line $y = c_0 + c_1 t$ to points $(t_i, y_i)$ whose abscissas $t_i$ are all equal: the two columns $\mathbf 1$ and $t = (t_1, \dots, t_m)^\T$ are parallel, and every line through the point $(t_1, \bar y)$ fits equally well, where $\bar y$ is the mean of the $y_i$. Uniqueness is lost exactly when the columns are dependent, as part 3 of <a class="xref" href="#thm-ls"></a> confirms.</p>
+</div>
+
+<div class="blk thm" id="thm-ls" data-name="Least squares and the normal equations">
+<p>Let $A \in \R^{m\times n}$ and $b \in \R^m$.</p>
+<ol>
+<li>A vector $\hat x$ minimizes $\norm{Ax - b}$ if and only if it solves the <dfn>normal equations</dfn> $A^\T A\hat x = A^\T b$, that is, if and only if the residual $r = b - A\hat x$ lies in $\Null(A^\T)$.</li>
+<li>Minimizers always exist, and the fitted vector $A\hat x = P_{\Range(A)}b$ is the same for all of them.</li>
+<li>The minimizer is unique if and only if $A$ has full column rank, and then $\hat x = (A^\T A)^{-1}A^\T b$.</li>
+</ol>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof by projection.</span> As $x$ ranges over $\R^n$, $Ax$ ranges over $\Range(A)$, so the problem is the closest-point problem for the subspace $\Range(A)$. By <a class="xref" href="#thm-proj"></a>, $\hat x$ is a minimizer exactly when $A\hat x = p := P_{\Range(A)}b$, and $p$ is the unique point of $\Range(A)$ with $b - p \perp \Range(A)$; for $A\hat x \in \Range(A)$ this orthogonality reads $A^\T(b - A\hat x) = 0$. Since $p \in \Range(A)$, the equation $A\hat x = p$ is solvable, and its solution set $\hat x_0 + \Null(A)$ (<a href="ch01_linear_maps.html#thm-solset">the solution-set theorem</a>, chapter 1) is a single point exactly when $\Null(A) = \{0\}$, that is, when $A$ has full column rank. Then $A^\T A$ is invertible by <a class="xref" href="#prop-projformulas"></a>.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof by calculus.</span> The function</p>
+<div class="eq">$$f(x) = \norm{Ax - b}^2 = x^\T A^\T A x - 2b^\T Ax + b^\T b$$</div>
+<p>has gradient $\nabla f(x) = 2(A^\T Ax - A^\T b)$ and constant Hessian $2A^\T A$, which is positive semidefinite because $x^\T A^\T Ax = \norm{Ax}^2 \ge 0$. Expanding exactly, $f(x + h) = f(x) + \nabla f(x)^\T h + \norm{Ah}^2$ for all $h$. If $\nabla f(x) = 0$ this gives $f(x + h) \ge f(x)$, so $x$ is a minimizer; conversely, at a minimizer the gradient of a differentiable function vanishes. So the minimizers are the solutions of the normal equations. This route finds the equations but not their solvability, which the projection argument supplies.</p>
+</div>
+
+<div class="blk rem">
+<p>In the language of chapter 1, $b$ splits uniquely as $b = p + r$ with $p \in \Range(A)$ and $r \in \Null(A^\T)$, the left null space (<a href="ch01_linear_maps.html#thm-ftla">the fundamental theorem of linear algebra</a>). Least squares solves the solvable part $Ax = p$ and discards $r$. That the normal equations are always consistent can also be read off $A^\T A$ directly: $\Null(A^\T A) = \Null(A)$ and $\Range(A^\T A) = \Range(A^\T)$, which contains $A^\T b$ (<a href="ch01_linear_maps.html#prop-gram">the subspaces of $A^\T A$</a>, chapter 1).</p>
+</div>
+
+<div class="blk ex" id="ex-threepoints" data-name="A three-point line fit">
+<p>Fit $y = c_0 + c_1 t$ to the points $(0, 1)$, $(1, 2)$, $(2, 4)$. Here</p>
+<div class="eq">$$A = \begin{bmatrix}1 & 0\\ 1 & 1\\ 1 & 2\end{bmatrix},\quad b = \begin{bmatrix}1\\ 2\\ 4\end{bmatrix},\quad A^\T A = \begin{bmatrix}3 & 3\\ 3 & 5\end{bmatrix},\quad A^\T b = \begin{bmatrix}7\\ 10\end{bmatrix},$$</div>
+<p>and the normal equations give $(c_0, c_1) = (5/6, 3/2)$. The residual $r = \tfrac16(1, -2, 1)^\T$ satisfies $A^\T r = 0$: it sums to zero and is orthogonal to $t = (0, 1, 2)^\T$. It spans $\Null(A^\T)$, which has dimension $3 - 2 = 1$, and $\norm{r}^2 = 1/6$. The preset <i>Three points</i> in <a class="xref" href="#viz-lsfit"></a> reproduces these numbers.</p>
+</div>
+
+<div class="blk thm" id="thm-lsqr" data-name="Least squares by QR">
+<p>Let $A \in \R^{m\times n}$ have full column rank and a full QR factorization $A = \begin{bmatrix}\hat Q & Q_2\end{bmatrix}\begin{bmatrix}\hat R\\ 0\end{bmatrix}$, where the columns of $Q_2 \in \R^{m\times(m - n)}$ are an orthonormal basis of $\Null(A^\T)$. The least-squares solution solves the triangular system $\hat R\hat x = \hat Q^\T b$, and the minimal residual norm is $\norm{Q_2^\T b}$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> The matrix $Q = \begin{bmatrix}\hat Q & Q_2\end{bmatrix}$ is orthogonal, so the $m - n$ columns of $Q_2$ are orthonormal and orthogonal to $\Range(\hat Q)$, which equals $\Range(A)$ because $A = \hat Q\hat R$ with $\hat R$ invertible. As $\dim\Null(A^\T) = m - n$, they are an orthonormal basis of $\Range(A)^\perp = \Null(A^\T)$. By <a class="xref" href="#prop-unitary"></a></p>
+<div class="eq">$$\norm{Ax - b}^2 = \norm{Q^\T(Ax - b)}^2 = \norm{\hat Rx - \hat Q^\T b}^2 + \norm{Q_2^\T b}^2.$$</div>
+<p>The second term does not depend on $x$, and the first vanishes at $\hat x = \hat R^{-1}\hat Q^\T b$, which exists because $\hat R$ is triangular with nonzero diagonal.</p>
+</div>
+
+<div class="blk def" id="def-cond" data-name="Condition number">
+<p>For $A \in \R^{m\times n}$ with full column rank, let $\sigma_{\max}(A) = \max_{\norm{x} = 1}\norm{Ax}$ and $\sigma_{\min}(A) = \min_{\norm{x} = 1}\norm{Ax} &gt; 0$ be its largest and smallest stretch factors, and $\kappa(A) = \sigma_{\max}(A)/\sigma_{\min}(A) \ge 1$ its <dfn>condition number</dfn>. These are the extreme singular values $\sigma_1$ and $\sigma_n$ of chapter 4 (<a href="ch04_svd.html#thm-norms">norms from singular values</a> and <a href="ch04_svd.html#prop-ellipsoid">the geometry of the SVD</a>).</p>
+</div>
+
+<div class="blk prop" id="prop-condsq" data-name="Forming the normal equations squares the condition number">
+<p>Let $A \in \R^{m\times n}$ have full column rank. Then $A^\T A$ is invertible and $\kappa(A^\T A) = \kappa(A)^2$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> $A^\T A$ is invertible by part (iii) of <a class="xref" href="#prop-projformulas"></a>. Write the singular value decomposition (SVD) of chapter 4 (<a href="ch04_svd.html#thm-svd">the SVD theorem</a>) in reduced form, $A = U\Sigma V^\T$ with $U \in \R^{m\times n}$, $U^\T U = I$, $V \in \R^{n\times n}$ orthogonal and $\Sigma = \diag(\sigma_1, \dots, \sigma_n)$, $\sigma_1 \ge \dots \ge \sigma_n &gt; 0$. With $y = V^\T x$, $\norm{Ax} = \norm{\Sigma y}$ and $\norm{A^\T Ax} = \norm{V\Sigma^2y} = \norm{\Sigma^2y}$, and $y$ runs over the unit vectors when $x$ does (<a class="xref" href="#prop-unitary"></a>). The extreme stretch factors of the diagonal matrices $\Sigma$ and $\Sigma^2$ are $\sigma_1, \sigma_n$ and $\sigma_1^2, \sigma_n^2$, so $\kappa(A^\T A) = \sigma_1^2/\sigma_n^2 = \kappa(A)^2$.</p>
+</div>
+
+<p>How sensitive is the least-squares problem itself to its data? The answer depends on the size of the residual.</p>
+
+<div class="blk prop" id="prop-lscond" data-name="Sensitivity of least squares">
+<p>Let $A \in \R^{m\times n}$ have full column rank and let $b \in \R^m$ satisfy $P_{\Range(A)}b \ne 0$; let $\hat x$ be the least-squares solution and $y = A\hat x$. Define the angle $\theta \in [0, \pi/2)$ between $b$ and $\Range(A)$ by $\cos\theta = \norm{y}/\norm{b}$, and $\eta = \norm{A}\norm{\hat x}/\norm{y}$, which lies in $[1, \kappa(A)]$. For data $d$, here $b$ or $A$ with matrices measured in the induced 2-norm, the <dfn>relative condition number</dfn> of $\hat x$ is</p>
+<div class="eq">$$\lim_{\delta \to 0}\ \sup\Big\{\frac{\norm{\delta\hat x}/\norm{\hat x}}{\norm{\delta d}/\norm{d}} : 0 &lt; \norm{\delta d} \le \delta\Big\},$$</div>
+<p>where $\delta\hat x$ is the change of $\hat x$ caused by the perturbation $\delta d$ of the data. It equals $\kappa(A)/(\eta\cos\theta)$ for $d = b$, and it is at most $\kappa(A) + \kappa(A)^2\tan\theta/\eta$ for $d = A$.</p>
+</div>
+<p class="src">Proof: Trefethen and Bau, <i>Numerical Linear Algebra</i>, Lecture 18, Theorem 18.1. Idea: $1 \le \eta \le \kappa(A)$ because $\sigma_{\min}(A)\norm{\hat x} \le \norm{A\hat x} \le \norm{A}\norm{\hat x}$. The map $b \mapsto \hat x = (A^\T A)^{-1}A^\T b$ is linear with norm $1/\sigma_{\min}(A)$, and $\norm{b}/(\sigma_{\min}(A)\norm{\hat x}) = \kappa(A)/(\eta\cos\theta)$. Perturbing $A$ by $E$ changes $\hat x$, to first order, by $(A^\T A)^{-1}(E^\T r - A^\T E\hat x)$ with $r = b - y$; bounding the two terms by $\norm{E}\norm{r}/\sigma_{\min}(A)^2$ and $\norm{E}\norm{\hat x}/\sigma_{\min}(A)$ gives the two summands of the bound.</p>
+
+<div class="blk rem">
+<p>This is why least-squares problems are solved by QR, not by the normal equations. Let $\eps_{\rm mach} \approx 1.1\times 10^{-16}$ be the unit roundoff of double precision. Forming $A^\T A$ squares the condition number (<a class="xref" href="#prop-condsq"></a>), and solving the normal equations can introduce relative errors of order $\kappa(A)^2\eps_{\rm mach}$ even when the residual is zero; <a class="xref" href="#cex-lauchli"></a> is an extreme instance. Householder QR is backward stable, so its relative error is of order $\eps_{\rm mach}$ times the condition numbers of <a class="xref" href="#prop-lscond"></a> (Trefethen and Bau, Lectures 15 and 19). Both are at most $2\kappa(A)$ when $\tan\theta \le 1/\kappa(A)$; the term in $\kappa(A)^2$ exceeds $\kappa(A)$ only for a sizeable residual, $\tan\theta &gt; \eta/\kappa(A)$.</p>
+</div>
+
+<div class="blk cex" id="cex-lauchli">
+<p>The normal equations can destroy information that QR keeps. Let $\eps = 10^{-8}$ and</p>
+<div class="eq">$$A = \begin{bmatrix}1 & 1\\ \eps & 0\\ 0 & \eps\end{bmatrix},\qquad A^\T A = \begin{bmatrix}1 + \eps^2 & 1\\ 1 & 1 + \eps^2\end{bmatrix}.$$</div>
+<p>$A$ has full column rank and $\kappa(A) = \sqrt{2 + \eps^2}/\eps \approx 1.4\times 10^8$, harmless in double precision. But $1 + \eps^2 = 1 + 10^{-16}$ rounds to $1$, so the computed $A^\T A$ is the singular matrix $\begin{bmatrix}1 & 1\\ 1 & 1\end{bmatrix}$ and the normal equations cannot be solved at all, whereas Householder QR recovers the solution $x = (1, 1)^\T$ of $Ax = (2, \eps, \eps)^\T$ to about 15 digits. The example is due to P. Läuchli (<i>Numer. Math.</i> 3, 1961).</p>
+</div>
+
+<div class="blk rem">
+<p>Weighted least squares. If measurements differ in reliability, one minimizes $(Ax - b)^\T W(Ax - b)$ with $W \succ 0$; for independent errors the usual choice is $W$ diagonal with the inverse error variances. <a class="xref" href="#s-norms"></a> reuses this to fit in other norms.</p>
+</div>
+
+<div class="blk prop" id="prop-wls" data-name="Weighted least squares">
+<p>Let $A \in \R^{m\times n}$, $b \in \R^m$ and $W \in \R^{m\times m}$ with $W \succ 0$. A vector $\hat x$ minimizes $(Ax - b)^\T W(Ax - b)$ if and only if $A^\T WA\hat x = A^\T Wb$, that is, if and only if the residual $r = b - A\hat x$ is $W$-orthogonal to $\Range(A)$: $\inner{r}{Ay}_W = 0$ for all $y \in \R^n$. Minimizers always exist, and the minimizer is unique if and only if $A$ has full column rank.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> The cost is $\norm{Ax - b}_W^2$, the squared norm induced by the inner product $\inner{x}{y}_W = y^\T Wx$ of <a class="xref" href="#prop-inner-examples"></a>, so the problem is the closest-point problem for $\Range(A)$ in that inner product, and Gram–Schmidt in it supplies the orthonormal basis that <a class="xref" href="#thm-proj"></a> assumes. The theorem gives a unique closest point $p$, characterized by $\inner{b - p}{Ay}_W = 0$ for all $y$; for $p = A\hat x$ this reads $y^\T A^\T W(b - A\hat x) = 0$ for all $y$, that is, $A^\T W(b - A\hat x) = 0$. As in the proof of <a class="xref" href="#thm-ls"></a>, the solutions of $A\hat x = p$ form a set $\hat x_0 + \Null(A)$, a single point exactly when $A$ has full column rank.</p>
+</div>
+
+<figure class="viz" id="viz-lsfit">
+  <figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">Fitting a line by least squares</span><span class="viz-sub">Drag the data points $(t_i, y_i)$ or click (tap) an empty spot to add one. The green line minimizes $\sum_i r_i^2$; red segments are the residuals. The right panel shows each residual $r_i$. The optional orange line approximately minimizes $\sum_i\abs{r_i}$ (the readout compares its cost with the exact optimum); it is computed by iteratively reweighted least squares (IRLS), explained in <a class="xref" href="#s-norms"></a>.</span></figcaption>
+  <div class="viz-plots main-side">
+    <div class="plot" id="ls-data"><div class="plot-cap">Data and fitted lines</div></div>
+    <div class="plot" id="ls-res"><div class="plot-cap">Residuals of each fit, point by point</div></div>
+  </div>
+  <div class="viz-controls" id="ls-controls"></div>
+  <div class="viz-notes">
+    <div><h5>Try this</h5><ol>
+      <li>Choose <i>Three points</i>: the readout gives $c_0 = 0.833$, $c_1 = 1.500$ and $\norm{r}^2 = 0.167$, as in <a class="xref" href="#ex-threepoints"></a>.</li>
+      <li>Drag any point. The two entries of $A^\T r$, which are $\sum_i r_i$ and $\sum_i t_i r_i$, stay at zero: the residual stays in $\Null(A^\T)$.</li>
+      <li>Press <i>Add outlier</i> with the $\ell_1$ fit switched on. The green line tilts toward the outlier; the orange line does not move, and the right panel shows its residuals concentrated on the outlier.</li>
+      <li>Choose <i>All points at one t</i>. The columns of $A$ are parallel, the fit is not unique, and the widget draws the minimum-norm solution $A^+b$ of <a class="xref" href="#s-minnorm"></a>.</li>
+    </ol></div>
+    <div><h5>What to notice</h5><p>The least-squares line is a projection: the vector of fitted values is $P_{\Range(A)}b$ and the residual is orthogonal to both columns, as <a class="xref" href="#thm-ls"></a> requires. In the outlier preset the squared cost lets one large residual tilt the whole line, while the $\ell_1$ line stays with the other points; for a constant fit, <a class="xref" href="#prop-constant"></a> makes this contrast exact. When the best $\ell_1$ line is unique, it passes through two of the data points, as <a class="xref" href="#prop-l1vertex"></a> predicts, and the IRLS cost matches the exact optimum found by checking every line through two points, which by the same proposition suffices.</p></div>
+  </div>
+</figure>
+</section>
+
+<section class="sec" id="s-minnorm">
+<h2>Minimum-norm solutions and the pseudoinverse</h2>
+
+<div class="blk prob"><p>If $A \in \R^{m\times n}$ has full row rank ($\rank A = m &lt; n$), then $Ax = b$ has infinitely many solutions, an affine subspace of dimension $n - m$ (<a href="ch01_linear_maps.html#thm-solset">the solution-set theorem</a>, chapter 1). Which one is smallest?</p></div>
+
+<div class="blk probe">
+<p>One equation in two unknowns, $a^\T x = c$ with $a \in \R^2$ nonzero and $c \in \R$. The solutions form a line perpendicular to $a$, and its point nearest the origin is the projection of $0$ onto that line, $x^\star = c\,a/\norm{a}^2$: a multiple of $a$, so a vector in the row space $\Range(a)$ of the $1\times 2$ matrix $a^\T$.</p>
+</div>
+
+<div class="blk conj"><p>The minimum-norm solution is the unique solution that lies in the row space $\Range(A^\T)$.</p></div>
+
+<div class="blk thm" id="thm-minnorm" data-name="Minimum-norm solution">
+<p>If $A \in \R^{m\times n}$ has full row rank, then $AA^\T$ is invertible, and for every $b \in \R^m$</p>
+<div class="eq">$$x^\star = A^\T(AA^\T)^{-1}b$$</div>
+<p>is the unique solution of $Ax = b$ of minimum Euclidean norm. It is the only solution in $\Range(A^\T)$, every solution has the form $x^\star + z$ with $z \in \Null(A)$, and $\norm{x^\star + z}^2 = \norm{x^\star}^2 + \norm{z}^2$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> $AA^\T y = 0$ gives $\norm{A^\T y}^2 = 0$, and $A^\T$ has full column rank, so $y = 0$: $AA^\T$ is invertible. Then $Ax^\star = b$, and $x^\star = A^\T y$ with $y = (AA^\T)^{-1}b$ lies in $\Range(A^\T)$. Every solution differs from $x^\star$ by some $z \in \Null(A) = \Range(A^\T)^\perp$ (<a href="ch01_linear_maps.html#thm-ftla">the fundamental theorem of linear algebra</a>), so Pythagoras gives the norm identity, and the minimum is attained only at $z = 0$.</p>
+</div>
+
+<div class="blk pattern">
+<p>Least squares and least norm are mirror images. Least squares projects $b$ onto $\Range(A)$ in the output space (<a class="xref" href="#thm-ls"></a>); least norm projects the origin onto the affine set of solutions in the input space, which keeps only the row-space component of any solution (<a class="xref" href="#thm-minnorm"></a>). The full-rank formulas mirror each other, $(A^\T A)^{-1}A^\T$ for tall $A$ and $A^\T(AA^\T)^{-1}$ for wide $A$. One matrix does both jobs for every $A$ (<a class="xref" href="#thm-pinv"></a>).</p>
+</div>
+
+<div class="blk def" id="def-pinv" data-name="Moore–Penrose pseudoinverse">
+<p>For $A \in \F^{m\times n}$, a matrix $X \in \F^{n\times m}$ satisfying the four <dfn>Penrose conditions</dfn></p>
+<div class="eq">$$AXA = A,\qquad XAX = X,\qquad (AX)^* = AX,\qquad (XA)^* = XA$$</div>
+<p>is a <dfn>Moore–Penrose pseudoinverse</dfn> of $A$. <a class="xref" href="#thm-pinv"></a> shows that there is exactly one, written $A^+$.</p>
+</div>
+
+<div class="blk thm" id="thm-pinv" data-name="The pseudoinverse solves both problems">
+<p>Every $A \in \F^{m\times n}$ has exactly one pseudoinverse $A^+$. It satisfies $AA^+ = P_{\Range(A)}$ and $A^+A = P_{\Range(A^*)}$; it vanishes on $\Null(A^*)$ and maps $\Range(A)$ one-to-one onto $\Range(A^*)$, inverting $A$ there: $A^+Ax = x$ for $x \in \Range(A^*)$. For every $b \in \F^m$ the vector $x^+ = A^+b$ is the <dfn>minimum-norm least-squares solution</dfn>: it minimizes $\norm{Ax - b}$, and among all minimizers it alone has the smallest norm. If $A$ has full column rank, $A^+ = (A^*A)^{-1}A^*$; if $A$ has full row rank, $A^+ = A^*(AA^*)^{-1}$; if $A$ is invertible, $A^+ = A^{-1}$.</p>
+</div>
+<details class="proof"><summary>Proof</summary>
+<p><i>Existence.</i> By <a href="ch01_linear_maps.html#thm-ftla">the fundamental theorem of linear algebra</a> (chapter 1, with $A^*$ in place of $A^\T$), $A$ maps $\Range(A^*)$ one-to-one onto $\Range(A)$, $\Null(A) = \Range(A^*)^\perp$ and $\Null(A^*) = \Range(A)^\perp$. For $y \in \F^m$ let $Xy$ be the unique $x \in \Range(A^*)$ with $Ax = P_{\Range(A)}y$. Then $X$ is linear and $AX = P_{\Range(A)}$. For $x = x_r + x_n$ with $x_r \in \Range(A^*)$ and $x_n \in \Null(A)$ we have $Ax = Ax_r$, hence $XAx = x_r$, that is, $XA = P_{\Range(A^*)}$. Both products are orthogonal projectors, hence Hermitian (<a class="xref" href="#thm-projchar"></a>), which gives the last two conditions; and $AXA = P_{\Range(A)}A = A$, $XAX = P_{\Range(A^*)}X = X$ because $X$ maps into $\Range(A^*)$. By construction $Xy = 0$ for $y \in \Null(A^*) = \Range(A)^\perp$, and $XAx = x$ for $x \in \Range(A^*)$, so $X$ maps $\Range(A)$ onto $\Range(A^*)$, one-to-one because $AX$ is the identity on $\Range(A)$.</p>
+<p><i>Uniqueness.</i> If $X$ and $Y$ both satisfy the conditions, then</p>
+<div class="eq">$$X = XAX = X(AX)^* = XX^*A^* = XX^*A^*Y^*A^* = X(AX)(AY) = XAY,$$
+$$Y = YAY = (YA)^*Y = A^*Y^*Y = A^*X^*A^*Y^*Y = (XA)(YA)Y = XAY,$$</div>
+<p>using $A^* = (AYA)^* = A^*Y^*A^*$ in the first line and $A^* = A^*X^*A^*$ in the second. So $X = Y$.</p>
+<p><i>Minimum norm.</i> By <a class="xref" href="#thm-ls"></a> the minimizers of $\norm{Ax - b}$ are the solutions of $Ax = P_{\Range(A)}b = AA^+b$, which form the set $A^+b + \Null(A)$. Since $A^+b \in \Range(A^*) = \Null(A)^\perp$, Pythagoras gives $\norm{A^+b + z}^2 = \norm{A^+b}^2 + \norm{z}^2$, minimal only at $z = 0$. The three special formulas satisfy the four conditions by direct substitution, and uniqueness identifies each with $A^+$.</p>
+</details>
+<p class="src">The conditions are from R. Penrose, "A generalized inverse for matrices", <i>Proc. Cambridge Philos. Soc.</i> 51 (1955) 406–413. In practice $A^+$ is computed from the SVD: if $A = U\Sigma V^*$ then $A^+ = V\Sigma^+U^*$, where $\Sigma^+$ is the transpose of $\Sigma$ with the nonzero singular values inverted (<a href="ch04_svd.html#prop-pinv">the pseudoinverse from the SVD</a>, chapter 4).</p>
+
+<figure class="wide" id="fig-pinv" aria-label="The pseudoinverse in two steps">
+<svg viewBox="0 0 760 330" role="img" aria-label="The output space splits into the column space, which holds p, and the left null space, which holds the residual r. The pseudoinverse discards r and maps p back to the unique preimage x plus in the row space; adding null-space vectors gives all least-squares solutions." style="width:100%;height:auto;max-width:860px;display:block;margin:6px 0 4px">
+  <defs><marker id="pi-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--ink-2)"/></marker></defs>
+  <text x="160" y="22" text-anchor="middle" font-family="var(--font-ui)" font-size="12" letter-spacing="1.2" fill="var(--muted)">INPUT SPACE ℝⁿ</text>
+  <text x="600" y="22" text-anchor="middle" font-family="var(--font-ui)" font-size="12" letter-spacing="1.2" fill="var(--muted)">OUTPUT SPACE ℝᵐ</text>
+  <rect x="40" y="36" width="240" height="110" rx="4" fill="var(--tint-def)" stroke="var(--c1)" stroke-width="1.5"/>
+  <text x="160" y="68" text-anchor="middle" font-family="var(--font-body)" font-size="16" font-weight="600" fill="var(--ink)">Row space</text>
+  <text x="160" y="92" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="15" fill="var(--ink-2)">Range(Aᵀ), dimension r</text>
+  <text x="160" y="118" text-anchor="middle" font-family="var(--font-body)" font-size="14" fill="var(--ink-2)">holds x⁺ = A⁺b</text>
+  <rect x="40" y="168" width="240" height="96" rx="4" fill="none" stroke="var(--c8)" stroke-width="1.5" stroke-dasharray="6 5"/>
+  <text x="160" y="198" text-anchor="middle" font-family="var(--font-body)" font-size="16" font-weight="600" fill="var(--ink)">Null space</text>
+  <text x="160" y="222" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="15" fill="var(--ink-2)">Null(A), dimension n − r</text>
+  <text x="160" y="246" text-anchor="middle" font-family="var(--font-body)" font-size="14" fill="var(--ink-2)">adds length, never fit</text>
+  <rect x="480" y="36" width="240" height="110" rx="4" fill="var(--tint-def)" stroke="var(--c1)" stroke-width="1.5"/>
+  <text x="600" y="68" text-anchor="middle" font-family="var(--font-body)" font-size="16" font-weight="600" fill="var(--ink)">Column space</text>
+  <text x="600" y="92" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="15" fill="var(--ink-2)">Range(A), dimension r</text>
+  <text x="600" y="118" text-anchor="middle" font-family="var(--font-body)" font-size="14" fill="var(--ink-2)">holds p = AA⁺b</text>
+  <rect x="480" y="168" width="240" height="96" rx="4" fill="none" stroke="var(--c8)" stroke-width="1.5" stroke-dasharray="6 5"/>
+  <text x="600" y="198" text-anchor="middle" font-family="var(--font-body)" font-size="16" font-weight="600" fill="var(--ink)">Left null space</text>
+  <text x="600" y="222" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="15" fill="var(--ink-2)">Null(Aᵀ), dimension m − r</text>
+  <text x="600" y="246" text-anchor="middle" font-family="var(--font-body)" font-size="14" fill="var(--ink-2)">holds the residual r = b − p</text>
+  <path d="M284 66 H476" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#pi-arrow)"/>
+  <text x="380" y="58" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="15" fill="var(--ink)">A</text>
+  <path d="M476 104 H284" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#pi-arrow)"/>
+  <text x="380" y="96" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="15" fill="var(--ink)">A⁺</text>
+  <text x="380" y="124" text-anchor="middle" font-family="var(--font-ui)" font-size="12" fill="var(--muted)">inverse of A on the row space</text>
+  <path d="M478 216 C 420 216, 400 164, 352 164" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#pi-arrow)"/>
+  <circle cx="342" cy="164" r="4" fill="var(--ink)"/>
+  <text x="326" y="169" text-anchor="middle" font-family="var(--font-body)" font-size="15" fill="var(--ink)">0</text>
+  <text x="418" y="244" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="15" fill="var(--ink)">A⁺r = 0</text>
+  <text x="380" y="294" text-anchor="middle" font-family="var(--font-ui)" font-size="12" fill="var(--muted)">Split b = p + r, discard r, invert A on the row space: that is A⁺b.</text>
+  <text x="380" y="314" text-anchor="middle" font-family="var(--font-ui)" font-size="12" fill="var(--muted)">All least-squares solutions: x⁺ + Null(A); x⁺ is the shortest.</text>
+</svg>
+</figure>
+
+<p>Applied row by row, the theorem also solves least-squares problems whose unknown is a matrix.</p>
+
+<div class="blk cor" id="cor-matrix-ls" data-name="Matrix least squares">
+<p>Let $X \in \F^{n\times k}$ and $Y \in \F^{p\times k}$. The matrices $M \in \F^{p\times n}$ that minimize the Frobenius norm $\norm{MX - Y}_F$ are exactly the matrices $M = YX^+ + Z$ with $ZX = 0$, and $YX^+$ is the unique minimizer of smallest Frobenius norm.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Write $m_j^\T$ and $y_j^\T$ for row $j$ of $M$ and of $Y$. Row $j$ of $MX - Y$ is $m_j^\T X - y_j^\T$, so $\norm{MX - Y}_F^2 = \sum_j\norm{X^\T m_j - y_j}^2$ splits into $p$ separate least-squares problems with matrix $X^\T$, while $\norm{M}_F^2 = \sum_j\norm{m_j}^2$. By <a class="xref" href="#thm-pinv"></a> the minimizers of the $j$-th problem are the vectors $(X^\T)^+y_j + w$ with $X^\T w = 0$, and $(X^\T)^+y_j$ alone has the smallest norm. Transposing the four Penrose conditions shows $(X^\T)^+ = (X^+)^\T$, so the minimizers are $m_j^\T = y_j^\T X^+ + z_j^\T$ with $z_j^\T X = 0$, that is, $M = YX^+ + Z$ with $ZX = 0$, and the norm is smallest exactly for $Z = 0$.</p>
+</div>
+
+<div class="blk cex" id="cex-pinv">
+<p>Two familiar rules fail for $A^+$. (i) Continuity: $A_\eps = \diag(1, \eps)$ has $A_\eps^+ = \diag(1, 1/\eps)$ for $\eps \ne 0$ but $A_0^+ = \diag(1, 0)$, so $A_\eps^+$ blows up instead of converging as $\eps \to 0$. Here the rank drops in the limit, and <a class="xref" href="#prop-pinv-cont"></a> shows that this is the only way continuity can fail, which is why numerical rank decisions (<a href="ch04_svd.html#def-cond">numerical rank</a>, chapter 4) and regularization matter. (ii) Products: with $A = \begin{bmatrix}1 & 1\end{bmatrix}$ and $B = \begin{bmatrix}1\\ 0\end{bmatrix}$, $(AB)^+ = 1^+ = 1$, but $B^+A^+ = \begin{bmatrix}1 & 0\end{bmatrix}\tfrac12\begin{bmatrix}1\\ 1\end{bmatrix} = \tfrac12$.</p>
+</div>
+
+<div class="blk prop" id="prop-pinv-cont" data-name="Continuity of the pseudoinverse">
+<p>Let $A_k \to A$ in $\F^{m\times n}$. Then $A_k^+ \to A^+$ if and only if $\rank A_k = \rank A$ for all sufficiently large $k$. If $\rank A_k \ne \rank A$ for infinitely many $k$, then $\norm{A_k^+}$ is unbounded.</p>
+</div>
+<p class="src">Idea: let $r = \rank A$. A nonzero $r\times r$ minor of $A$ stays nonzero near $A$, so $\rank A_k \ge r$ for large $k$. For a matrix $B$ of rank $s \ge 1$ the SVD formula gives $\norm{B^+} = 1/\sigma_s(B)$, the reciprocal of the smallest nonzero singular value, and singular values are $1$-Lipschitz functions of the matrix (<a href="ch04_svd.html#prop-dilation">chapter 4</a>). So $\rank A_k &gt; r$ gives $\norm{A_k^+} \ge 1/\sigma_{r+1}(A_k) \ge 1/\norm{A_k - A}$. If the ranks agree, the $r$ nonzero singular values of $A_k$ stay away from $0$, and $A_k^+ \to A^+$. Proof: G. W. Stewart, "On the continuity of the generalized inverse", <i>SIAM J. Appl. Math.</i> 17 (1969) 33–45; Golub and Van Loan, ch. 5.</p>
+
+<div class="blk prop" id="prop-ridge" data-name="Ridge regression">
+<p>Let $A \in \R^{m\times n}$ be arbitrary and let $\mu &gt; 0$ be a regularization parameter. The function $\norm{Ax - b}^2 + \mu\norm{x}^2$ has the unique minimizer</p>
+<div class="eq">$$x_\mu = (A^\T A + \mu I)^{-1}A^\T b = A^\T(AA^\T + \mu I)^{-1}b,$$</div>
+<p>and $x_\mu \to A^+b$ as $\mu \to 0^+$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> The objective is $\norm{\tilde Ax - \tilde b}^2$ with $\tilde A = \begin{bmatrix}A\\ \sqrt\mu\, I\end{bmatrix}$ and $\tilde b = \begin{bmatrix}b\\ 0\end{bmatrix}$. $\tilde A$ has full column rank, so by <a class="xref" href="#thm-ls"></a> the minimizer is unique and solves $\tilde A^\T\tilde Ax = \tilde A^\T\tilde b$, which is $(A^\T A + \mu I)x = A^\T b$. The second form follows from $(A^\T A + \mu I)A^\T = A^\T(AA^\T + \mu I)$, both inverses existing because $x^\T(A^\T A + \mu I)x \ge \mu\norm{x}^2$. For the limit, write the SVD of chapter 4 as $A = \sum_i \sigma_i u_i v_i^\T$, summed over the singular values $\sigma_i &gt; 0$, with orthonormal singular vectors $u_i$ and $v_i$. Then $A^\T b = \sum_i\sigma_i(u_i^\T b)\,v_i$, and $A^\T A + \mu I$ multiplies each $v_i$ by $\sigma_i^2 + \mu$; with $A^+b = \sum_i\sigma_i^{-1}(u_i^\T b)\,v_i$ from <a href="ch04_svd.html#prop-pinv">the pseudoinverse from the SVD</a> (chapter 4),</p>
+<div class="eq">$$x_\mu = \sum_i \frac{\sigma_i}{\sigma_i^2 + \mu}\,(u_i^\T b)\,v_i \;\longrightarrow\; \sum_i \frac{1}{\sigma_i}\,(u_i^\T b)\,v_i = A^+b \qquad (\mu \to 0^+).$$</div>
+</div>
+
+<div class="blk prop" id="prop-ridge-tradeoff" data-name="What the ridge parameter controls">
+<p>Let $A \in \R^{m\times n}$, $b \in \R^m$, and let $x_\mu$ be the ridge solution of <a class="xref" href="#prop-ridge"></a>. (i) For every $\mu &gt; 0$, $\norm{(A^\T A + \mu I)^{-1}A^\T} \le 1/(2\sqrt\mu)$; in particular $\norm{x_\mu} \le \norm{b}/(2\sqrt\mu)$, $x_\mu$ is a Lipschitz function of $b$, and it is a continuous function of $A$. (ii) As $\mu$ increases, $\norm{x_\mu}$ does not increase and $\norm{Ax_\mu - b}$ does not decrease, and $x_\mu \to 0$ as $\mu \to \infty$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> In the notation of the proof of <a class="xref" href="#prop-ridge"></a>, let $\beta_i = u_i^\T b$ and $b_\perp = b - \sum_i\beta_iu_i$, which is orthogonal to every $u_i$. Then $b - Ax_\mu = \sum_i\frac{\mu}{\sigma_i^2 + \mu}\beta_iu_i + b_\perp$, and Pythagoras gives</p>
+<div class="eq">$$\norm{x_\mu}^2 = \sum_i\Big(\frac{\sigma_i}{\sigma_i^2 + \mu}\Big)^2\beta_i^2,$$
+$$\norm{Ax_\mu - b}^2 = \sum_i\Big(\frac{\mu}{\sigma_i^2 + \mu}\Big)^2\beta_i^2 + \norm{b_\perp}^2.$$</div>
+<p>As $\mu$ grows, each coefficient of the first sum decreases to $0$ and each of the second increases, which is (ii). Since $\sigma_i^2 + \mu \ge 2\sigma_i\sqrt\mu$, the coefficients of the first sum are at most $1/(4\mu)$, and $\sum_i\beta_i^2 \le \norm{b}^2$, which gives (i) for the linear map $b \mapsto x_\mu$. Continuity in $A$ holds because $A^\T A + \mu I$ is invertible for every $A$ and inversion is continuous on invertible matrices.</p>
+</div>
+
+<div class="blk why">
+<p>The parameter $\mu$ trades fit against size, and it turns an ill-posed problem into a well-posed one: $x_\mu$ is unique and depends continuously on $A$ and $b$ (<a class="xref" href="#prop-ridge-tradeoff"></a>), whereas $A^+$ is not continuous across a change of rank (<a class="xref" href="#prop-pinv-cont"></a>). Linear decoders that read out behaviour from the activity of many correlated neurons are often fitted this way. Heuristically, correlated activity makes $A^\T A$ nearly singular; whatever $A$ is, the penalty keeps the norm of the decoder weights below $\norm{b}/(2\sqrt\mu)$. In <a href="ch13_neural_bridges.html#def-dmd">chapter 13</a> the limit $\mu \to 0^+$, the pseudoinverse, fits linear dynamics to data: with the columns of $X$ and $X'$ holding successive snapshots of a state, dynamic mode decomposition (DMD) takes the minimum-norm least-squares operator $A \approx X'X^+$ (<a class="xref" href="#cor-matrix-ls"></a> with $Y = X'$).</p>
+</div>
+</section>
+
+<section class="sec" id="s-norms">
+<h2>The norm changes the answer</h2>
+
+<div class="blk prob"><p>Replace the Euclidean norm by $\norm{\cdot}_1$ or $\norm{\cdot}_\infty$ in both problems: the smallest point of an affine set, and the best fit to data. Which conclusions of the previous sections survive?</p></div>
+
+<div class="blk setting"><p>$\R^n$ with a $p$-norm, $1 \le p \le \infty$, and the dual exponent $q$ of <a class="xref" href="#prop-pnorms"></a>, $1/p + 1/q = 1$. The main tool is Hölder's inequality $\abs{a^\T x} \le \norm{a}_q\norm{x}_p$ from the same proposition, which generalizes Cauchy–Schwarz ($p = q = 2$).</p></div>
+
+<div class="blk probe">
+<p>The simplest affine set is a line $a^\T x = c$ in $\R^2$, with $a = (a_1, a_2)^\T \ne 0$ and $c \ne 0$. Grow the ball $\{x : \norm{x}_p \le t\}$ from $t = 0$ until it first touches the line; the touching point is the minimum-norm point. For $p = 2$ the disk touches at the foot of the perpendicular, $x = c\,a/\norm{a}_2^2$. For $p = \infty$ and $a_1a_2 \ne 0$ the square touches with a corner, at $x = c\,(\operatorname{sign}a_1, \operatorname{sign}a_2)^\T/\norm{a}_1$, where both coordinates have the same magnitude and $\operatorname{sign}$ is $+1$, $-1$ or $0$. For $p = 1$ and $\abs{a_1} \ne \abs{a_2}$ the diamond touches with a vertex on an axis, at $x = (c/a_k)\,e_k$ for the index $k$ with the larger $\abs{a_k}$: the minimizer is <dfn>sparse</dfn>, with a zero entry. (When $\abs{a_1} = \abs{a_2}$ a whole edge touches.)</p>
+</div>
+
+<div class="blk thm" id="thm-minp" data-name="Minimum $p$-norm point on a hyperplane">
+<p>Let $a \in \R^n$ be nonzero, $c \in \R$ and $1 \le p \le \infty$. Then</p>
+<div class="eq">$$\min\{\norm{x}_p : a^\T x = c\} = \frac{\abs{c}}{\norm{a}_q}.$$</div>
+<p>For $1 &lt; p &lt; \infty$ the minimizer is unique, with entries $x^\star_i = \dfrac{c}{\norm{a}_q^q}\operatorname{sign}(a_i)\abs{a_i}^{q-1}$. For $p = 1$ the minimizers include $(c/a_k)\,e_k$ for every $k$ with $\abs{a_k} = \norm{a}_\infty$; for $p = \infty$ they include $c\operatorname{sign}(a)/\norm{a}_1$, with $\operatorname{sign}$ applied entrywise.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> For every feasible $x$, Hölder gives $\abs{c} = \abs{a^\T x} \le \norm{a}_q\norm{x}_p$, so no feasible point has norm below $\abs{c}/\norm{a}_q$. The proposed points are feasible and attain the bound. For $1 &lt; p &lt; \infty$: $a^\T x^\star = \frac{c}{\norm{a}_q^q}\sum_i \abs{a_i}^q = c$, and since $(q - 1)p = q$, $\norm{x^\star}_p = \frac{\abs{c}}{\norm{a}_q^q}\norm{a}_q^{q/p} = \abs{c}/\norm{a}_q$ (use $q/p - q = -1$). The cases $p = 1$ and $p = \infty$ are checked directly. Uniqueness for $1 &lt; p &lt; \infty$: the feasible set is convex and $x \mapsto \norm{x}_p^p$ is strictly convex, so the midpoint of two different minimizers would do strictly better.</p>
+</div>
+
+<p>In the plane the uniqueness question has a complete answer.</p>
+
+<div class="blk prop" id="prop-ties" data-name="Ties in the plane">
+<p>Let $a = (a_1, a_2)^\T \in \R^2$ be nonzero and $c \ne 0$, and consider the minimum-norm points of the line $a^\T x = c$. (i) For $\norm{\cdot}_1$ the minimizer is unique if and only if $\abs{a_1} \ne \abs{a_2}$, and it is then $(c/a_k)\,e_k$ with $\abs{a_k} = \norm{a}_\infty$, which has a zero entry. If $\abs{a_1} = \abs{a_2}$, the minimizers are the points of the segment from $(c/a_1, 0)$ to $(0, c/a_2)$. (ii) For $\norm{\cdot}_\infty$ the minimizer is unique if and only if $a_1a_2 \ne 0$. If $a_2 = 0$, the minimizers are the points $(c/a_1, s)$ with $\abs{s} \le \abs{c/a_1}$, and symmetrically if $a_1 = 0$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Let $(p, q)$ be $(1, \infty)$ or $(\infty, 1)$. Every feasible $x$ satisfies</p>
+<div class="eq">$$\abs{c} = \abs{a_1x_1 + a_2x_2} \le \abs{a_1}\abs{x_1} + \abs{a_2}\abs{x_2} \le \norm{a}_q\norm{x}_p,$$</div>
+<p>so by <a class="xref" href="#thm-minp"></a> it is a minimizer exactly when both inequalities are equalities. The first is an equality when each nonzero product $a_ix_i$ has the sign of $c$. (i) For $p = 1$ the second is an equality when $x_i = 0$ for each $i$ with $\abs{a_i} &lt; \norm{a}_\infty$. If $\abs{a_1} \ne \abs{a_2}$ this forces one zero entry, and $a^\T x = c$ fixes the other. If $\abs{a_1} = \abs{a_2}$, only the sign condition remains: $a_1x_1 = \lambda c$ and $a_2x_2 = (1 - \lambda)c$ with $\lambda \in [0, 1]$, which is the segment. (ii) For $p = \infty$ the second is an equality when $\abs{x_i} = \norm{x}_\infty$ for each $i$ with $a_i \ne 0$. If $a_1a_2 \ne 0$, both entries have magnitude $\abs{c}/\norm{a}_1$ and signs fixed by the first condition, so $x = c\operatorname{sign}(a)/\norm{a}_1$. If $a_2 = 0$, the conditions reduce to $x_1 = c/a_1$ and $\abs{x_2} \le \abs{x_1}$.</p>
+</div>
+
+<div class="blk rem">
+<p>Geometrically, each tie is a flat piece of the boundary of the ball lying on the line: an edge of the diamond, or a side of the square. A norm induced by an inner product has no ties: the minimum-norm point of an affine set $x_0 + \mathcal S$, with $\mathcal S$ a subspace, is the unique point $x_0 - P_{\mathcal S}x_0$ by <a class="xref" href="#thm-proj"></a>.</p>
+</div>
+
+<figure class="viz" id="viz-balls">
+  <figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">Norm balls meeting a line</span><span class="viz-sub">The green line $a^\T x = c$ passes through the two green handles; drag them. The blue ball $\{x: \norm{x}_p \le t\}$ is drawn at the radius $t = \abs{c}/\norm{a}_q$ where it first touches the line. Hollow dots mark the minimizers for $p = 1, 2, \infty$; the dashed violet curve is the minimizer as $p$ runs from $1$ to $\infty$.</span></figcaption>
+  <div class="viz-plots cols-1"><div class="plot" id="balls-plot"></div></div>
+  <div class="viz-controls" id="balls-controls"></div>
+  <div class="viz-notes">
+    <div><h5>Try this</h5><ol>
+      <li>Press <i>Grow the ball</i> at $p = 1$. The diamond first meets the line at a vertex on an axis: the minimizer has one zero entry.</li>
+      <li>Move the slider from $p = 1$ to $p = 20$ and then switch on $p = \infty$. The touching point slides along the dashed curve from the sparse point, through the Euclidean foot of the perpendicular, to the point with equal coordinates.</li>
+      <li>Choose the preset <i>Tie</i>. At $p = 1$ a whole edge of the diamond lies on the line and the readout reports non-uniqueness; any $p &gt; 1$ picks a single point (<a class="xref" href="#thm-minp"></a> and <a class="xref" href="#prop-ties"></a>).</li>
+      <li>Choose <i>Horizontal line</i> and switch on $p = \infty$: now the square's top side lies on the line.</li>
+    </ol></div>
+    <div><h5>What to notice</h5><p>The readout compares the computed $\norm{x^\star}_p$ with $\abs{c}/\norm{a}_q$ from <a class="xref" href="#thm-minp"></a>. Corners of the ball produce sparse or equalized answers, and flat faces produce ties (<a class="xref" href="#prop-ties"></a>); the round Euclidean ball has neither, which is why its answer is unique and given by linear algebra (<a class="xref" href="#thm-minnorm"></a>).</p></div>
+  </div>
+</figure>
+
+<div class="blk cex" id="cex-rotate">
+<p>Sparsity is not coordinate-free. Euclidean minimizers commute with rotations: for orthogonal $R$, the minimum-$\ell_2$ point of the rotated line is $R$ times the original one, by <a class="xref" href="#prop-unitary"></a>. The $\ell_1$ minimizer does not. Rotate the line $x_2 = 1$ clockwise by $30^\circ$; it becomes $\tfrac12 x_1 + \tfrac{\sqrt3}{2}x_2 = 1$. The rotated image of the $\ell_1$ minimizer $e_2$ is $(\tfrac12, \tfrac{\sqrt3}{2})^\T$, with $\ell_1$ norm $\approx 1.366$, while the $\ell_1$ minimizer of the rotated problem is $(0, 2/\sqrt3)^\T$, with norm $\approx 1.155$.</p>
+</div>
+
+<div class="blk pattern">
+<p>The Euclidean norm is invariant under every orthogonal change of coordinates, and so are its minimizers (<a class="xref" href="#prop-unitary"></a>). The $\ell_1$ and $\ell_\infty$ norms are invariant only under permutations of the coordinates combined with sign changes:</p>
+</div>
+
+<div class="blk prop" id="prop-isometries" data-name="Isometries of $\ell_1$ and $\ell_\infty$">
+<p>A <dfn>signed permutation matrix</dfn> is a matrix $T \in \R^{n\times n}$ with $Te_k = \pm e_{\pi(k)}$ for every $k$, for some permutation $\pi$ of $\{1, \dots, n\}$; it preserves every $p$-norm. Conversely, if $T \in \R^{n\times n}$ satisfies $\norm{Tx}_1 = \norm{x}_1$ for all $x \in \R^n$, or $\norm{Tx}_\infty = \norm{x}_\infty$ for all $x \in \R^n$, then $T$ is a signed permutation matrix.</p>
+</div>
+<details class="proof"><summary>Proof</summary>
+<p>A signed permutation permutes the entries of $x$ and changes some of their signs, which leaves $\sum_i\abs{x_i}^p$ and $\max_i\abs{x_i}$ unchanged. Write $t_{ik}$ for the entries of $T$. Let $T$ preserve $\norm{\cdot}_1$. Then $\norm{Te_k}_1 = 1$, and for $j \ne k$ and either sign, $\norm{T(e_j \pm e_k)}_1 = 2 = \norm{Te_j}_1 + \norm{Te_k}_1$. Since $\abs{t_{ij} \pm t_{ik}} \le \abs{t_{ij}} + \abs{t_{ik}}$ for every $i$, equality for both signs forces $t_{ij}t_{ik} = 0$: the $n$ columns, all nonzero, have pairwise disjoint supports in $\{1, \dots, n\}$. So each column has a single nonzero entry, in a different row for each column, and $Te_k = \pm e_{\pi(k)}$ for a permutation $\pi$.</p>
+<p>Now let $T$ preserve $\norm{\cdot}_\infty$, and let $\tau_i^\T$ be its $i$-th row. For the vector $x$ with entries $x_k = \operatorname{sign}(t_{ik})$, $\norm{\tau_i}_1 = \tau_i^\T x \le \norm{Tx}_\infty = \norm{x}_\infty \le 1$. For each $k$, $\norm{Te_k}_\infty = 1$, so some row has an entry $\pm1$ in column $k$, and by the bound just shown that row is $\pm e_k^\T$. Different $k$ give different rows, so the $n$ rows are $\pm e_1^\T, \dots, \pm e_n^\T$ in some order, and $T$ is a signed permutation matrix.</p>
+</details>
+
+<p>Sparsity is therefore a statement about a chosen basis. That is its cost and its use: in a basis where a signal is known to be sparse, $\ell_1$ minimization can find it, under conditions recalled at the end of this section.</p>
+
+<div class="blk def" id="def-robust" data-name="Fitting in other norms">
+<p>For $A \in \R^{m\times n}$ with rows $a_i^\T$ and $b \in \R^m$, the <dfn>$\ell_1$ fit</dfn> (least absolute deviations) minimizes $\norm{Ax - b}_1 = \sum_i \abs{a_i^\T x - b_i}$, and the <dfn>Chebyshev</dfn> or <dfn>minimax fit</dfn> minimizes $\norm{Ax - b}_\infty = \max_i\abs{a_i^\T x - b_i}$.</p>
+</div>
+
+<div class="blk probe">
+<p>Fit a constant, $A = \mathbf 1$, in each of the three norms, and then move one of three or more data points far away. <a class="xref" href="#prop-constant"></a> identifies the three fits and shows which of them follow the outlier.</p>
+</div>
+
+<div class="blk prop" id="prop-constant" data-name="Fitting a constant">
+<p>Let $b_1, \dots, b_m \in \R$ and $x \in \R$. (i) $\sum_i(x - b_i)^2$ is minimized exactly at the mean $\bar b = \frac1m\sum_i b_i$. (ii) $\sum_i\abs{x - b_i}$ is minimized exactly at the <dfn>medians</dfn>, the $x$ with at most $m/2$ of the $b_i$ below $x$ and at most $m/2$ above $x$; they form a closed interval whose endpoints are data points, a single data point when $m$ is odd. (iii) $\max_i\abs{x - b_i}$ is minimized exactly at the <dfn>midrange</dfn> $\frac12(\max_i b_i + \min_i b_i)$. (iv) Let $m \ge 3$, and let $b_j$ be the largest or the smallest of the data. Then every median lies between the smallest and the largest of the other $m - 1$ points, whatever the value of $b_j$, while the mean and the midrange tend to $\pm\infty$ with $b_j$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (i) $\sum_i(x - b_i)^2 = m(x - \bar b)^2 + \sum_i(b_i - \bar b)^2$. (ii) $f(x) = \sum_i\abs{x - b_i}$ is convex, so its local minimizers are global. Let $n_{&lt;}$ count the $b_i &lt; x$, and define $n_{\le}$, $n_{&gt;}$, $n_{\ge}$ likewise. For small $h &gt; 0$, $f(x + h) - f(x) = h\,(n_{\le} - n_{&gt;})$ and $f(x - h) - f(x) = h\,(n_{\ge} - n_{&lt;})$, so $x$ is a minimizer exactly when $n_{&gt;} \le n_{\le}$ and $n_{&lt;} \le n_{\ge}$, that is, $n_{&gt;} \le m/2$ and $n_{&lt;} \le m/2$. With $b_{(1)} \le \dots \le b_{(m)}$ the sorted data, this set is the interval $[b_{(\lceil m/2\rceil)}, b_{(\lfloor m/2\rfloor + 1)}]$. (iii) The farthest data point from $x$ is the largest or the smallest one, so the cost is $\max(x - \min_i b_i,\ \max_i b_i - x)$, which decreases until the two terms agree, at the midrange, and increases afterwards. (iv) Say $b_j$ is the largest, and let $\ell \le u$ be the smallest and the largest of the other points. A point $x &gt; u$ has the $m - 1 &gt; m/2$ other points below it, and a point $x &lt; \ell$ has all $m$ points above it, so neither is a median. The mean is $b_j/m$ plus a quantity independent of $b_j$, and the midrange is $(b_j + \ell)/2$. The case of the smallest point is symmetric.</p>
+</div>
+
+<div class="blk lem" id="lem-extreme" data-name="Extreme points exist">
+<p>Let $K \subset \R^n$ be nonempty, compact and convex, and call $x \in K$ an <dfn>extreme point</dfn> of $K$ if it is not the midpoint of two different points of $K$. Every point of $K$ of largest Euclidean norm is an extreme point; in particular $K$ has one.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> A point of largest norm exists by compactness. If $x = \frac12(u + v)$ with $u \ne v$ in $K$, the parallelogram law (<a class="xref" href="#thm-parallelogram"></a>) gives</p>
+<div class="eq">$$\norm{x}^2 = \tfrac12\norm{u}^2 + \tfrac12\norm{v}^2 - \tfrac14\norm{u - v}^2 &lt; \max(\norm{u}, \norm{v})^2,$$</div>
+<p>so $x$ does not have the largest norm.</p>
+</div>
+
+<div class="blk prop" id="prop-l1vertex" data-name="The $\ell_1$ fit interpolates">
+<p>If $A \in \R^{m\times n}$ has full column rank, then $\norm{Ax - b}_1$ has a minimizer at which at least $n$ residuals vanish, for rows of $A$ that are linearly independent. In particular, some best $\ell_1$ line through data points with at least two distinct abscissas passes through two of the points.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> $f(x) = \norm{Ax - b}_1$ is the maximum of the affine functions $s^\T(Ax - b)$ over sign vectors $s \in \{\pm1\}^m$, so it is convex and piecewise linear, and $f(x) \ge \norm{Ax}_1 - \norm{b}_1 \to \infty$ as $\norm{x} \to \infty$ because $A$ has full column rank ($\norm{Ax}_1 \ge \norm{Ax} \ge \sigma_{\min}(A)\norm{x}$ by <a class="xref" href="#prop-pnorms"></a> and <a class="xref" href="#def-cond"></a>). Its set of minimizers is therefore a nonempty, bounded polyhedron, in particular compact and convex, and it has an extreme point $x_0$ by <a class="xref" href="#lem-extreme"></a>. Let $I$ be the set of indices with $a_i^\T x_0 = b_i$. If the rows $a_i$, $i \in I$, did not span $\R^n$, there would be $d \ne 0$ with $a_i^\T d = 0$ for $i \in I$; along $x_0 + td$ no residual changes sign for small $\abs{t}$, so $f$ is affine there, hence constant (as $x_0$ is a minimizer), and $x_0 \pm td$ would be minimizers, contradicting extremality. So the rows indexed by $I$ span $\R^n$, and $n$ of them are independent.</p>
+</div>
+
+<div class="blk prop" id="prop-irls" data-name="Iteratively reweighted least squares descends">
+<p>Let $r_i(x) = a_i^\T x - b_i$, fix $\delta &gt; 0$, and let $f_\delta(x) = \sum_i \sqrt{r_i(x)^2 + \delta^2}$. Given $x_k$, set weights $w_i = 1/\sqrt{r_i(x_k)^2 + \delta^2}$ and let $x_{k+1}$ minimize the weighted least-squares cost $\sum_i w_i r_i(x)^2$. Then $f_\delta(x_{k+1}) \le f_\delta(x_k)$. Moreover $\norm{Ax - b}_1 \le f_\delta(x) \le \norm{Ax - b}_1 + m\delta$ for every $x$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> For $\beta &gt; 0$ and $s \ge 0$, $\sqrt{s} \le \frac{s + \beta^2}{2\beta}$, since this is $(\sqrt s - \beta)^2 \ge 0$, with equality at $s = \beta^2$. With $\beta_i = \sqrt{r_i(x_k)^2 + \delta^2} = 1/w_i$ and $s = r_i(x)^2 + \delta^2$, this gives $f_\delta(x) \le g(x) := \sum_i \frac{r_i(x)^2 + \delta^2 + \beta_i^2}{2\beta_i}$ for all $x$, with equality at $x = x_k$. As $g$ differs from $\frac12\sum_i w_i r_i(x)^2$ by a constant, $x_{k+1}$ minimizes $g$, and $f_\delta(x_{k+1}) \le g(x_{k+1}) \le g(x_k) = f_\delta(x_k)$. The two-sided bound is $\abs{r} \le \sqrt{r^2 + \delta^2} \le \abs{r} + \delta$, summed over the $m$ residuals.</p>
+</div>
+
+<div class="blk rem">
+<p>This majorize-then-minimize argument is the whole mechanism of iteratively reweighted least squares (IRLS): each step is a weighted least-squares problem (<a class="xref" href="#prop-wls"></a>), with large residuals down-weighted. <a class="xref" href="#viz-lsfit"></a> runs it with $\delta = 10^{-7}$ and checks the result against the exact optimum. With other weights the same scheme is used for other norms and penalties; for IRLS in sparse recovery see I. Daubechies, R. DeVore, M. Fornasier and C. S. Güntürk, <i>Comm. Pure Appl. Math.</i> 63 (2010) 1–38. For full column rank the iteration converges, to the minimizer of the smoothed cost $f_\delta$:</p>
+</div>
+
+<div class="blk prop" id="prop-irls-conv" data-name="Convergence of smoothed IRLS">
+<p>In the setting of <a class="xref" href="#prop-irls"></a>, let $A \in \R^{m\times n}$, with rows $a_i^\T$, have full column rank, and start from any $x_0 \in \R^n$. Then $f_\delta$ is strictly convex with a unique minimizer $x_\delta$, the iterates $x_k$ are well defined and converge to $x_\delta$, and $\norm{Ax_\delta - b}_1 \le \min_x\norm{Ax - b}_1 + m\delta$.</p>
+</div>
+<details class="proof"><summary>Proof</summary>
+<p>Write $r_i = r_i(x)$ and $W(x) = \diag\big((r_i^2 + \delta^2)^{-1/2}\big)$. The Hessian $\nabla^2 f_\delta(x) = A^\T DA$, with $D = \diag\big(\delta^2(r_i^2 + \delta^2)^{-3/2}\big)$, is positive definite because $A$ has full column rank, so $f_\delta$ is strictly convex; and $f_\delta(x) \ge \norm{Ax - b}_1 \to \infty$ as $\norm{x} \to \infty$, as in the proof of <a class="xref" href="#prop-l1vertex"></a>. So $f_\delta$ has a unique minimizer $x_\delta$, and $x_\delta$ is the only zero of $\nabla f_\delta(x) = A^\T W(x)(Ax - b)$: at a point $\bar x$ with $f_\delta(y) &lt; f_\delta(\bar x)$, convexity makes the derivative in the direction $y - \bar x$ negative.</p>
+<p>The step is $x_{k+1} = T(x_k)$ with $T(x) = (A^\T W(x)A)^{-1}A^\T W(x)b$ (<a class="xref" href="#prop-wls"></a>), a continuous map. Built at $x_k = x$, the majorizer $g$ of the proof of <a class="xref" href="#prop-irls"></a> is a strictly convex quadratic minimized only at $T(x)$, so $f_\delta(T(x)) &lt; f_\delta(x)$ unless $T(x) = x$, that is, unless $\nabla f_\delta(x) = 0$. The iterates stay in the compact set $\{x : f_\delta(x) \le f_\delta(x_0)\}$, and $f_\delta(x_k)$ decreases to a limit $f^\ast$. If $x_{k_j} \to \bar x$ along a subsequence, then $x_{k_j + 1} = T(x_{k_j}) \to T(\bar x)$ and $f_\delta(T(\bar x)) = f^\ast = f_\delta(\bar x)$, so $T(\bar x) = \bar x$, that is, $\bar x = x_\delta$; a sequence in a compact set with the single limit point $x_\delta$ converges to it. Finally, for an $\ell_1$ optimum $x^\ast$ (<a class="xref" href="#prop-l1vertex"></a>), <a class="xref" href="#prop-irls"></a> gives $\norm{Ax_\delta - b}_1 \le f_\delta(x_\delta) \le f_\delta(x^\ast) \le \norm{Ax^\ast - b}_1 + m\delta$.</p>
+</details>
+
+<div class="blk pattern">
+<p>The choice of norm, summarized for fitting and for least-norm problems:</p>
+</div>
+<div class="tbl-wrap"><table class="tbl">
+  <thead><tr><th>Norm</th><th>Best fit $\min\norm{Ax - b}$</th><th>Least norm $\min\norm{x}$, $Ax = b$</th><th>Computed by</th><th>Unique?</th><th>Character</th></tr></thead>
+  <tbody>
+    <tr><td>$\ell_2$</td><td>least squares; residual $\perp \Range(A)$</td><td>$A^+b$, in the row space</td><td>QR, SVD (linear algebra)</td><td>yes (fit: if full column rank)</td><td>spreads error; large residuals dominate; rotation invariant</td></tr>
+    <tr><td>$\ell_1$</td><td>least absolute deviations; some minimizer interpolates $n$ points</td><td>sparse: some minimizer has at most $m$ nonzeros</td><td>linear program; IRLS</td><td>not always</td><td>robust to outliers; favours sparsity; basis dependent</td></tr>
+    <tr><td>$\ell_\infty$</td><td>Chebyshev (minimax); equalizes the largest residuals</td><td>equalized: some minimizer has at least $n - m + 1$ entries of maximal magnitude</td><td>linear program</td><td>not always</td><td>controls the worst case; most sensitive to outliers</td></tr>
+  </tbody>
+</table></div>
+<p>The $\ell_2$ entries are <a class="xref" href="#thm-ls"></a>, <a class="xref" href="#thm-lsqr"></a> and <a class="xref" href="#thm-pinv"></a>, and the $\ell_1$ fitting entry is <a class="xref" href="#prop-l1vertex"></a>. Non-uniqueness is witnessed by <a class="xref" href="#prop-ties"></a> and, for the $\ell_1$ fit, by a constant fit to two points (<a class="xref" href="#prop-constant"></a>). The last column is a heuristic summary, except for rotation invariance and basis dependence (<a class="xref" href="#cex-rotate"></a>, <a class="xref" href="#prop-isometries"></a>) and for the behaviour of a constant fit under an outlier (<a class="xref" href="#prop-constant"></a>). The remaining entries are statements about linear programs, problems that minimize a linear function subject to linear equalities and inequalities:</p>
+
+<div class="blk prop" id="prop-lp-vertex" data-name="Vertex solutions in $\ell_1$ and $\ell_\infty$">
+<p>Let $A \in \R^{m\times n}$, with rows $a_i^\T$, and $b \in \R^m$.</p>
+<ol>
+<li>If $A$ has full row rank, $\min\{\norm{x}_1 : Ax = b\}$ has a minimizer with at most $m$ nonzero entries, and $\min\{\norm{x}_\infty : Ax = b\}$ has a minimizer with at least $n - m + 1$ entries of magnitude $\norm{x}_\infty$.</li>
+<li>If $A$ has full column rank and $b \notin \Range(A)$, then $\min_x\norm{Ax - b}_\infty$ has a minimizer at which at least $n + 1$ residuals $\abs{a_i^\T x - b_i}$ equal the minimum value.</li>
+<li>The four problems $\min_x\norm{Ax - b}_1$, $\min_x\norm{Ax - b}_\infty$, $\min\{\norm{x}_1 : Ax = b\}$ and $\min\{\norm{x}_\infty : Ax = b\}$ are linear programs after adding bound variables, with the same minimizers $x$. For instance, with entrywise inequalities,
+<div class="eq">$$\min_x\norm{Ax - b}_1 = \min_{x,\,s}\Big\{\sum_i s_i : -s \le Ax - b \le s\Big\},$$
+$$\min_{Ax = b}\norm{x}_\infty = \min_{x,\,t}\big\{t : Ax = b,\ -t \le x_i \le t \text{ for all } i\big\}.$$</div></li>
+</ol>
+</div>
+<details class="proof"><summary>Proof</summary>
+<p>In each problem of parts 1 and 2 the objective is continuous and convex and tends to $\infty$ as $\norm{x} \to \infty$ (in part 2 because $A$ has full column rank), and the feasible set is closed and convex, and nonempty in part 1 because $A$ has full row rank. So the set $K$ of minimizers is nonempty, compact and convex, and it has an extreme point $x_0$ by <a class="xref" href="#lem-extreme"></a>. Let $t$ be the minimum value.</p>
+<p>Part 1, $\ell_1$. Let $J$ be the set of indices of the nonzero entries of $x_0$. If $J$ had more than $m$ elements, the columns of $A$ indexed by $J$ would be dependent, so some $d \ne 0$ with $d_i = 0$ for $i \notin J$ would satisfy $Ad = 0$. For small $\abs{s}$ no entry of $x_0 + sd$ changes sign, so $\norm{x_0 + sd}_1$ is affine in $s$, hence constant because it is minimal at $s = 0$; then $x_0 \pm sd \in K$, contradicting extremality.</p>
+<p>Part 1, $\ell_\infty$. If $t = 0$ then $x_0 = 0$ and every entry qualifies. Otherwise let $I$ be the set of $i$ with $\abs{x_{0,i}} = t$, and suppose $I$ had at most $n - m$ elements. The $m + \abs{I}$ homogeneous linear conditions $Ad = 0$ and $d_i = \operatorname{sign}(x_{0,i})\,\tau$ for $i \in I$, on $(d, \tau) \in \R^n\times\R$, would have a nonzero solution, with $d \ne 0$ because $I$ is nonempty. For small $\abs{s}$, $\norm{x_0 + sd}_\infty = t + s\tau$, so minimality forces $\tau = 0$, and then $x_0 \pm sd \in K$ contradicts extremality.</p>
+<p>Part 2. Here $t &gt; 0$ because $b \notin \Range(A)$. Repeat the previous argument with the residual $\rho = Ax_0 - b$ in place of $x_0$: if at most $n$ indices $i$ had $\abs{\rho_i} = t$, the conditions $a_i^\T d = \operatorname{sign}(\rho_i)\,\tau$ for these $i$ would have a solution with $d \ne 0$, along which $\norm{A(x_0 + sd) - b}_\infty = t + s\tau$ for small $\abs{s}$, and $x_0 \pm sd$ would again contradict extremality.</p>
+<p>Part 3. For fixed $x$ the smallest feasible bound variables are $s_i = \abs{(Ax - b)_i}$ and $t = \norm{x}_\infty$ (likewise in the two problems not displayed), so each reformulation has the same minimum value and the same minimizers $x$ as the original problem.</p>
+</details>
+
+<div class="blk why">
+<p>Compressed sensing makes the preference of $\ell_1$ for sparse answers quantitative: under conditions on $A$ that suitable random matrices satisfy with high probability, the minimum-$\ell_1$ solution of an underdetermined system recovers a sufficiently sparse vector exactly (E. J. Candès, J. Romberg and T. Tao, <i>IEEE Trans. Inf. Theory</i> 52, 2006; D. L. Donoho, <i>IEEE Trans. Inf. Theory</i> 52, 2006). Adding a penalty $\lambda\norm{x}_1$ with weight $\lambda &gt; 0$ to a least-squares cost gives the lasso (R. Tibshirani, <i>J. R. Stat. Soc. B</i> 58, 1996), and the same preference for few active causes underlies sparse coding models of visual receptive fields (B. A. Olshausen and D. J. Field, <i>Nature</i> 381, 1996).</p>
+</div>
+</section>
+
+<section class="selfcheck" id="s-selfcheck">
+<h2>Self-check</h2>
+<ol>
+<li><p>Project $b = (1, 2, 3)^\T$ onto $\mathcal S = \spn\big((1, 1, 1)^\T\big)$. Give the residual and check Pythagoras.</p>
+<details><summary>Answer</summary><p>$p = \frac{6}{3}(1, 1, 1)^\T = (2, 2, 2)^\T$, the mean in every entry, and $r = (-1, 0, 1)^\T \perp (1, 1, 1)^\T$. Pythagoras: $\norm{b}^2 = 14 = 12 + 2 = \norm{p}^2 + \norm{r}^2$.</p></details></li>
+<li><p>For a unit vector $u \in \R^n$, is $H = I - 2uu^\T$ a projector? What is $\tfrac12(I + H)$?</p>
+<details><summary>Answer</summary><p>$H^2 = I - 4uu^\T + 4u(u^\T u)u^\T = I \ne H$, so $H$ is not a projector; it is the reflection across $u^\perp$ (a Householder reflector, the building block of QR). $\tfrac12(I + H) = I - uu^\T$ is symmetric and idempotent, the orthogonal projector onto $u^\perp$.</p></details></li>
+<li><p>If $A$ has orthonormal columns, what are $A^+$, the least-squares solution and the fitted vector?</p>
+<details><summary>Answer</summary><p>$A^\T A = I$, so by <a class="xref" href="#thm-pinv"></a> $A^+ = (A^\T A)^{-1}A^\T = A^\T$, $\hat x = A^\T b$ (the coefficients of $b$ in the orthonormal basis), and $A\hat x = AA^\T b = P_{\Range(A)}b$ by <a class="xref" href="#prop-projformulas"></a>.</p></details></li>
+<li><p>Show that if $P^2 = P$ then $I - P$ is a projector with range $\Null(P)$ and null space $\Range(P)$. When is it an orthogonal projector?</p>
+<details><summary>Answer</summary><p>$(I - P)^2 = I - 2P + P^2 = I - P$. $(I - P)b \in \Null(P)$ because $P(I - P) = 0$, and $(I - P)z = z$ for $z \in \Null(P)$, so the range is $\Null(P)$. $(I - P)b = 0$ means $b = Pb$, that is, $b \in \Range(P)$. By <a class="xref" href="#thm-projchar"></a> it is orthogonal exactly when $(I - P)^* = I - P$, that is, when $P^* = P$.</p></details></li>
+<li><p>For which lines $a^\T x = c$ in $\R^2$ with $c \ne 0$ is the minimum-$\ell_1$-norm point not unique, and what is the set of minimizers?</p>
+<details><summary>Answer</summary><p>When $\abs{a_1} = \abs{a_2}$: the line is parallel to an edge of the diamond, and the minimizers are the segment between $(c/a_1, 0)$ and $(0, c/a_2)$, all with $\ell_1$ norm $\abs{c}/\abs{a_1} = \abs{c}/\norm{a}_\infty$, as <a class="xref" href="#thm-minp"></a> and <a class="xref" href="#prop-ties"></a> predict.</p></details></li>
+</ol>
+</section>
+
+<section class="refs" id="s-refs">
+<h2>Sources and further reading</h2>
+<ul>
+<li>S. Axler, <i>Linear Algebra Done Right</i>, 4th ed. (Springer, 2024), ch. 6: §6A inner products and norms, §6B orthonormal bases and Gram–Schmidt, §6C orthogonal complements, minimization problems and the pseudoinverse; §7D for QR. <a href="https://linear.axler.net/">linear.axler.net</a><span class="free">Open access</span></li>
+<li>S. Treil, <i>Linear Algebra Done Wrong</i>, ch. 5: §3 orthogonal projection and Gram–Schmidt, §4 least squares and the projection formula, §6 unitary matrices. <a href="https://sites.google.com/a/brown.edu/sergei-treil-homepage/linear-algebra-done-wrong">author page</a><span class="free">Free</span></li>
+<li>L. N. Trefethen and D. Bau, <i>Numerical Linear Algebra</i> (SIAM, 1997), Lectures 2–3 (orthogonality, norms), 6 (projectors), 7–8 (QR, Gram–Schmidt), 10–11 (Householder, least squares), 18–19 (conditioning and stability of least squares).</li>
+<li>S. Boyd and L. Vandenberghe, <i>Introduction to Applied Linear Algebra: Vectors, Matrices, and Least Squares</i> (Cambridge, 2018), ch. 5 and 10 (Gram–Schmidt, QR), ch. 11 (pseudo-inverse), ch. 12–16 (least squares, data fitting, regularized and constrained least squares, least-norm problems). <a href="https://web.stanford.edu/~boyd/vmls/">web.stanford.edu/~boyd/vmls</a><span class="free">Free</span></li>
+<li>S. Boyd, EE263 <i>Introduction to Linear Dynamical Systems</i>, course reader: lectures on orthonormal sets and QR, least squares, least-norm solutions and regularized least squares. <a href="https://web.stanford.edu/class/archive/ee/ee263/ee263.1082/notes/ee263coursereader.pdf">course reader PDF</a><span class="free">Free</span></li>
+<li>S. Boyd and L. Vandenberghe, <i>Convex Optimization</i> (Cambridge, 2004), ch. 6: norm approximation in $\ell_1$, $\ell_2$, $\ell_\infty$, least-norm problems, regularization and robust fitting. <a href="https://web.stanford.edu/~boyd/cvxbook/">web.stanford.edu/~boyd/cvxbook</a><span class="free">Free</span></li>
+<li>G. H. Golub and C. F. Van Loan, <i>Matrix Computations</i>, 4th ed. (Johns Hopkins, 2013), ch. 5 (orthogonalization and least squares).</li>
+<li>R. Penrose, "A generalized inverse for matrices", <i>Proc. Cambridge Philos. Soc.</i> 51 (1955) 406–413; G. W. Stewart, "On the continuity of the generalized inverse", <i>SIAM J. Appl. Math.</i> 17 (1969) 33–45; P. Jordan and J. von Neumann, "On inner products in linear, metric spaces", <i>Ann. of Math.</i> 36 (1935) 719–723.</li>
+<li>S. Foucart and H. Rauhut, <i>A Mathematical Introduction to Compressive Sensing</i> (Birkhäuser, 2013), for the theory behind $\ell_1$ recovery.</li>
+</ul>
+</section>
+
+</div>
+</main>
+</div>
+<script>LT.page.init();</script>
+<script>
+(function () {
+  'use strict';
+  const { Plot, ui, mat: M, fmt } = LT;
+  const perp = w => [-w[1], w[0]];
+
+  /* ---------------- Visual 2.1: orthogonal versus oblique projection ---------------- */
+  (function () {
+    const st = { th: 0.42, b: [0.7, 1.8], obl: false, ph: 1.6 };
+    const R = 2.5, LD = 1.25;
+    const p = new Plot('#proj-plot', { xlim: [-3.6, 3.6], ylim: [-2.3, 3.5], equal: true, minH: 300, maxH: 480, label: 'A line through the origin, a point b, its orthogonal projection p with the residual, and an optional oblique projection along a direction d' });
+    const panel = ui.panel('#proj-controls');
+    const sel = panel.select({ id: 'proj-preset', label: 'Preset', value: 'generic', options: [
+      ['custom', 'Drag a, b and d'], ['generic', 'Generic b'], ['inS', 'b on the line'], ['perpS', 'b perpendicular to the line'],
+      ['obl', 'Oblique, 60° between d and a'], ['nearly', 'Oblique, d nearly parallel to a'], ['orthd', 'Oblique with d perpendicular to a']],
+      onChange: v => preset(v) });
+    const tog = panel.toggle({ id: 'proj-obl', label: 'Oblique projector along $d$', value: st.obl, onChange: v => { st.obl = v; update(); } });
+    panel.note(ui.legend([
+      { color: 'c1', label: '<span>line <i>S</i> = span(<i>a</i>)</span>' }, { color: 'c4', label: '<span><i>b</i></span>', kind: 'dot' },
+      { color: 'c3', label: '<span>orthogonal projection <i>p</i></span>', kind: 'dot' }, { color: 'c8', label: '<span>residual <i>b</i> − <i>p</i></span>', kind: 'dash' },
+      { color: 'c2', label: '<span>oblique projection <i>p</i>′ along <i>d</i></span>', kind: 'dash' }]));
+    const out = panel.readout({});
+    const a = () => [Math.cos(st.th), Math.sin(st.th)];
+    const d = () => [Math.cos(st.ph), Math.sin(st.ph)];
+    function geom() {
+      const aa = a(), pc = M.dot(aa, st.b), pt = [pc * aa[0], pc * aa[1]], r = M.vsub(st.b, pt);
+      const dd = d(), w = perp(dd), wa = M.dot(w, aa);               // |w . a| = sin(gamma)
+      const ok = Math.abs(wa) > 0.03;
+      const q = ok ? M.vscale(aa, M.dot(w, st.b) / wa) : null;        // oblique projection of b
+      return { aa, pt, r, dd, w, wa, ok, q };
+    }
+    p.draw = g => {
+      const G = geom(), rn = M.vnorm(G.r);
+      g.circle([0, 0], R, { color: 'rule-strong', width: 1, dash: [2, 4] });
+      g.ray([0, 0], G.aa, { color: 'c1', width: 2.25 });
+      if (rn > 1e-6) g.circle(st.b, rn, { color: 'muted', width: 1, dash: [2, 4] });
+      if (st.obl && G.ok) {
+        g.ray(st.b, G.dd, { color: 'c2', width: 1, dash: [6, 5], alpha: 0.6 });
+        g.line(st.b[0], st.b[1], G.q[0], G.q[1], { color: 'c2', width: 2.25, dash: [7, 4] });
+        g.dot(G.q, { color: 'c2', r: 5 });
+        g.text(G.q, 'p′', { size: 15, dx: -6, dy: 16, align: 'right' });
+      }
+      if (rn > 1e-6) {
+        g.line(G.pt[0], G.pt[1], st.b[0], st.b[1], { color: 'c8', width: 2.25, dash: [4, 3] });
+        g.rightAngle(G.pt, G.aa, G.r, { size: 11 });
+      }
+      g.dot(G.pt, { color: 'c3', r: 5.5 });
+      g.text(G.pt, 'p', { size: 15, dx: 12, dy: 14 });
+      g.text(st.b, 'b', { size: 15, dx: 13, dy: -13 });
+    };
+    p.addHandle({ get: () => [R * Math.cos(st.th), R * Math.sin(st.th)], set: (x, y) => { st.th = Math.atan2(y, x); sel.set('custom'); update(); }, color: 'c1', r: 6, label: 'a' });
+    p.addHandle({ get: () => st.b, set: (x, y) => { st.b = [x, y]; sel.set('custom'); update(); }, color: 'c4', snap: 0.05 });
+    const hd = p.addHandle({ get: () => [st.b[0] + LD * Math.cos(st.ph), st.b[1] + LD * Math.sin(st.ph)], set: (x, y) => { if (Math.hypot(x - st.b[0], y - st.b[1]) < 0.05) return; st.ph = Math.atan2(y - st.b[1], x - st.b[0]); sel.set('custom'); update(); }, color: 'c2', r: 6, label: 'd' });
+    function preset(v) {
+      const aa = a(), ap = perp(aa);
+      if (v === 'generic') { st.th = 0.42; st.b = [0.7, 1.8]; }
+      else if (v === 'inS') { st.b = [2.0 * aa[0], 2.0 * aa[1]]; }
+      else if (v === 'perpS') { st.b = [1.8 * ap[0], 1.8 * ap[1]]; }
+      else if (v === 'obl') { st.th = 0.42; st.b = [0.7, 1.8]; st.obl = true; st.ph = st.th + Math.PI / 3; }
+      else if (v === 'nearly') { st.th = 0.42; const a2 = a(), p2 = perp(a2); st.b = [1.4 * a2[0] + 0.45 * p2[0], 1.4 * a2[1] + 0.45 * p2[1]]; st.obl = true; st.ph = st.th + 0.24; }
+      else if (v === 'orthd') { st.obl = true; st.ph = st.th + Math.PI / 2; }
+      tog.set(st.obl); update();
+    }
+    function update() {
+      const G = geom(); hd.hidden = !st.obl;
+      const P = M.outer(G.aa, G.aa);
+      let html = `${ui.mat(P, 2, { name: 'P' })}` +
+        `<span>‖<i>b</i> − <i>p</i>‖ <span class="num">${fmt(M.vnorm(G.r), 3)}</span></span>` +
+        `<span><i>a</i><sup>T</sup>(<i>b</i> − <i>p</i>) <span class="num">${fmt(M.dot(G.aa, G.r), 3)}</span></span>`;
+      if (st.obl) {
+        if (!G.ok) html += '<span class="tag bad">directions parallel: no projector</span>';
+        else {
+          const Pd = M.scale(M.outer(G.aa, G.w), 1 / G.wa), dist = M.vnorm(M.vsub(st.b, G.q));
+          const orth = Math.abs(Math.abs(G.wa) - 1) < 1e-3;
+          html += `${ui.mat(Pd, 2, { name: 'P<sub>d</sub>' })}` +
+            `<span>‖<i>b</i> − <i>p</i>′‖ <span class="num">${fmt(dist, 3)}</span></span>` +
+            `<span>‖<i>P</i><sub>d</sub>‖ <span class="num">${fmt(M.norm2(Pd), 3)}</span> and 1/sin <i>γ</i> <span class="num">${fmt(1 / Math.abs(G.wa), 3)}</span></span>` +
+            (orth ? '<span class="tag good">orthogonal projector</span>' : '<span class="tag bad">oblique: not symmetric</span>');
+        }
+      }
+      out.set(html); p.redraw();
+    }
+    update();
+  })();
+
+  /* ---------------- Visual 2.2: least-squares line fit, with an l1 fit by IRLS ---------------- */
+  (function () {
+    const TREND = [[1, 2.44], [2, 2.41], [3, 2.57], [4, 3.21], [5, 3.57], [6, 4.99], [7, 5.44], [8, 6.65]];
+    const PRE = { trend: TREND, three: [[0, 1], [1, 2], [2, 4]], outlier: TREND.concat([[8.6, 0.8]]), same: [[5, 2.0], [5, 3.2], [5, 4.1], [5, 5.3]] };
+    const XL = [-0.5, 10], YL = [-1, 9], DELTA = 1e-7;
+    const st = { pts: TREND.map(q => q.slice()), l1: false };
+    const pd = new Plot('#ls-data', { xlim: XL, ylim: YL, frame: true, aspect: 0.68, maxH: 440, xlabel: 't', ylabel: 'y', label: 'Data points, the least-squares line with residual segments, and an optional l1 line' });
+    const pr = new Plot('#ls-res', { xlim: [0.4, 8.6], ylim: [-1, 1], frame: true, aspect: 0.95, maxH: 440, xlabel: 'data point i', ylabel: 'residual', xfmt: v => (Math.abs(v - Math.round(v)) < 1e-9 ? String(Math.round(v)) : ''), label: 'Residual of each data point for the least-squares fit and the l1 fit' });
+    pd.el.insertBefore(pd.canvas, pd.el.firstChild); pr.el.insertBefore(pr.canvas, pr.el.firstChild);
+    const panel = ui.panel('#ls-controls');
+    const sel = panel.select({ id: 'ls-preset', label: 'Data', value: 'trend', options: [['custom', 'Your points'], ['trend', 'Noisy trend'], ['three', 'Three points'], ['outlier', 'Noisy trend with an outlier'], ['same', 'All points at one t']], onChange: v => { if (PRE[v]) { st.pts = PRE[v].map(q => q.slice()); rebuild(); update(); } } });
+    panel.toggle({ id: 'ls-l1', label: 'Show the $\\ell_1$ fit', value: st.l1, onChange: v => { st.l1 = v; update(); } });
+    panel.buttons([
+      { label: 'Add outlier', onClick: () => { if (st.pts.length < 30) { st.pts.push([8.6, 0.8]); sel.set('custom'); rebuild(); update(); } } },
+      { label: 'Remove last point', onClick: () => { if (st.pts.length > 1) { st.pts.pop(); sel.set('custom'); rebuild(); update(); } } },
+      { label: 'Reset', onClick: () => { st.pts = TREND.map(q => q.slice()); sel.set('trend'); rebuild(); update(); } }
+    ]);
+    panel.note(ui.legend([{ color: 'c1', label: '<span>data</span>', kind: 'dot' }, { color: 'c3', label: '<span>ℓ₂ (least-squares) line</span>' }, { color: 'c8', label: '<span>ℓ₂ residuals</span>' }, { color: 'c2', label: '<span>ℓ₁ line</span>', kind: 'dash' }]));
+    const out = panel.readout({});
+    let F = null;
+    // weighted least-squares line fit, closed form for the 2 x 2 normal equations
+    const fitW = (t, y, w) => {
+      let s0 = 0, s1 = 0, s2 = 0, b0 = 0, b1 = 0;
+      for (let i = 0; i < t.length; i++) { const wi = w ? w[i] : 1; s0 += wi; s1 += wi * t[i]; s2 += wi * t[i] * t[i]; b0 += wi * y[i]; b1 += wi * t[i] * y[i]; }
+      const dt = s0 * s2 - s1 * s1; return [(s2 * b0 - s1 * b1) / dt, (s0 * b1 - s1 * b0) / dt];
+    };
+    const cost1 = (t, y, c) => t.reduce((s, ti, i) => s + Math.abs(y[i] - c[0] - c[1] * ti), 0);
+    function irls(t, y) {
+      let c = fitW(t, y, null), k = 0;
+      for (; k < 5000; k++) {                 // with delta = 1e-7 some point sets need a few thousand steps
+        const w = t.map((ti, i) => 1 / Math.sqrt((y[i] - c[0] - c[1] * ti) ** 2 + DELTA * DELTA));
+        const cn = fitW(t, y, w), ch = Math.abs(cn[0] - c[0]) + Math.abs(cn[1] - c[1]); c = cn;
+        if (ch < 1e-11) { k++; break; }
+      }
+      return { c, steps: k };
+    }
+    function exactL1(t, y) { // best line through two data points: an exact l1 optimum (vertex property)
+      let best = null, bc = Infinity;
+      for (let i = 0; i < t.length; i++) for (let j = i + 1; j < t.length; j++) {
+        if (Math.abs(t[i] - t[j]) < 1e-12) continue;
+        const c1 = (y[j] - y[i]) / (t[j] - t[i]), c = [y[i] - c1 * t[i], c1], v = cost1(t, y, c);
+        if (v < bc) { bc = v; best = c; }
+      }
+      return { c: best, cost: bc };
+    }
+    function compute() {
+      const t = st.pts.map(q => q[0]), y = st.pts.map(q => q[1]), m = t.length;
+      const s1 = t.reduce((s, v) => s + v, 0), s2 = t.reduce((s, v) => s + v * v, 0), det = m * s2 - s1 * s1;
+      const deficient = m < 2 || det <= 1e-9 * (m * s2 + 1);
+      const A = t.map(ti => [1, ti]);
+      const c = deficient ? M.mv(M.pinv(A), y) : fitW(t, y, null);
+      const r = y.map((yi, i) => yi - c[0] - c[1] * t[i]);
+      const Atr = [r.reduce((s, v) => s + v, 0), r.reduce((s, v, i) => s + v * t[i], 0)];
+      let l1 = null;
+      if (!deficient && m >= 2) {
+        const ir = irls(t, y), ex = exactL1(t, y);
+        l1 = { c: ir.c, steps: ir.steps, cost: cost1(t, y, ir.c), exact: ex.cost, r: y.map((yi, i) => yi - ir.c[0] - ir.c[1] * t[i]) };
+      }
+      return { t, y, m, c, r, Atr, deficient, l1 };
+    }
+    pd.draw = g => {
+      if (!F) return;
+      F.t.forEach((ti, i) => g.line(ti, F.y[i], ti, F.y[i] - F.r[i], { color: 'c8', width: 1.75, alpha: 0.9 }));
+      g.fn(x => F.c[0] + F.c[1] * x, { color: 'c3', width: 2.25 });
+      if (st.l1 && F.l1) g.fn(x => F.l1.c[0] + F.l1.c[1] * x, { color: 'c2', width: 2.25, dash: [8, 5] });
+    };
+    pr.draw = g => {
+      if (!F) return;
+      const two = st.l1 && F.l1;
+      for (let i = 0; i < F.m; i++) {
+        const x2 = i + 1 - (two ? 0.16 : 0);
+        g.line(x2, 0, x2, F.r[i], { color: 'c3', width: 2.5 }); g.dot([x2, F.r[i]], { color: 'c3', r: 3.5 });
+        if (two) { const x1 = i + 1 + 0.16; g.line(x1, 0, x1, F.l1.r[i], { color: 'c2', width: 2.5 }); g.dot([x1, F.l1.r[i]], { color: 'c2', r: 3.5 }); }
+      }
+    };
+    const snap = v => Math.round(v / 0.05) * 0.05;
+    function rebuild() {
+      pd.handles.length = 0;
+      st.pts.forEach((q, i) => pd.addHandle({ get: () => st.pts[i], set: (x, y) => { st.pts[i] = [x, y]; sel.set('custom'); update(); }, color: 'c1', r: 6, snap: 0.05 }));
+    }
+    // add a point with a click or tap on an empty spot (not after a drag, not while scrolling)
+    pd.onClick = () => {};
+    let down = null;
+    pd.canvas.addEventListener('pointerdown', e => { down = { x: e.clientX, y: e.clientY, h: !!pd.dragging }; });
+    pd.canvas.addEventListener('click', e => {
+      if (!down || down.h || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6 || st.pts.length >= 30) return;
+      const rc = pd.canvas.getBoundingClientRect(), x = pd.invX(e.clientX - rc.left), y = pd.invY(e.clientY - rc.top);
+      if (x < XL[0] || x > XL[1] || y < YL[0] || y > YL[1]) return;
+      st.pts.push([snap(x), snap(y)]); sel.set('custom'); rebuild(); update();
+    });
+    function update() {
+      F = compute();
+      const R = Math.max(0.3, 1.2 * Math.max(...F.r.map(Math.abs), ...(st.l1 && F.l1 ? F.l1.r.map(Math.abs) : [0])));
+      pr.setLimits([0.4, F.m + 0.6], [-R, R]);
+      let html = `<span>ℓ₂ line <i>y</i> = <i>c</i><sub>0</sub> + <i>c</i><sub>1</sub><i>t</i>: <i>c</i><sub>0</sub> <span class="num">${fmt(F.c[0], 3)}</span>, <i>c</i><sub>1</sub> <span class="num">${fmt(F.c[1], 3)}</span></span>` +
+        `<span><i>A</i><sup>T</sup><i>r</i> = (Σ<i>r</i><sub>i</sub>, Σ<i>t</i><sub>i</sub><i>r</i><sub>i</sub>) <span class="num">(${fmt(F.Atr[0], 3)}, ${fmt(F.Atr[1], 3)})</span></span>` +
+        `<span>‖<i>r</i>‖² <span class="num">${fmt(F.r.reduce((s, v) => s + v * v, 0), 3)}</span></span>`;
+      if (F.deficient) html += '<span class="tag bad">parallel columns: not unique</span><span>drawn: the minimum-norm solution <i>A</i><sup>+</sup><i>b</i></span>';
+      if (st.l1) {
+        if (F.l1) html += `<span>ℓ₁ line: <i>c</i><sub>0</sub> <span class="num">${fmt(F.l1.c[0], 3)}</span>, <i>c</i><sub>1</sub> <span class="num">${fmt(F.l1.c[1], 3)}</span></span>` +
+          `<span>Σ|<i>r</i><sub>i</sub>|: IRLS <span class="num">${fmt(F.l1.cost, 4)}</span>, exact optimum <span class="num">${fmt(F.l1.exact, 4)}</span> (${F.l1.steps} IRLS steps)</span>`;
+        else html += '<span>ℓ₁ fit not shown: it is not unique here</span>';
+      }
+      out.set(html); pd.redraw(); pr.redraw();
+    }
+    rebuild(); update();
+  })();
+
+  /* ---------------- Visual 2.3: norm balls meeting a line ---------------- */
+  (function () {
+    const st = { h1: [-1.6, 1.8], h2: [2.6, -0.3], p: 1, inf: false, t: null };
+    const p = new Plot('#balls-plot', { xlim: [-3, 3], ylim: [-2.1, 2.3], equal: true, minH: 300, maxH: 460, label: 'A line, the smallest p-norm ball touching it, and the minimum-norm points for p equal to 1, 2 and infinity' });
+    const panel = ui.panel('#balls-controls');
+    const sP = panel.slider({ id: 'balls-p', label: 'Exponent $p$', min: 1, max: 20, step: 0.05, value: st.p, digits: 2, onInput: v => { st.p = v; st.inf = false; tInf.set(false); st.t = null; update(); } });
+    const tInf = panel.toggle({ id: 'balls-inf', label: '$p = \\infty$', value: st.inf, onChange: v => { st.inf = v; st.t = null; update(); } });
+    const sel = panel.select({ id: 'balls-line', label: 'Line', value: 'generic', options: [['custom', 'Drag the handles'], ['generic', 'Generic line'], ['tie', 'Tie: |a₁| = |a₂|'], ['horiz', 'Horizontal line'], ['origin', 'Through the origin']], onChange: v => {
+      const L = { generic: [[-1.6, 1.8], [2.6, -0.3]], tie: [[-0.5, 2], [2.5, -1]], horiz: [[-2.5, 1.2], [2.5, 1.2]], origin: [[-2, -1], [2, 1]] }[v];
+      if (L) { st.h1 = L[0].slice(); st.h2 = L[1].slice(); st.t = null; update(); } } });
+    const setP = v => { st.t = null; if (v === Infinity) { st.inf = true; tInf.set(true); } else { st.inf = false; tInf.set(false); st.p = v; sP.set(v); } update(); };
+    let anim = null;
+    panel.buttons([
+      { label: 'p = 1', onClick: () => setP(1) }, { label: 'p = 2', onClick: () => setP(2) }, { label: 'p = ∞', onClick: () => setP(Infinity) },
+      { label: 'Grow the ball', kind: 'primary', onClick: () => { const C = geom(); if (C.c < 1e-9) return; st.t = 0; anim.play(); } }
+    ]);
+    panel.note(ui.legend([{ color: 'c3', label: '<span>line <i>a</i><sup>T</sup><i>x</i> = <i>c</i></span>' }, { color: 'c1', label: '<span>ℓ<sub><i>p</i></sub> ball</span>', kind: 'area' }, { color: 'c7', label: '<span>minimizer for the current <i>p</i></span>', kind: 'dot' }, { color: 'c7', label: '<span>minimizer as <i>p</i> varies</span>', kind: 'dash' }]));
+    const out = panel.readout({});
+    const curP = () => (st.inf ? Infinity : st.p);
+    function geom() { // unit normal a and offset c >= 0 of the line through h1 and h2
+      const dv = M.vsub(st.h2, st.h1); let a = M.unit(perp(dv)), c = M.dot(a, st.h1);
+      if (c < 0) { a = a.map(v => -v); c = -c; }
+      return { a, c };
+    }
+    const pnorm = (x, pp) => (pp === Infinity ? Math.max(Math.abs(x[0]), Math.abs(x[1])) : Math.pow(Math.pow(Math.abs(x[0]), pp) + Math.pow(Math.abs(x[1]), pp), 1 / pp));
+    function minimizer(a, c, pp) {
+      const mx = Math.max(Math.abs(a[0]), Math.abs(a[1])), n1 = Math.abs(a[0]) + Math.abs(a[1]);
+      if (c < 1e-12) return { x: [0, 0], val: 0, tie: null };
+      if (pp === Infinity) {
+        const x = [c * Math.sign(a[0]) / n1, c * Math.sign(a[1]) / n1]; let tie = null;
+        if (Math.abs(a[0]) < 1e-9 * n1) { const s = c / a[1]; tie = [[-Math.abs(s), s], [Math.abs(s), s]]; }
+        else if (Math.abs(a[1]) < 1e-9 * n1) { const s = c / a[0]; tie = [[s, -Math.abs(s)], [s, Math.abs(s)]]; }
+        return { x, val: c / n1, tie };
+      }
+      if (pp === 1) {
+        const k = Math.abs(a[0]) >= Math.abs(a[1]) ? 0 : 1, x = [0, 0]; x[k] = c / a[k];
+        const tie = Math.abs(Math.abs(a[0]) - Math.abs(a[1])) < 1e-9 * mx ? [[c / a[0], 0], [0, c / a[1]]] : null;
+        return { x, val: c / mx, tie };
+      }
+      const q = pp / (pp - 1), at = a.map(v => v / mx), nq = Math.pow(Math.abs(at[0]), q) + Math.pow(Math.abs(at[1]), q);
+      const x = at.map(v => (c / mx) * Math.sign(v) * Math.pow(Math.abs(v), q - 1) / nq);
+      return { x, val: (c / mx) / Math.pow(nq, 1 / q), tie: null };
+    }
+    let C = null;
+    function compute() {
+      const G = geom(), pp = curP();
+      const cur = minimizer(G.a, G.c, pp);
+      const path = [minimizer(G.a, G.c, 1).tie ? [0.5 * (G.c / G.a[0]), 0.5 * (G.c / G.a[1])] : minimizer(G.a, G.c, 1).x];
+      for (let k = 0; k <= 120; k++) path.push(minimizer(G.a, G.c, 1 + Math.pow(10, -3 + 5.5 * k / 120)).x);
+      path.push(minimizer(G.a, G.c, Infinity).x);
+      return { G, pp, cur, path, m1: minimizer(G.a, G.c, 1), m2: minimizer(G.a, G.c, 2), mi: minimizer(G.a, G.c, Infinity) };
+    }
+    function ballPts(pp, t) {
+      if (pp === Infinity) return [[t, t], [-t, t], [-t, -t], [t, -t]];
+      const pts = [];
+      for (let k = 0; k < 400; k++) { const ph = 2 * Math.PI * k / 400, cs = Math.cos(ph), sn = Math.sin(ph); pts.push([t * Math.sign(cs) * Math.pow(Math.abs(cs), 2 / pp), t * Math.sign(sn) * Math.pow(Math.abs(sn), 2 / pp)]); }
+      return pts;
+    }
+    p.draw = g => {
+      if (!C) return;
+      const { G, pp, cur } = C, tt = st.t == null ? cur.val : st.t;
+      if (tt > 1e-9) g.poly(ballPts(pp, tt), { fill: 'c1', fillAlpha: 0.16, color: 'c1', width: 2 });
+      g.ray(st.h1, M.vsub(st.h2, st.h1), { color: 'c3', width: 2.25 });
+      if (G.c > 1e-9) {
+        g.path(C.path, { color: 'c7', width: 1.5, dash: [5, 4], alpha: 0.85 });
+        const nx = G.a[0], ny = G.a[1];                      // outward unit normal of the line (c >= 0)
+        const marks = [];                                     // merge labels of points that coincide on screen
+        [[C.m1.tie ? null : C.m1.x, 'ℓ₁'], [C.m2.x, 'ℓ₂'], [C.mi.tie ? null : C.mi.x, 'ℓ∞']].forEach(([x, lab]) => {
+          if (!x) return; const X = p.X(x[0]), Y = p.Y(x[1]), m = marks.find(k => Math.hypot(k.X - X, k.Y - Y) < 24);
+          if (m) m.lab += ', ' + lab; else marks.push({ x, X, Y, lab });
+        });
+        marks.forEach(m => { g.dot(m.x, { color: 'ink-2', r: 4.5, hollow: true }); g.text([m.X + 19 * nx, m.Y - 19 * ny], m.lab, { px: true, font: 'ui', italic: false, size: 13.5, color: 'ink-2', align: 'center' }); });
+        if (st.t == null && cur.tie) g.line(cur.tie[0][0], cur.tie[0][1], cur.tie[1][0], cur.tie[1][1], { color: 'c7', width: 5, alpha: 0.75 });
+        if (st.t == null) g.dot(cur.x, { color: 'c7', r: 5.5 });
+      } else g.dot([0, 0], { color: 'c7', r: 5.5 });
+    };
+    p.addHandle({ get: () => st.h1, set: (x, y) => { if (Math.hypot(x - st.h2[0], y - st.h2[1]) < 0.2) return; st.h1 = [x, y]; sel.set('custom'); st.t = null; update(); }, color: 'c3', snap: 0.05 });
+    p.addHandle({ get: () => st.h2, set: (x, y) => { if (Math.hypot(x - st.h1[0], y - st.h1[1]) < 0.2) return; st.h2 = [x, y]; sel.set('custom'); st.t = null; update(); }, color: 'c3', snap: 0.05 });
+    anim = LT.animate(dt => {
+      if (st.t == null) { anim.pause(); return; }
+      const target = C.cur.val; st.t += dt * Math.max(target, 0.3) / 1.6;
+      if (st.t >= target) { st.t = null; anim.pause(); }
+      update();
+    }, { el: '#viz-balls' });
+    function update() {
+      C = compute();
+      const { G, pp, cur } = C, q = pp === 1 ? Infinity : pp === Infinity ? 1 : pp / (pp - 1);
+      const qs = q === Infinity ? '∞' : fmt(q, 2), ps = pp === Infinity ? '∞' : fmt(pp, 2);
+      const nz = cur.x.filter(v => Math.abs(v) > 1e-9 * (1 + G.c)).length;
+      let html = `<span>line <i>a</i><sup>T</sup><i>x</i> = <i>c</i>: <i>a</i> <span class="num">(${fmt(G.a[0], 3)}, ${fmt(G.a[1], 3)})</span>, <i>c</i> <span class="num">${fmt(G.c, 3)}</span></span>` +
+        `<span><i>p</i> <span class="num">${ps}</span>, <i>q</i> <span class="num">${qs}</span></span>`;
+      if (G.c < 1e-9) html += '<span class="tag good">line through the origin: the minimum is 0</span>';
+      else {
+        html += `<span>|<i>c</i>| / ‖<i>a</i>‖<sub>q</sub> <span class="num">${fmt(G.c / pnorm(G.a, q), 4)}</span></span>` +
+          `<span>‖<i>x</i>*‖<sub>p</sub> <span class="num">${fmt(pnorm(cur.x, pp), 4)}</span></span>` +
+          `<span><i>x</i>* <span class="num">(${fmt(cur.x[0], 3)}, ${fmt(cur.x[1], 3)})</span>, nonzero entries <span class="num">${nz}</span></span>` +
+          (st.t != null ? `<span>radius <span class="num">${fmt(st.t, 3)}</span></span>` : '') +
+          (cur.tie ? '<span class="tag bad">not unique: a flat side lies on the line</span>' : '<span class="tag good">unique minimizer</span>');
+      }
+      out.set(html); p.redraw();
+    }
+    update();
+  })();
+})();
+</script>
+</body>
+</html>

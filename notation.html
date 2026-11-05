@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Notation · Linear Theory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap">
+<link rel="stylesheet" href="assets/lt.css">
+<script src="assets/toc.js"></script>
+<script src="assets/lt.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+<style>
+  .tbl td:nth-child(3) { color: var(--muted); font-family: var(--font-ui); font-size: 13px; white-space: nowrap; }
+  #abbr-table td:first-child { font-family: var(--font-ui); font-weight: 600; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="topbar"><button class="btn" id="lt-menu" type="button" aria-controls="lt-side" aria-expanded="false">Contents</button><span class="topbar-title">Notation and abbreviations</span></div>
+<div class="shell">
+<nav class="side" id="lt-side" aria-label="Chapters"></nav>
+<main class="page" id="main" data-page="notation">
+<div class="content">
+
+<header class="ch-head">
+  <div class="eyebrow">Reference</div>
+  <h1 class="ch-title">Notation and abbreviations</h1>
+  <p class="ch-lead">One set of symbols runs through all thirteen chapters. Each chapter still defines every symbol where it first appears; this page collects them, flags the few deliberate collisions, and spells out every abbreviation.</p>
+</header>
+
+<section id="n-sets">
+<h2>Scalars, vectors and matrices</h2>
+<div class="tbl-wrap"><table class="tbl">
+<thead><tr><th>Symbol</th><th>Meaning</th><th>First in</th></tr></thead>
+<tbody>
+<tr><td>$\F$</td><td>the field of scalars: $\R$ (real numbers) or $\C$ (complex numbers)</td><td>ch. 1</td></tr>
+<tr><td>$x, b, u, v$</td><td>vectors, written as columns, lowercase italic</td><td>ch. 1</td></tr>
+<tr><td>$A, B, M$</td><td>matrices, uppercase italic; $a_{ij}$ is the entry in row $i$, column $j$</td><td>ch. 1</td></tr>
+<tr><td>$\F^n$, $\F^{m\times n}$</td><td>column vectors with $n$ entries; matrices with $m$ rows and $n$ columns</td><td>ch. 1</td></tr>
+<tr><td>$I$, $I_n$, $e_i$</td><td>identity matrix (of size $n$); $i$-th standard basis vector</td><td>ch. 1</td></tr>
+<tr><td>$\mathbf 1$</td><td>the all-ones vector</td><td>ch. 2</td></tr>
+<tr><td>$A^\T$, $A^*$</td><td>transpose; conjugate transpose (adjoint)</td><td>ch. 1</td></tr>
+<tr><td>$A^{-1}$, $A^+$</td><td>inverse; Moore–Penrose pseudoinverse</td><td>ch. 1, 2</td></tr>
+<tr><td>$\spn(\cdot)$, $\dim$</td><td>span; dimension</td><td>ch. 1</td></tr>
+<tr><td>$\Null(A)$, $\Range(A)$, $\rank A$</td><td>null space, range (column space), rank</td><td>ch. 1</td></tr>
+<tr><td>$S^\perp$, $U \oplus W$</td><td>orthogonal complement; direct sum</td><td>ch. 1</td></tr>
+<tr><td>$\det A$, $\tr A$</td><td>determinant; trace (sum of diagonal entries)</td><td>ch. 1</td></tr>
+<tr><td>$\inner{x}{y} = y^*x$</td><td>inner product, linear in the first slot; $x^\T y$ on $\R^n$</td><td>ch. 2</td></tr>
+<tr><td>$\norm{x}$, $\norm{x}_p$</td><td>Euclidean norm; $p$-norm $\big(\sum_i \abs{x_i}^p\big)^{1/p}$, with $\norm{x}_\infty = \max_i\abs{x_i}$</td><td>ch. 1, 2</td></tr>
+<tr><td>$P_{\mathcal S}$</td><td>orthogonal projector onto the subspace $\mathcal S$</td><td>ch. 2</td></tr>
+<tr><td>$A = QR$</td><td>QR factorization: $Q$ with orthonormal columns, $R$ upper triangular</td><td>ch. 2</td></tr>
+<tr><td>$A \succ 0$, $A \succeq 0$</td><td>positive definite, positive semidefinite (symmetric or Hermitian $A$)</td><td>ch. 4</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="n-spectra">
+<h2>Spectra, singular values and norms</h2>
+<div class="tbl-wrap"><table class="tbl">
+<thead><tr><th>Symbol</th><th>Meaning</th><th>First in</th></tr></thead>
+<tbody>
+<tr><td>$\Lambda(A)$</td><td>spectrum: the set of eigenvalues of $A$ (Trefethen and Embree write $\sigma(A)$)</td><td>ch. 3</td></tr>
+<tr><td>$\lambda_i$, $p_A(\lambda)$</td><td>eigenvalues; characteristic polynomial $\det(\lambda I - A)$</td><td>ch. 3</td></tr>
+<tr><td>$m_a(\lambda)$, $m_g(\lambda)$</td><td>algebraic multiplicity (as a root of $p_A$); geometric multiplicity $\dim E_\lambda$</td><td>ch. 3</td></tr>
+<tr><td>$E_\lambda$, $G_\lambda$</td><td>eigenspace $\Null(A - \lambda I)$; generalized eigenspace $\Null\big((A - \lambda I)^n\big)$ for $A \in \C^{n\times n}$</td><td>ch. 3</td></tr>
+<tr><td>$q_A$</td><td>minimal polynomial of $A$</td><td>ch. 3</td></tr>
+<tr><td>$J_k(\lambda)$</td><td>Jordan block of size $k$ with eigenvalue $\lambda$</td><td>ch. 3</td></tr>
+<tr><td>$A = UTU^*$</td><td>Schur form: $U$ unitary, $T$ upper triangular</td><td>ch. 3</td></tr>
+<tr><td>$\rho(A)$, $\alpha(A)$</td><td>spectral radius $\max\abs{\lambda}$; spectral abscissa $\max\Re\lambda$</td><td>ch. 3, 6</td></tr>
+<tr><td>$\sigma_1 \ge \sigma_2 \ge \dots \ge 0$</td><td>singular values; $\sigma_{\min}$ the smallest</td><td>ch. 4</td></tr>
+<tr><td>$A = U\Sigma V^*$</td><td>singular value decomposition (SVD)</td><td>ch. 4</td></tr>
+<tr><td>$H(A)$</td><td>Hermitian dilation $\begin{bmatrix}0 & A\\ A^* & 0\end{bmatrix}$, with eigenvalues $\pm\sigma_j(A)$</td><td>ch. 4</td></tr>
+<tr><td>$\norm{A}$, $\norm{A}_F$</td><td>spectral norm $\sigma_1$ (the induced 2-norm); Frobenius norm</td><td>ch. 2, 4</td></tr>
+<tr><td>$\kappa(A)$</td><td>condition number $\sigma_1/\sigma_n$</td><td>ch. 4, 6</td></tr>
+<tr><td>$\norm{T}$ for an operator</td><td>operator norm $\sup_{x\ne 0}\norm{Tx}/\norm{x}$</td><td>ch. 5</td></tr>
+<tr><td>$\ell^2$, $L^2[a,b]$</td><td>square-summable sequences; square-integrable functions</td><td>ch. 5</td></tr>
+<tr><td>$\Lambda_\eps(A)$</td><td>$\eps$-pseudospectrum: $\{z : \sigma_{\min}(zI - A) &lt; \eps\}$</td><td>ch. 6</td></tr>
+<tr><td>$W(A)$, $\omega(A)$</td><td>numerical range $\{x^*Ax : \norm{x} = 1\}$; numerical abscissa $\max\Re W(A)$</td><td>ch. 6</td></tr>
+<tr><td>$R(z) = (zI - A)^{-1}$</td><td>resolvent of $A$ at a point $z \notin \Lambda(A)$</td><td>ch. 6</td></tr>
+<tr><td>$\kappa(\lambda)$, $\kappa(V)$</td><td>condition number of a simple eigenvalue; condition number of an eigenvector matrix</td><td>ch. 6</td></tr>
+<tr><td>$\operatorname{dist}(z, \Lambda(A))$</td><td>distance $\min_i\abs{z - \lambda_i}$ from a point $z \in \C$ to the spectrum</td><td>ch. 6</td></tr>
+<tr><td>$\Theta$, $\sin\Theta$</td><td>diagonal matrices of the canonical angles between two subspaces and of their sines</td><td>ch. 6</td></tr>
+<tr><td>$\alpha_\eps(A)$, $\mathcal K(A)$</td><td>pseudospectral abscissa $\sup\Re\Lambda_\eps(A)$; Kreiss constant</td><td>ch. 6</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="n-systems">
+<h2>Dynamical systems and control</h2>
+<div class="tbl-wrap"><table class="tbl">
+<thead><tr><th>Symbol</th><th>Meaning</th><th>First in</th></tr></thead>
+<tbody>
+<tr><td>$t$, $k$, $\dot x$</td><td>continuous time; discrete time step; time derivative $\dd x/\dd t$</td><td>ch. 7</td></tr>
+<tr><td>$e^{At}$, $\Phi(t, t_0)$</td><td>matrix exponential; state-transition matrix of a time-varying system; for a $T$-periodic system, the monodromy matrix $\Phi(T, 0)$, whose eigenvalues are the Floquet multipliers</td><td>ch. 7</td></tr>
+<tr><td>$\tau = \tr A$, $\Delta = \det A$</td><td>coordinates of the trace–determinant plane for $2\times 2$ systems</td><td>ch. 3, 7</td></tr>
+<tr><td>$E^s, E^u, E^c$</td><td>stable, unstable and centre subspaces</td><td>ch. 7</td></tr>
+<tr><td>$(A, B, C, D)$</td><td>state-space system $\dot x = Ax + Bu$, $y = Cx + Du$, with state $x \in \R^n$, input $u \in \R^m$, output $y \in \R^p$</td><td>ch. 8</td></tr>
+<tr><td>$h(t)$</td><td>impulse response</td><td>ch. 8</td></tr>
+<tr><td>$\delta(t)$, $\mathbb 1(t)$</td><td>Dirac impulse; unit step</td><td>ch. 8</td></tr>
+<tr><td>$\zeta$, $\omega_n$</td><td>damping ratio and natural frequency of a second-order system</td><td>ch. 8</td></tr>
+<tr><td>$s$, $z$, $i\omega$</td><td>Laplace variable; z-transform variable; a point on the imaginary axis at frequency $\omega$</td><td>ch. 8</td></tr>
+<tr><td>$G(s) = C(sI-A)^{-1}B + D$</td><td>transfer function; $G(i\omega)$ is the frequency response</td><td>ch. 8</td></tr>
+<tr><td>$G \in \R(s)^{p\times m}$, $\operatorname{normrank} G$</td><td>transfer matrix with real rational entries; its normal rank, the rank of $G(s)$ at all but finitely many $s$</td><td>ch. 8</td></tr>
+<tr><td>$\varepsilon_i/\psi_i$; $\psi_G$, $\varepsilon_G$</td><td>diagonal entries of the Smith–McMillan form; pole polynomial and zero polynomial; the McMillan degree is $\deg\psi_G$</td><td>ch. 8</td></tr>
+<tr><td>$u_z$, $y_z$</td><td>input and output zero directions: $G(z)u_z = 0$, $y_z^*G(z) = 0$</td><td>ch. 8</td></tr>
+<tr><td>$P(s)$ (Rosenbrock)</td><td>system matrix $\begin{bmatrix}sI - A & -B\\ C & D\end{bmatrix}$; its rank drops are the invariant zeros</td><td>ch. 8</td></tr>
+<tr><td>$\sigma_i(G(i\omega))$; $v_i$, $u_i$</td><td>principal gains; input and output directions, $G(i\omega)v_i = \sigma_iu_i$</td><td>ch. 8, 12</td></tr>
+<tr><td>$W_c(t_f)$, $W_o(t_f)$</td><td>controllability and observability Gramians over the horizon $[0, t_f]$; without argument, the infinite-horizon Gramians</td><td>ch. 9</td></tr>
+<tr><td>$\mathcal C$, $\mathcal O$, $\mathcal C_k$</td><td>controllability matrix $[B\ AB\ \cdots\ A^{n-1}B]$; observability matrix; the matrix $[B\ AB\ \cdots\ A^{k-1}B]$ with $k$ blocks</td><td>ch. 9, 10</td></tr>
+<tr><td>$\mathbb E$, $\beta$</td><td>expectation; standard Wiener process (Brownian motion), whose formal derivative is white noise</td><td>ch. 9, 11</td></tr>
+<tr><td>$K$, $L$</td><td>state-feedback gain ($u = -Kx$); observer or Kalman gain</td><td>ch. 10, 11</td></tr>
+<tr><td>$\hat x$, $\tilde x = x - \hat x$</td><td>state estimate; estimation error</td><td>ch. 10, 11</td></tr>
+<tr><td>$J(u)$, $H$</td><td>quadratic cost of an input; Hamiltonian matrix of the Riccati equation</td><td>ch. 11</td></tr>
+<tr><td>$G(s)$, $K(s)$, $L(s)$</td><td>in loop analysis: plant, controller, loop transfer function $L = GK$</td><td>ch. 10, 12</td></tr>
+<tr><td>$S$, $T$</td><td>sensitivity $(1 + L)^{-1}$, complementary sensitivity $L(1+L)^{-1}$; $S + T = 1$; for transfer matrices $(I + L)^{-1}$ and $L(I + L)^{-1}$ with $L = GK$, and $S + T = I$</td><td>ch. 10, 12</td></tr>
+<tr><td>$L_I$, $S_I$, $T_I$</td><td>input loop transfer function $KG$, input sensitivity $(I + L_I)^{-1}$, input complementary sensitivity $L_I(I + L_I)^{-1}$</td><td>ch. 12</td></tr>
+<tr><td>$\ell_j$</td><td>loop transfer function of channel $j$ with the other channels closed (loop-at-a-time analysis)</td><td>ch. 12</td></tr>
+<tr><td>$\mu(M)$</td><td>structured singular value of $M$ for complex diagonal perturbations; $\rho(M) \le \mu(M) \le \sigma_{\max}(M)$</td><td>ch. 12</td></tr>
+<tr><td>$Q \succeq 0$, $R \succ 0$</td><td>state and input weights of the quadratic cost</td><td>ch. 11</td></tr>
+<tr><td>$P$</td><td>solution of a Lyapunov equation (ch. 7) or of a Riccati equation (ch. 11): in both cases $x^\T P x$ is a quadratic value function</td><td>ch. 7, 11</td></tr>
+<tr><td>$W$, $V$, $\Sigma$</td><td>process noise covariance, measurement noise covariance, Kalman error covariance</td><td>ch. 11</td></tr>
+<tr><td>$\norm{G}_{\mathcal H_2}$, $\norm{G}_{\mathcal H_\infty}$</td><td>system norms: impulse-response energy; peak gain over frequency</td><td>ch. 12</td></tr>
+<tr><td>$\Delta$</td><td>model uncertainty (in robustness)</td><td>ch. 12</td></tr>
+<tr><td>$s_m$</td><td>stability margin $\min_\omega\abs{1 + L(i\omega)} = 1/\norm{S}_{\mathcal H_\infty}$</td><td>ch. 12</td></tr>
+<tr><td>$\sigma_i$ (Hankel)</td><td>Hankel singular values $\sqrt{\lambda_i(W_cW_o)}$</td><td>ch. 12</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="n-neural">
+<h2>Neural circuit models</h2>
+<div class="tbl-wrap"><table class="tbl">
+<thead><tr><th>Symbol</th><th>Meaning</th><th>First in</th></tr></thead>
+<tbody>
+<tr><td>$r(t)$</td><td>vector of firing rates</td><td>ch. 13</td></tr>
+<tr><td>$W$</td><td>synaptic connectivity matrix</td><td>ch. 13</td></tr>
+<tr><td>$\tau$, $\phi$</td><td>membrane or synaptic time constant; rate (gain) function</td><td>ch. 13</td></tr>
+<tr><td>$J = (-I + WD)/\tau$</td><td>Jacobian at a fixed point, with $D = \diag\phi'(r^*)$</td><td>ch. 13</td></tr>
+<tr><td>$g$, $N$</td><td>connectivity gain and network size in random-network models</td><td>ch. 13</td></tr>
+<tr><td>$\Phi_x$, $\Phi_u$</td><td>closed-loop response maps from disturbance to state and to input (system level synthesis)</td><td>ch. 13</td></tr>
+<tr><td>$\mathcal K$, $X$, $X'$</td><td>Koopman operator; data matrices of snapshots and of their successors (dynamic mode decomposition)</td><td>ch. 13</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="n-collisions">
+<h2>Deliberate collisions</h2>
+<p>A few letters carry more than one meaning because the literature uses them that way. Context and arguments separate them.</p>
+<div class="tbl-wrap"><table class="tbl">
+<thead><tr><th>Symbol</th><th>Meanings</th><th>How to tell</th></tr></thead>
+<tbody>
+<tr><td>$\Lambda$</td><td>the spectrum $\Lambda(A)$ always carries its matrix; bare $\Lambda$ is the diagonal matrix of eigenvalues in $A = V\Lambda V^{-1}$</td><td>argument</td></tr>
+<tr><td>$D$</td><td>feedthrough matrix in $(A, B, C, D)$; the discriminant of a $2\times 2$ characteristic polynomial (ch. 3); $\diag\phi'(r^*)$ (ch. 13)</td><td>chapter</td></tr>
+<tr><td>$\Sigma$</td><td>diagonal of singular values (ch. 4, 12); Kalman error covariance (ch. 11)</td><td>chapter</td></tr>
+<tr><td>$P$</td><td>Lyapunov or Riccati solution; projector $P_{\mathcal S}$ always carries its subspace; in chapter 8, the Rosenbrock system matrix $P(s)$ of the multivariable section and the plant $P(s)$ of the hidden-mode counterexample</td><td>subscript, section</td></tr>
+<tr><td>$u$</td><td>input signal $u(t)$ and input vectors $u_0$, $u_z$; left singular vectors $u_i$ of the SVD, which are the output directions of a transfer matrix (ch. 4, 8)</td><td>index, context</td></tr>
+<tr><td>$L$</td><td>gain matrix $L$; loop transfer function $L(s)$ always carries $s$</td><td>argument</td></tr>
+<tr><td>$T$</td><td>triangular factor in a Schur form; change of state coordinates (ch. 8); complementary sensitivity $T(s)$; period of a periodic system (ch. 7); time horizons are $t_f$</td><td>argument, chapter</td></tr>
+<tr><td>$\mu$</td><td>ridge parameter (ch. 2); an eigenvalue of a second matrix (ch. 3, 6); structured singular value $\mu(M)$ (ch. 12)</td><td>argument, chapter</td></tr>
+<tr><td>$W$</td><td>noise covariance (ch. 11); connectivity (ch. 13); Gramians are always $W_c$, $W_o$</td><td>subscript</td></tr>
+<tr><td>$\tau$</td><td>trace in the trace–determinant plane (ch. 3, 7); time constant (ch. 8, 13)</td><td>chapter</td></tr>
+<tr><td>$\Delta$</td><td>$\det A$ in the trace–determinant plane (ch. 3, 7); an open disk $\Delta_r$ (ch. 6); model uncertainty (ch. 12)</td><td>chapter, subscript</td></tr>
+<tr><td>$K$</td><td>state-feedback gain; controller $K(s)$; a local rotation generator in ch. 7</td><td>argument, chapter</td></tr>
+<tr><td>$V$</td><td>eigenvector matrix; Lyapunov function $V(x)$ (ch. 7); measurement noise covariance (ch. 11)</td><td>argument, chapter</td></tr>
+<tr><td>$H$</td><td>Hermitian dilation $H(A)$ (ch. 4); Hermitian part $\tfrac12(A + A^*)$ (ch. 6); Hamiltonian matrix (ch. 11)</td><td>chapter</td></tr>
+<tr><td>$\mathcal K$</td><td>Kreiss constant $\mathcal K(A)$ (ch. 6); Koopman operator (ch. 13)</td><td>chapter</td></tr>
+<tr><td>$i$</td><td>imaginary unit; index in sums. Engineering texts write $j$ for the imaginary unit</td><td>context</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="n-abbr">
+<h2>Abbreviations</h2>
+<p>Every chapter spells out an abbreviation at its first use on the page; the list below is generated from the same glossary that the page checker uses.</p>
+<div class="tbl-wrap"><table class="tbl" id="abbr-table"><thead><tr><th>Abbreviation</th><th>Meaning</th></tr></thead><tbody></tbody></table></div>
+</section>
+
+<section id="n-type">
+<h2>Typesetting conventions</h2>
+<ul>
+<li>Vectors are columns; $x^\T y$ is a scalar and $xy^\T$ a matrix.</li>
+<li>Displayed equations are followed by a "where" list defining each new symbol.</li>
+<li>Definitions, theorems, propositions, lemmas, corollaries, examples and counterexamples share one counter per chapter (Theorem 7.4 follows Definition 7.3). Problems, probes, patterns, conjectures and remarks carry run-in labels without numbers.</li>
+<li>Every general claim is the statement of a numbered block (a Theorem, Proposition, Lemma or Corollary, or a Counterexample when something fails), followed by its proof, a proof sketch or a precise source. Heuristics appear only inside Remarks and are marked as such.</li>
+<li>Frequency responses are written $G(i\omega)$ with $i^2 = -1$.</li>
+<li>In live readouts and figure labels, symbols are set in plain italic type and subscripts with Unicode digits; everywhere else math is typeset.</li>
+</ul>
+</section>
+
+</div>
+</main>
+</div>
+<script>LT.page.init();</script>
+<script>
+(function () {
+  const tb = document.querySelector('#abbr-table tbody');
+  const rows = (window.LT_GLOSSARY || []).slice().sort((a, b) => a[0].localeCompare(b[0]));
+  tb.innerHTML = rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('');
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,745 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>11 Optimal control and estimation · Linear Theory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap">
+<link rel="stylesheet" href="assets/lt.css">
+<script src="assets/toc.js"></script>
+<script src="assets/lt.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+</head>
+<body>
+<div class="topbar"><button class="btn" id="lt-menu" type="button" aria-controls="lt-side" aria-expanded="false">Contents</button><span class="topbar-title">11 · Optimal control and estimation: LQR, Kalman filter, LQG</span></div>
+<div class="shell">
+<nav class="side" id="lt-side" aria-label="Chapters"></nav>
+<main class="page" id="main" data-chapter="11">
+<div class="content">
+
+<header class="ch-head">
+  <div class="eyebrow">Part IV · Control · Chapter 11</div>
+  <h1 class="ch-title">Optimal control and estimation: LQR, Kalman filter, LQG</h1>
+  <p class="ch-lead">The linear quadratic regulator (LQR) is the state feedback that minimizes a quadratic cost, and the Kalman filter, also called the linear quadratic estimator (LQE), is the state estimate that minimizes the mean-square error under Gaussian noise. Both come from Riccati equations, and the two are dual: transposing the system matrices and exchanging the weights for the noise covariances turns one into the other. Their combination, the linear quadratic Gaussian (LQG) controller, is optimal and yet carries no guaranteed robustness.</p>
+  <p class="ch-meta"><span><b>Prerequisites</b> chapters 7, 9 and 10 (Lyapunov equations, controllability and observability, state feedback and observers)</span><span><b>Leads to</b> chapters 12 and 13</span><span><b>Visuals</b> 3</span></p>
+  <ol class="core-q">
+    <li>Which input minimizes a quadratic cost of state and input, and why does it turn out to be a linear state feedback?</li>
+    <li>Which state estimate is best under Gaussian noise, and why is it computed by the control Riccati equation of the transposed system?</li>
+    <li>What does combining the optimal controller with the optimal estimator guarantee, and what does it not?</li>
+  </ol>
+  <details class="notation">
+    <summary>Notation introduced in this chapter</summary>
+    <div class="tbl-wrap"><table class="tbl">
+      <thead><tr><th>Symbol</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td>$Q \succeq 0$, $R \succ 0$</td><td>state and input weights: symmetric positive semidefinite, symmetric positive definite</td></tr>
+        <tr><td>$J(u)$, $J_k(x)$</td><td>cost of an input; optimal cost-to-go from state $x$ at time $k$ (the value function)</td></tr>
+        <tr><td>$P$, $P_k$</td><td>solution of the continuous-time algebraic Riccati equation (CARE) or the discrete-time algebraic Riccati equation (DARE); $P_k$ from the Riccati recursion; $x^\T P x$ is the optimal cost</td></tr>
+        <tr><td>$K$, $K_k$</td><td>optimal state-feedback gain, $u = -Kx$</td></tr>
+        <tr><td>$\rho$</td><td>scalar input weight, $R = \rho I$</td></tr>
+        <tr><td>$H$</td><td>Hamiltonian matrix of the regulator problem</td></tr>
+        <tr><td>$L_K(s)$, $G_Q(s)$</td><td>$K(sI - A)^{-1}B$, the state-feedback loop broken at the plant input; $Q^{1/2}(sI - A)^{-1}B$</td></tr>
+        <tr><td>$d(s)$, $d_\rho(s)$, $\psi(s)$</td><td>open-loop and optimal closed-loop characteristic polynomials; the polynomial $d(s)d(-s)\,G_Q(-s)^\T G_Q(s)$ of the symmetric root locus</td></tr>
+        <tr><td>$w$, $v$; $W \succeq 0$, $V \succ 0$</td><td>process and measurement noise; their covariances (discrete time) or intensities (continuous time)</td></tr>
+        <tr><td>$\mathcal N(\mu, \Sigma)$, $\mathbb E$</td><td>Gaussian distribution with mean $\mu$ and covariance $\Sigma$; expectation</td></tr>
+        <tr><td>$\hat x_{k|j}$, $\Sigma_{k|j}$</td><td>estimate of $x_k$ from $y_0, \dots, y_j$ and its error covariance</td></tr>
+        <tr><td>$\Sigma$</td><td>steady-state error covariance of the Kalman filter (not the singular-value matrix of chapter 4)</td></tr>
+        <tr><td>$L_k$, $L$</td><td>Kalman gain (time-varying, steady state)</td></tr>
+        <tr><td>$K_{\rm ob}(s)$</td><td>transfer function of the observer-based controller, $u = -K_{\rm ob}(s)\,y$</td></tr>
+      </tbody>
+    </table></div>
+  </details>
+</header>
+
+<section class="sec" id="s-problem">
+<h2>The regulator problem</h2>
+
+<div class="blk prob"><p>Among all inputs that bring $\dot x = Ax + Bu$, $x(0) = x_0$, to rest, find the one that minimizes</p>
+<div class="eq">$$J(u) = \int_0^\infty \bigl(x(t)^\T Q\, x(t) + u(t)^\T R\, u(t)\bigr)\,\dd t .$$</div>
+</div>
+<dl class="where">
+  <dt>$x(t) \in \R^n$, $u(t) \in \R^m$</dt><dd>state and input; $A \in \R^{n\times n}$, $B \in \R^{n\times m}$</dd>
+  <dt>$Q = Q^\T \succeq 0$</dt><dd>the state weight, penalizing deviation from rest; $Q^{1/2}$ is its positive semidefinite square root (<a href="ch04_svd.html#cor-calculus">functions of a symmetric matrix</a>, chapter 4), so $x^\T Q x = \norm{Q^{1/2}x}^2$</dd>
+  <dt>$R = R^\T \succ 0$</dt><dd>the input weight, penalizing effort; $R^{1/2}$ is its positive definite square root</dd>
+</dl>
+
+<div class="blk setting"><p>The standing assumptions are $(A, B)$ stabilizable and $(Q^{1/2}, A)$ detectable (<a href="ch09_controllability.html#def-stabilizable">stabilizable and detectable</a>, chapter 9: every uncontrollable, respectively unobservable, eigenvalue has negative real part). Each assumption has a job. $R \succ 0$ makes every input cost something, so that the minimization over the input is strictly convex. $(A, B)$ stabilizable makes some input achieve finite cost. $(Q^{1/2}, A)$ detectable makes every unstable mode visible in the cost, so that the optimizer cannot ignore it (<a class="xref" href="#cex-detect"></a> shows what happens otherwise). <a class="xref" href="#prop-assumptions"></a> makes these three statements precise. The discrete-time problem replaces the integral by $\sum_k (x_k^\T Q x_k + u_k^\T R u_k)$ for $x_{k+1} = Ax_k + Bu_k$. There a matrix is stable when it is <dfn>Schur stable</dfn>, with all eigenvalues of modulus less than 1, and stabilizable and detectable are meant <dfn>in the discrete-time sense</dfn>: every uncontrollable, respectively unobservable, eigenvalue has modulus less than 1.</p></div>
+
+<div class="blk prop" id="prop-assumptions" data-name="What the assumptions provide">
+<p>Consider the continuous-time problem with $Q \succeq 0$ and $R \succ 0$.</p>
+<ol>
+<li>If $(A, B)$ is stabilizable, then for every $x_0$ some input has finite cost $J(u)$.</li>
+<li>If $(Q^{1/2}, A)$ is detectable, then every input with $J(u) &lt; \infty$ produces a state with $x(t) \to 0$ as $t \to \infty$.</li>
+<li>$J$ is strictly convex on the inputs of finite cost, so for each $x_0$ at most one input is optimal.</li>
+</ol>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> (1) Take $F$ with $A - BF$ Hurwitz (<a href="ch10_feedback.html#cor-stabilizable">tests for stabilizability</a>, chapter 10) and $u = -Fx$; then $\norm{x(t)}$ decays exponentially and $J$ is finite. (2) Take $F$ with $A - FQ^{1/2}$ Hurwitz (<a href="ch10_feedback.html#cor-detectable">tests for detectability</a>, chapter 10) and write $\dot x = (A - FQ^{1/2})x + f$ with $f = FQ^{1/2}x + Bu$. Finite cost gives $\int_0^\infty \norm{Q^{1/2}x}^2\dd t &lt; \infty$ and, as $u^\T Ru \ge \lambda_{\min}(R)\norm{u}^2$ with $\lambda_{\min}(R) &gt; 0$ the smallest eigenvalue of $R$, $\int_0^\infty\norm{u}^2\dd t &lt; \infty$; so $f$ is square integrable. Convolution with the integrable kernel $e^{t(A - FQ^{1/2})}$ maps square-integrable functions to square-integrable functions (Young's inequality), so $x$ is square integrable, and then so is $\dot x$. Hence $\norm{x(t)}^2$, whose derivative $2x^\T\dot x$ is integrable, has a limit as $t \to \infty$, and the limit is $0$ because $\norm{x}^2$ is integrable. (3) The state is affine in the input, so $u \mapsto \int_0^\infty \norm{Q^{1/2}x}^2\dd t$ is convex, while $u \mapsto \int_0^\infty u^\T Ru\,\dd t$ is strictly convex because $R \succ 0$. If two different inputs were optimal, their average would cost strictly less.</p></div>
+
+<div class="blk goal"><p>Show that the optimal input is a linear state feedback $u = -Kx$ with a constant gain, characterize $K$ through one quadratic matrix equation, and show that the optimal closed loop is stable with optimal cost a quadratic form $x_0^\T P x_0$.</p></div>
+
+<div class="blk probe"><p>The best linear gain for a scalar plant. Let $\dot x = ax + bu$ with $b \neq 0$, weights $q &gt; 0$ and $r &gt; 0$, and restrict to $u = -kx$ with $bk &gt; a$. Then $x(t) = e^{(a - bk)t}x_0$ and $J = (q + rk^2)\,x_0^2/\bigl(2(bk - a)\bigr)$. Setting the derivative in $k$ to zero gives $rbk^2 - 2ark - bq = 0$, whose root with $bk &gt; a$ is</p>
+<div class="eq">$$k = \frac{a + \sqrt{a^2 + b^2 q/r}}{b}, \qquad J = p\,x_0^2, \qquad p = \frac{r}{b^2}\Bigl(a + \sqrt{a^2 + b^2q/r}\Bigr),$$</div>
+<p>and $p$ is the positive root of $2ap - (b^2/r)p^2 + q = 0$. Two questions remain: whether a nonlinear or time-varying input could do better (it cannot: <a class="xref" href="#cor-lqr"></a>), and what replaces the scalar quadratic equation when $n &gt; 1$ (a Riccati equation).</p></div>
+</section>
+
+<section class="sec" id="s-dp">
+<h2>Discrete time: dynamic programming and the Riccati recursion</h2>
+
+<div class="blk setting"><p>Take $x_{k+1} = Ax_k + Bu_k$, a horizon $N$ and the cost $x_N^\T Q_f x_N + \sum_{k=0}^{N-1}(x_k^\T Q x_k + u_k^\T R u_k)$ with $Q \succeq 0$, $R \succ 0$ and terminal weight $Q_f \succeq 0$. Let $J_k(x)$ be the smallest cost of the stages $k, \dots, N$ starting from $x_k = x$ (an infimum over $u_k, \dots, u_{N-1}$, finite and nonnegative because every cost is). The tail of an optimal input sequence is optimal for the tail problem, the principle of optimality, which gives the Bellman recursion of <a class="xref" href="#lem-bellman"></a>.</p></div>
+
+<div class="blk lem" id="lem-bellman" data-name="Bellman recursion">
+<p>In this setting $J_N(x) = x^\T Q_f\, x$ and, for $k = N-1, \dots, 0$ and every $x \in \R^n$,</p>
+<div class="eq">$$J_k(x) = \inf_{u \in \R^m}\Bigl\{x^\T Q x + u^\T R u + J_{k+1}(Ax + Bu)\Bigr\}.$$</div>
+<p>An input sequence $u_k, \dots, u_{N-1}$ is optimal from $x_k = x$ if and only if $u_k$ attains this infimum and $u_{k+1}, \dots, u_{N-1}$ is optimal from $x_{k+1} = Ax + Bu_k$.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> Fix the first input $u$. The cost from $x$ is $x^\T Qx + u^\T Ru$ plus the cost of the remaining inputs from $Ax + Bu$, and the infimum of the latter over those inputs is $J_{k+1}(Ax + Bu)$ by definition. Taking the infimum over $u$ as well gives the recursion. For any sequence, the cost is therefore at least $x^\T Qx + u_k^\T Ru_k + J_{k+1}(Ax + Bu_k)$, with equality exactly when the tail is optimal, and this is at least $J_k(x)$, with equality exactly when $u_k$ attains the infimum.</p></div>
+
+<div class="blk lem" id="lem-square" data-name="Completing the square">
+<p>Let $M \in \R^{m\times m}$ be symmetric positive definite and $g \in \R^m$. Then</p>
+<div class="eq">$$u^\T M u + 2u^\T g = (u + M^{-1}g)^\T M\,(u + M^{-1}g) - g^\T M^{-1} g,$$</div>
+<p>so the minimum over $u$ is $-g^\T M^{-1}g$, attained only at $u = -M^{-1}g$.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> Expand the right-hand side. The first term is nonnegative and vanishes only at $u = -M^{-1}g$ because $M \succ 0$.</p></div>
+
+<div class="blk thm" id="thm-dlqr" data-name="Finite-horizon discrete-time regulator">
+<p>In this setting ($Q \succeq 0$, $R \succ 0$, $Q_f \succeq 0$), for every $k = 0, \dots, N$, $J_k(x) = x^\T P_k x$ where $P_N = Q_f$ and</p>
+<div class="eq">$$P_k = Q + A^\T P_{k+1} A - A^\T P_{k+1} B\,\bigl(R + B^\T P_{k+1} B\bigr)^{-1} B^\T P_{k+1} A .$$</div>
+<p>Each $P_k$ is symmetric positive semidefinite, and the unique optimal input is the linear feedback $u_k = -K_k x_k$ with $K_k = (R + B^\T P_{k+1}B)^{-1}B^\T P_{k+1}A$.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> Backward induction on the recursion of <a class="xref" href="#lem-bellman"></a>. If $J_{k+1}(x) = x^\T P_{k+1}x$ with $P_{k+1} \succeq 0$, the bracket in the Bellman recursion equals $x^\T(Q + A^\T P_{k+1}A)x + u^\T M u + 2u^\T g$ with $M = R + B^\T P_{k+1}B \succ 0$ and $g = B^\T P_{k+1}Ax$. <a class="xref" href="#lem-square"></a> gives the unique minimizer $u = -M^{-1}g = -K_k x$ and the minimum $x^\T P_k x$ with $P_k$ as stated. $P_k$ is symmetric by construction and positive semidefinite because $J_k$ is an infimum of nonnegative costs. By the second part of <a class="xref" href="#lem-bellman"></a>, an optimal sequence must use the unique minimizer at every stage, so the feedback is the only optimal input.</p></div>
+
+<div class="blk pattern"><p>Nothing restricted the input to be linear: linearity is produced by the quadratic value function. The matrices $P_k$ do not depend on $x_0$ and are computed offline, backward from the horizon. The Riccati recursion is a nonlinear map $P \mapsto \mathcal R(P)$, the right-hand side of the recursion in <a class="xref" href="#thm-dlqr"></a>, defined at least on the positive semidefinite matrices and mapping them to positive semidefinite matrices (its value is the matrix of a minimum of nonnegative costs). Its fixed points solve the discrete-time algebraic Riccati equation</p>
+<div class="eq">$$P = Q + A^\T P A - A^\T P B\,(R + B^\T P B)^{-1} B^\T P A .$$</div>
+</div>
+
+<div class="blk def" id="def-stabilizing" data-name="Stabilizing solution">
+<p>A symmetric solution $P$ of the DARE is <dfn>stabilizing</dfn> if $A - BK$, with $K = (R + B^\T PB)^{-1}B^\T PA$, is Schur stable: all its eigenvalues have modulus less than 1. A symmetric solution $P$ of the continuous-time equation of <a class="xref" href="#s-care"></a> is stabilizing if $A - BR^{-1}B^\T P$ is Hurwitz.</p>
+</div>
+
+<div class="blk thm" id="thm-dare" data-name="Infinite-horizon discrete-time regulator">
+<p>Let $Q \succeq 0$, $R \succ 0$, and let $(A, B)$ be stabilizable and $(Q^{1/2}, A)$ detectable, both in the discrete-time sense of <a class="xref" href="#s-problem"></a>. Then the DARE has exactly one symmetric positive semidefinite solution $P$; it is stabilizing (<a class="xref" href="#def-stabilizing"></a>); the recursion of <a class="xref" href="#thm-dlqr"></a> converges to $P$ from every $Q_f \succeq 0$ as $N - k \to \infty$; and $u_k = -Kx_k$ minimizes the infinite-horizon cost, with value $x_0^\T P x_0$.</p>
+</div>
+<p class="src">Proof: D. P. Bertsekas, <i>Dynamic Programming and Optimal Control</i>, vol. 1, chapter on problems with perfect state information (linear systems and quadratic cost), under the stronger assumptions that $(A, B)$ is controllable and $(Q^{1/2}, A)$ observable; for the stabilizable and detectable case, B. D. O. Anderson and J. B. Moore, <i>Optimal Filtering</i> (Prentice Hall, 1979; Dover, 2005), ch. 4, in the dual filtering form (<a class="xref" href="#prop-duality"></a>). The scalar case below shows the mechanism completely. The words matter: with the continuous-time notions the theorem is false, as <a class="xref" href="#cex-detect"></a> shows for $a &lt; -1$.</p>
+
+<div class="blk ex" id="ex-scalar-map" data-name="The scalar Riccati map">
+<p>For $x_{k+1} = ax_k + bu_k$ with weights $q \ge 0$, $r &gt; 0$, the recursion is $p \mapsto f(p)$ with</p>
+<div class="eq">$$f(p) = q + a^2 p - \frac{a^2b^2p^2}{r + b^2 p} = q + \frac{a^2 r\, p}{r + b^2 p},$$</div>
+<div class="eq">$$k(p) = \frac{abp}{r + b^2p}, \qquad a - b\,k(p) = \frac{ar}{r + b^2 p}.$$</div>
+<p>Here $k(p)$ is the gain computed from $p$ and $a - bk(p)$ the resulting closed-loop factor. Differentiating,</p>
+<div class="eq">$$f'(p) = \Bigl(\frac{ar}{r + b^2 p}\Bigr)^2 = \bigl(a - b\,k(p)\bigr)^2 :$$</div>
+<p>the slope of the Riccati map is the square of the closed-loop factor. On $p \ge 0$ this slope is nonnegative and nonincreasing, so $f$ is nondecreasing and concave there (constant when $a = 0$).</p>
+</div>
+
+<div class="blk prop" id="prop-scalar-dare" data-name="Scalar DARE">
+<p>Let $f$ be the scalar Riccati map of <a class="xref" href="#ex-scalar-map"></a>, with $a, b \in \R$, $q \ge 0$ and $r &gt; 0$.</p>
+<ol>
+<li>A fixed point $p \ge 0$ of $f$ is stabilizing, $\abs{a - bk(p)} &lt; 1$, if and only if $f'(p) &lt; 1$.</li>
+<li>If $q &gt; 0$ and $b \neq 0$, $f$ has exactly one fixed point $p^\star \ge 0$, and $p^\star &gt; 0$; every orbit $p_{j+1} = f(p_j)$ with $p_0 \ge 0$ converges to it monotonically, and the optimal closed-loop factor satisfies $\abs{a - bk(p^\star)} &lt; 1$, with $p_j - p^\star$ shrinking asymptotically by the factor $(a - bk(p^\star))^2$ per step.</li>
+</ol>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> (1) By <a class="xref" href="#ex-scalar-map"></a>, $f'(p) = (a - bk(p))^2$. (2) Let $g(p) = f(p) - p$. Then $g(0) = q &gt; 0$, $g$ is concave, and $g(p) \to -\infty$ because $f$ is bounded by $q + a^2r/b^2$; so $g$ has exactly one zero $p^\star$ on $p &gt; 0$, and concavity gives $g'(p^\star) \le (g(p^\star) - g(0))/p^\star &lt; 0$, that is, $f'(p^\star) &lt; 1$. For $0 \le p &lt; p^\star$ we have $p &lt; f(p) \le f(p^\star) = p^\star$, so orbits below $p^\star$ increase to a fixed point, which must be $p^\star$; orbits above decrease in the same way. The rate is $f'(p^\star) = (a - bk(p^\star))^2$.</p></div>
+
+<div class="blk cex" id="cex-detect">
+<p>Detectability is not decoration. Take $q = 0$, $b \neq 0$ and $\abs a &gt; 1$. Then $f(p) = a^2rp/(r + b^2p)$ has two fixed points, $0$ and $p^\star = r(a^2 - 1)/b^2$. The solution $p = 0$ is positive semidefinite and optimal in its own terms: with no state cost, doing nothing ($k = 0$) costs nothing, and the closed loop keeps the unstable factor $a$. Orbits from $p_0 &gt; 0$ converge instead to $p^\star$, by the monotonicity argument in the proof of <a class="xref" href="#prop-scalar-dare"></a>: the only zeros of $g(p) = f(p) - p$ on $p \ge 0$ are $0$ and $p^\star$, $g'(0) = a^2 - 1 &gt; 0$ and $g(p) \to -\infty$, so $g &gt; 0$ on $(0, p^\star)$ and $g &lt; 0$ beyond. The closed-loop factor of $p^\star$ is $ar/(r + b^2p^\star) = 1/a$: the unstable pole is reflected in the unit circle. Uniqueness of the positive semidefinite solution fails because $(q^{1/2}, a) = (0, a)$ is not detectable in the discrete-time sense. For $a &lt; -1$ the pair is detectable in the continuous-time sense, since $a &lt; 0$, so the discrete-time notions in <a class="xref" href="#thm-dare"></a> cannot be replaced by the continuous-time ones.</p>
+</div>
+
+<figure class="viz" id="viz-riccati">
+  <figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">The Riccati map as a dynamical system</span><span class="viz-sub">Cobweb diagram of the scalar recursion $p_{j+1} = f(p_j)$ of <a class="xref" href="#ex-scalar-map"></a>. Drag the starting value $p_0$ along the horizontal axis; the sliders set the plant $(a, b)$ and the weights $(q, r)$.</span></figcaption>
+  <div class="viz-plots main-side">
+    <div class="plot" id="ric-map"><div class="plot-cap">The map $f$ (blue), the diagonal (dashed), the cobweb from $p_0$ (violet) and the fixed points (green: stabilizing, red: not stabilizing)</div></div>
+    <div class="plot" id="ric-conv"><div class="plot-cap">Distance $\abs{p_j - p^\star}$ on a log scale (violet) against the rate $(a - bk(p^\star))^{2j}$ (dashed)</div></div>
+  </div>
+  <div class="viz-controls" id="ric-controls"></div>
+  <div class="viz-notes">
+    <div><h5>Try this</h5><ol>
+      <li>At the defaults (an unstable plant, $a = 1.6$) the cobweb climbs from $p_0 = 0$ to $p^\star$. The readout shows $f'(p^\star)$ equal to the squared closed-loop factor (<a class="xref" href="#ex-scalar-map"></a>), and the log plot falls with that slope.</li>
+      <li>Drag $p_0$ above $p^\star$: the orbit descends monotonically to the same fixed point (<a class="xref" href="#prop-scalar-dare"></a>).</li>
+      <li>Choose <i>No state cost</i>: the map passes through the origin and has two fixed points. From $p_0 = 0$ the orbit stays at the non-stabilizing solution; from any $p_0 &gt; 0$ it converges to $r(a^2 - 1)/b^2$, with closed-loop factor $1/a$ (<a class="xref" href="#cex-detect"></a>).</li>
+      <li>Choose <i>No input</i> ($b = 0$, here with $q &gt; 0$): $f$ becomes the line $q + a^2 p$, which stays above the diagonal on $p \ge 0$ when $\abs a \ge 1$. The cost-to-go grows without bound; stabilizability in the discrete-time sense fails.</li>
+    </ol></div>
+    <div><h5>What to notice</h5><p>Iterating the Riccati map is dynamic programming run backward, one stage per step. The slope at a fixed point is the squared closed-loop factor, so a fast-converging recursion and a fast optimal loop are one and the same fact, and a fixed point is a stabilizing solution exactly when the slope there is below 1 (<a class="xref" href="#prop-scalar-dare"></a>). Attraction alone is not enough: for $q = 0$, $\abs a = 1$ and $b \neq 0$, $f(p) = rp/(r + b^2p)$ gives $p_j = p_0/(1 + jb^2p_0/r) \to 0$ from every $p_0 \ge 0$, yet the closed-loop factor at $p = 0$ is $a = \pm 1$. In the two presets where an assumption of <a class="xref" href="#thm-dare"></a> fails, the picture shows how: without state cost a second, non-stabilizing fixed point appears; without input there is no fixed point at all.</p></div>
+  </div>
+</figure>
+</section>
+
+<section class="sec" id="s-care">
+<h2>Continuous time: the algebraic Riccati equation</h2>
+
+<div class="blk thm" id="thm-care" data-name="Optimality by completing the square">
+<p>In the regulator problem ($Q \succeq 0$, $R \succ 0$), let $P = P^\T$ satisfy the continuous-time algebraic Riccati equation</p>
+<div class="eq">$$A^\T P + PA - PBR^{-1}B^\T P + Q = 0$$</div>
+<p>and be stabilizing: $A - BK$ is Hurwitz for $K = R^{-1}B^\T P$. Then for every input $u$ whose state satisfies $x(t) \to 0$,</p>
+<div class="eq">$$J(u) = x_0^\T P x_0 + \int_0^\infty \bigl\lVert R^{1/2}\bigl(u + R^{-1}B^\T P x\bigr)\bigr\rVert^2 \dd t .$$</div>
+<p>Consequently $u = -Kx$ is the unique optimal input among them, the optimal cost is $x_0^\T P x_0$, and the optimal closed loop $\dot x = (A - BK)x$ is asymptotically stable.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> Along any trajectory, $\frac{\dd}{\dd t}(x^\T P x) = x^\T(A^\T P + PA)x + 2u^\T B^\T P x$, and the Riccati equation replaces $x^\T(A^\T P + PA)x$ by $x^\T(PBR^{-1}B^\T P - Q)x$. Hence</p>
+<div class="eq">$$x^\T Q x + u^\T R u + \frac{\dd}{\dd t}\bigl(x^\T P x\bigr) = \bigl(u + R^{-1}B^\T P x\bigr)^\T R\,\bigl(u + R^{-1}B^\T P x\bigr).$$</div>
+<p>Integrate over $[0, T]$ and let $T \to \infty$; the boundary term $x(T)^\T P x(T)$ tends to $0$. The integral on the right is nonnegative and vanishes only if $u = -Kx$ along the trajectory, whose state then solves $\dot x = (A - BK)x$.</p></div>
+
+<div class="blk rem"><p>The restriction to inputs whose state tends to 0 costs nothing under detectability: by <a class="xref" href="#prop-assumptions"></a>, every input of finite cost has this property. <a class="xref" href="#cor-lqr"></a> below combines this with the existence of $P$.</p></div>
+
+<div class="blk thm" id="thm-care-exist" data-name="Existence and uniqueness of the stabilizing solution">
+<p>Let $Q \succeq 0$, $R \succ 0$, and let $(A, B)$ be stabilizable and $(Q^{1/2}, A)$ detectable. Then the CARE has exactly one symmetric positive semidefinite solution, and it is the stabilizing solution. If $(Q^{1/2}, A)$ is observable, this solution is positive definite.</p>
+</div>
+<p class="src">Proof: B. D. O. Anderson and J. B. Moore, <i>Optimal Control: Linear Quadratic Methods</i>, ch. 3 (free author copy); Zhou, Doyle and Glover, <i>Robust and Optimal Control</i>, ch. 13; Liberzon, <i>Calculus of Variations and Optimal Control Theory</i>, ch. 6. Positive definiteness is direct: by <a class="xref" href="#thm-care"></a>, $x_0^\T P x_0$ is the optimal cost, so $x_0^\T P x_0 = 0$ forces $u = 0$ and $Q^{1/2}e^{At}x_0 \equiv 0$, and $x_0$ is unobservable.</p>
+
+<div class="blk cor" id="cor-lqr" data-name="The infinite-horizon regulator">
+<p>Let $Q \succeq 0$, $R \succ 0$, $(A, B)$ stabilizable and $(Q^{1/2}, A)$ detectable, let $P$ be the positive semidefinite solution of the CARE and $K = R^{-1}B^\T P$. Then, among all inputs, $u = -Kx$ is the unique optimal one; the optimal cost is $x_0^\T Px_0$, and $A - BK$ is Hurwitz.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> By <a class="xref" href="#thm-care-exist"></a>, $P$ is stabilizing, so $u = -Kx$ has finite cost $x_0^\T Px_0$ by <a class="xref" href="#thm-care"></a>. An input of infinite cost is worse. An input of finite cost drives the state to 0 by <a class="xref" href="#prop-assumptions"></a>, so <a class="xref" href="#thm-care"></a> applies to it: its cost is at least $x_0^\T Px_0$, with equality only for $u = -Kx$.</p></div>
+
+<div class="blk prop" id="prop-hamiltonian" data-name="The Hamiltonian matrix">
+<p>Let $R \succ 0$, $Q = Q^\T$ and $H = \begin{bmatrix} A & -BR^{-1}B^\T\\ -Q & -A^\T\end{bmatrix} \in \R^{2n\times 2n}$.</p>
+<ol>
+<li>$\lambda \in \Lambda(H)$ implies $-\lambda \in \Lambda(H)$, with the same algebraic multiplicity. As $H$ is real, $\Lambda(H)$ is therefore symmetric about both axes, in particular about the imaginary axis.</li>
+<li>A symmetric $P$ solves the CARE if and only if, with $T = \begin{bmatrix} I & 0\\ P & I\end{bmatrix}$ and $K = R^{-1}B^\T P$,
+$$T^{-1} H T = \begin{bmatrix} A - BK & -BR^{-1}B^\T\\ 0 & -(A - BK)^\T\end{bmatrix}.$$
+Then $\Lambda(H) = \Lambda(A - BK) \cup \bigl(-\Lambda(A - BK)\bigr)$, and the graph $\Range\begin{bmatrix} I\\ P\end{bmatrix}$ is an invariant subspace of $H$; for the stabilizing solution it is the stable one.</li>
+</ol>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> With $\mathcal J = \begin{bmatrix} 0 & I\\ -I & 0\end{bmatrix}$, the product $\mathcal J H = \begin{bmatrix} -Q & -A^\T\\ -A & BR^{-1}B^\T\end{bmatrix}$ is symmetric, so $\mathcal J H \mathcal J^{-1} = -H^\T$: $H$ is similar to $-H^\T$, whose eigenvalues are the negatives of those of $H$, with the same multiplicities. For item 2, multiply out: the upper blocks of $T^{-1}HT$ are $A - BR^{-1}B^\T P = A - BK$ and $-BR^{-1}B^\T$, the lower-left block is $-(A^\T P + PA - PBR^{-1}B^\T P + Q)$ and the lower-right block is $PBR^{-1}B^\T - A^\T = -(A - BK)^\T$. The spectrum of a block-triangular matrix is the union of the spectra of its diagonal blocks, and the first block column of $HT = T(T^{-1}HT)$ reads $H\begin{bmatrix} I\\ P\end{bmatrix} = \begin{bmatrix} I\\ P\end{bmatrix}(A - BK)$, which is the invariance. When $A - BK$ is Hurwitz, $H$ acts on the $n$-dimensional graph with stable eigenvalues only, and its other $n$ eigenvalues, those of $-(A - BK)^\T$, lie in the open right half-plane, so the graph is the whole stable invariant subspace.</p></div>
+<p>Item 2 is also how $P$ is computed in practice, by the Schur method of <a class="xref" href="#cor-schur"></a>. A second method, Newton's iteration of <a class="xref" href="#prop-kleinman"></a>, improves a stabilizing gain by solving one Lyapunov equation per step.</p>
+
+<div class="blk cor" id="cor-schur" data-name="The stabilizing solution from the Hamiltonian">
+<p>Let $Q \succeq 0$, $R \succ 0$, $(A, B)$ stabilizable and $(Q^{1/2}, A)$ detectable. Then $H$ has no eigenvalues on the imaginary axis and exactly $n$ eigenvalues, counted with multiplicity, in the open left half-plane. If the columns of $\begin{bmatrix} X_1\\ X_2\end{bmatrix}$, with $X_1, X_2 \in \R^{n\times n}$, form a basis of the stable invariant subspace of $H$ (the sum of its generalized eigenspaces for the eigenvalues with negative real part), then $X_1$ is invertible and $P = X_2X_1^{-1}$ is the stabilizing solution of the CARE.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> By <a class="xref" href="#thm-care-exist"></a> the stabilizing solution $P$ exists. By item 2 of <a class="xref" href="#prop-hamiltonian"></a>, $\Lambda(H) = \Lambda(A - BK) \cup \bigl(-\Lambda(A - BK)\bigr)$ with $A - BK$ Hurwitz, which gives the count, and the stable invariant subspace is the graph $\Range\begin{bmatrix} I\\ P\end{bmatrix}$. Hence $\begin{bmatrix} X_1\\ X_2\end{bmatrix} = \begin{bmatrix} I\\ P\end{bmatrix}M$ for an invertible $M \in \R^{n\times n}$, so $X_1 = M$ and $X_2 = PX_1$.</p></div>
+<p class="src">A. J. Laub, "A Schur method for solving algebraic Riccati equations", <i>IEEE Trans. Autom. Control</i> 24 (1979) 913–921, computes such a basis from an ordered real Schur form of $H$.</p>
+
+<div class="blk ex" id="ex-scalar-care" data-name="Scalar case in closed form">
+<p>For $\dot x = ax + bu$ with $b \neq 0$, $q &gt; 0$, $r &gt; 0$, the CARE is $2ap - (b^2/r)p^2 + q = 0$, with roots $p_\pm = \frac{r}{b^2}\bigl(a \pm \sqrt{a^2 + b^2q/r}\bigr)$ and closed-loop poles $a - (b^2/r)p_\pm = \mp\sqrt{a^2 + b^2q/r}$. Only $p_+$ is stabilizing, and it is the positive root found in the probe of <a class="xref" href="#s-problem"></a>. The Hamiltonian $\begin{bmatrix} a & -b^2/r\\ -q & -a\end{bmatrix}$ has eigenvalues $\pm\sqrt{a^2 + b^2q/r}$. The optimal pole depends on $a$ only through $a^2$: an unstable plant and its stable mirror image receive the same closed loop, at different cost.</p>
+</div>
+
+<div class="blk ex" id="ex-dint-lqr" data-name="Double integrator">
+<p>For $A = \begin{bmatrix} 0 & 1\\ 0 & 0\end{bmatrix}$, $B = \begin{bmatrix} 0\\ 1\end{bmatrix}$, $Q = I$ and $R = 1$, the stabilizing solution is $P = \begin{bmatrix} \sqrt3 & 1\\ 1 & \sqrt3\end{bmatrix}$: indeed $A^\T P + PA = \begin{bmatrix} 0 & \sqrt3\\ \sqrt3 & 2\end{bmatrix}$ and $PBB^\T P = \begin{bmatrix} 1 & \sqrt3\\ \sqrt3 & 3\end{bmatrix}$ differ by $-I$. The gain is $K = [1\ \ \sqrt3]$, the closed-loop polynomial $s^2 + \sqrt3\, s + 1$: natural frequency 1 and damping ratio $\sqrt3/2$.</p>
+</div>
+
+<div class="blk pattern"><p>The CARE is a Lyapunov equation in disguise. The cost of any stabilizing feedback is a quadratic form computed by a Lyapunov equation, the optimal gain is the one whose Lyapunov solution also solves the CARE, and the optimal cost splits into a state part and an input part. <a class="xref" href="#viz-lqr"></a> displays the split.</p></div>
+
+<div class="blk prop" id="prop-care-lyap" data-name="The CARE as a Lyapunov equation">
+<p>Let $Q \succeq 0$ and $R \succ 0$.</p>
+<ol>
+<li>If $A_F = A - BF$ is Hurwitz, the feedback $u = -Fx$ has cost $J = x_0^\T X_F\, x_0$, where $X_F$ is the unique solution of $A_F^\T X + XA_F + Q + F^\T RF = 0$. The state part $\int_0^\infty x^\T Qx\,\dd t$ and the input part $\int_0^\infty u^\T Ru\,\dd t$ of the cost are $x_0^\T X x_0$ for the solutions $X$ of the same equation with $Q$ alone, respectively $F^\T RF$ alone, in place of $Q + F^\T RF$.</li>
+<li>If $P$ is the stabilizing solution of the CARE, $K = R^{-1}B^\T P$ and $A_K = A - BK$, then $A_K^\T P + PA_K + Q + K^\T RK = 0$, so $X_K = P$, and along the optimal closed loop $\frac{\dd}{\dd t}\bigl(x^\T Px\bigr) = -\bigl(x^\T Qx + u^\T Ru\bigr)$.</li>
+</ol>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> (1) Along $x(t) = e^{tA_F}x_0$ the integrand is $x^\T(Q + F^\T RF)x$. For a Hurwitz matrix $A_F$ and every symmetric $M$, the equation $A_F^\T X + XA_F + M = 0$ has the unique solution $X = \int_0^\infty e^{tA_F^\T}Me^{tA_F}\dd t$; the proof of <a href="ch07_autonomous_systems.html#thm-lyapunov">Lyapunov's theorem</a> (chapter 7) shows this using only that $A_F$ is Hurwitz. Then $x_0^\T Xx_0 = \int_0^\infty x(t)^\T Mx(t)\,\dd t$, and the split follows by linearity in $M$. (2) With $K = R^{-1}B^\T P$ we have $K^\T B^\T P = PBK = K^\T RK = PBR^{-1}B^\T P$, so the left side equals $A^\T P + PA - PBR^{-1}B^\T P + Q = 0$, and uniqueness in (1) gives $X_K = P$. Along $\dot x = A_Kx$, the derivative of $x^\T Px$ is $x^\T(A_K^\T P + PA_K)x$, which equals $-x^\T(Q + K^\T RK)x$, and $x^\T K^\T RKx = u^\T Ru$.</p></div>
+
+<div class="blk prop" id="prop-kleinman" data-name="Newton–Kleinman iteration">
+<p>Let $Q \succeq 0$, $R \succ 0$, $(Q^{1/2}, A)$ detectable, and let $K_0$ be a gain with $A - BK_0$ Hurwitz. For $j = 0, 1, 2, \dots$ let $P_j$ solve the Lyapunov equation</p>
+<div class="eq">$$(A - BK_j)^\T P_j + P_j(A - BK_j) + Q + K_j^\T RK_j = 0$$</div>
+<p>and put $K_{j+1} = R^{-1}B^\T P_j$. Then every $A - BK_j$ is Hurwitz, $P_0 \succeq P_1 \succeq P_2 \succeq \dots \succeq P$, and $P_j \to P$, the stabilizing solution of the CARE, quadratically: $\norm{P_{j+1} - P} = O\bigl(\norm{P_j - P}^2\bigr)$ as $j \to \infty$. The step from $P_{j-1}$ to $P_j$ is Newton's method for the CARE.</p>
+</div>
+<details class="proof"><summary>Proof</summary><p>Newton's method: the derivative of $\mathcal F(P) = A^\T P + PA - PBR^{-1}B^\T P + Q$ at $P_{j-1}$ is $X \mapsto (A - BK_j)^\T X + X(A - BK_j)$, and expanding with $B^\T P_{j-1} = RK_j$ shows that the Newton equation $\mathcal F'(P_{j-1})[P_j - P_{j-1}] = -\mathcal F(P_{j-1})$ is the Lyapunov equation for $P_j$. Convergence: $K_0$ shows that $(A, B)$ is stabilizable, so $P$ exists by <a class="xref" href="#thm-care-exist"></a>. If $A - BK_j$ is Hurwitz, $x_0^\T P_jx_0$ is the cost of $u = -K_jx$ by <a class="xref" href="#prop-care-lyap"></a>, at least the optimal cost $x_0^\T Px_0$ by <a class="xref" href="#thm-care"></a>; so $P_j \succeq P \succeq 0$. Write $A_{j+1} = A - BK_{j+1}$ and $\Delta = K_{j+1} - K_j$. Using $B^\T P_j = RK_{j+1}$, a direct expansion of the equation for $P_j$ gives</p>
+<div class="eq">$$A_{j+1}^\T P_j + P_jA_{j+1} + Q + K_{j+1}^\T RK_{j+1} = -\Delta^\T R\,\Delta .$$</div>
+<p>If $A_{j+1}v = \lambda v$ with $v \neq 0$ and $\Re\lambda \ge 0$, multiplying the display by $v^*$ on the left and $v$ on the right gives $2\Re\lambda\; v^*P_jv = -v^*Mv$ with $M = Q + K_{j+1}^\T RK_{j+1} + \Delta^\T R\Delta \succeq 0$. The left side is nonnegative and the right side nonpositive, so $v^*Mv = 0$: $Q^{1/2}v = 0$ and $K_{j+1}v = 0$, whence $Av = \lambda v$: an unobservable eigenvalue with $\Re\lambda \ge 0$, which detectability excludes. So $A_{j+1}$ is Hurwitz. With $D_j = P_j - P_{j+1}$, subtracting the Lyapunov equation of $P_{j+1}$ from the display gives $A_{j+1}^\T D_j + D_jA_{j+1} = -\Delta^\T R\Delta$, hence $D_j = \int_0^\infty e^{tA_{j+1}^\T}\Delta^\T R\Delta\, e^{tA_{j+1}}\dd t \succeq 0$. A nonincreasing sequence of symmetric matrices bounded below converges; its limit $P_\infty \succeq 0$ satisfies the limit of the Lyapunov equations with $K_\infty = R^{-1}B^\T P_\infty$, which is the CARE (as in item 2 of <a class="xref" href="#prop-care-lyap"></a>). By the uniqueness in <a class="xref" href="#thm-care-exist"></a>, $P_\infty = P$. The quadratic rate is proved in the source below.</p></details>
+<p class="src">D. L. Kleinman, "On an iterative technique for Riccati equation computations", <i>IEEE Trans. Autom. Control</i> 13 (1968) 114–115. The rate is that of Newton's method at a solution where the derivative, here the Lyapunov operator of the Hurwitz matrix $A - BK$, is invertible. Each step evaluates the cost of the current gain and then improves the gain: in the language of reinforcement learning, policy iteration (see Recht, 2019).</p>
+</section>
+
+<section class="sec" id="s-extremes">
+<h2>Extreme weights, the symmetric root locus and guaranteed margins</h2>
+
+<div class="blk prop" id="prop-limits" data-name="Cheap and expensive control, scalar case">
+<p>Let $\dot x = ax + bu$ with $b \neq 0$, state weight $q &gt; 0$ and input weight $r = \rho &gt; 0$, as in <a class="xref" href="#ex-scalar-care"></a>. The optimal closed-loop pole is $s_\rho = -\sqrt{a^2 + b^2 q/\rho}$.</p>
+<ol>
+<li>Expensive control, $\rho \to \infty$: $s_\rho \to -\abs a$. A stable open-loop pole stays where it is, an unstable one is mirrored to $-a$. For $a &lt; 0$ the optimal cost tends to the open-loop cost, $p \to q/(2\abs a)$; for $a &gt; 0$ it grows like $2a\rho/b^2$.</li>
+<li>Cheap control, $\rho \to 0$: $s_\rho \approx -\abs b\sqrt{q/\rho} \to -\infty$, the gain satisfies $\abs k \approx \sqrt{q/\rho}$, and $p \approx \sqrt{q\rho}/\abs b \to 0$.</li>
+</ol>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> Read off the closed forms $p = (\rho/b^2)\bigl(a + \sqrt{a^2 + b^2q/\rho}\bigr)$ and $k = bp/\rho = \bigl(a + \sqrt{a^2 + b^2q/\rho}\bigr)/b$. For $a &lt; 0$ rationalize: $p = q/\bigl(\sqrt{a^2 + b^2q/\rho} - a\bigr)$.</p></div>
+
+<div class="blk thm" id="thm-rd" data-name="Return difference identity">
+<p>Let $Q \succeq 0$, $R \succ 0$, let $P$ be the stabilizing solution of the CARE and $K = R^{-1}B^\T P$, and put $L_K(s) = K(sI - A)^{-1}B$ and $G_Q(s) = Q^{1/2}(sI - A)^{-1}B$. Wherever both sides are defined,</p>
+<div class="eq">$$\bigl(I + L_K(-s)\bigr)^\T R\,\bigl(I + L_K(s)\bigr) = R + G_Q(-s)^\T G_Q(s).$$</div>
+<p>On the imaginary axis this gives $(I + L_K(i\omega))^* R\,(I + L_K(i\omega)) \succeq R$, and for a single input with $R = \rho$,</p>
+<div class="eq">$$\abs{1 + L_K(i\omega)}^2 = 1 + \frac{\norm{G_Q(i\omega)}^2}{\rho} \ge 1 .$$</div>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> Add and subtract $sP$ in the CARE, using $PBR^{-1}B^\T P = K^\T RK$: $(-sI - A^\T)P + P(sI - A) + K^\T RK = Q$. Multiply on the left by $B^\T(-sI - A^\T)^{-1}$ and on the right by $(sI - A)^{-1}B$, and use $B^\T P = RK$:</p>
+<div class="eq">$$R L_K(s) + L_K(-s)^\T R + L_K(-s)^\T R L_K(s) = G_Q(-s)^\T G_Q(s).$$</div>
+<p>Adding $R$ to both sides factors the left side. For real matrices $L_K(-i\omega) = \overline{L_K(i\omega)}$, which gives the statements on the imaginary axis.</p></div>
+<p class="src">R. E. Kalman, "When is a linear control system optimal?", <i>J. Basic Eng.</i> 86 (1964) 51–60, which also proves the converse stated in <a class="xref" href="#prop-inverse"></a>; Anderson and Moore, ch. 5.</p>
+
+<div class="blk cor" id="cor-margins" data-name="Guaranteed margins of the regulator">
+<p>In the continuous-time setting of <a class="xref" href="#thm-rd"></a>, let the input be single, $B = b \in \R^n$. Then the Nyquist curve of $L_K(i\omega)$ never enters the open disk of radius 1 about $-1$. Consequently $A - \beta bK$ is Hurwitz for every constant $\beta \in (1/2, \infty)$, a gain margin from $1/2$ to $\infty$, and also for $\beta = 1/2$ when $Q \succ 0$. At every gain crossover $\omega_c$, where $\abs{L_K(i\omega_c)} = 1$, the point $L_K(i\omega_c)$ of the unit circle is at least $60^\circ$ of arc away from $-1$: a phase margin of at least $60^\circ$.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> The first claim is the scalar inequality of <a class="xref" href="#thm-rd"></a>. For $\beta &gt; 1/2$ the point $-1/\beta$ lies in $(-2, 0)$, inside the disk the curve avoids (the detours around poles of $L_K$ on the imaginary axis stay far outside it, where $\abs{L_K}$ is large), so the curve winds around $-1/\beta$ exactly as often as around $-1$. Winding around $-1/\beta$ by $L_K$ is winding around $-1$ by $\beta L_K$, so by <a href="ch12_robustness.html#thm-nyquist">the Nyquist criterion</a> (chapter 12) stability at $\beta = 1$ persists. If $Q \succ 0$, then $(Q^{1/2}, A)$ is observable, so $P \succ 0$ by <a class="xref" href="#thm-care-exist"></a>, and since $bK = bR^{-1}b^\T P$ the CARE gives</p>
+<div class="eq">$$\bigl(A - \tfrac12 bK\bigr)^\T P + P\bigl(A - \tfrac12 bK\bigr) = A^\T P + PA - PbR^{-1}b^\T P = -Q \prec 0;$$</div>
+<p><a href="ch07_autonomous_systems.html#thm-lyapunov">Lyapunov's theorem</a> (chapter 7) makes $A - \frac12 bK$ Hurwitz. Finally, the unit circle meets the circle $\abs{1 + z} = 1$ at $z = e^{\pm 2\pi i/3}$, so the points of the unit circle outside the open disk are those at angular distance at least $60^\circ$ from $-1$.</p></div>
+<p>These margins belong to the loop broken at the plant input with the full state fed back, and to continuous time.</p>
+
+<div class="blk cex" id="cex-margin-ends" data-name="Where the guarantee ends">
+<p>The constant $1/2$ in <a class="xref" href="#cor-margins"></a> cannot be lowered, the end point $\beta = 1/2$ can fail when $Q$ is singular, and the guarantee does not hold in discrete time.</p>
+<ol>
+<li>Sharpness. For the scalar plant with $a &gt; 0$, the gain $\beta k$ stabilizes exactly when $\beta &gt; a/(a + \sqrt{a^2 + b^2q/r})$, which tends to $1/2$ as $q \to 0$.</li>
+<li>The end point. Take $A = \begin{bmatrix} 0 & 1\\ 1 & 0\end{bmatrix}$, $b = \begin{bmatrix} 0\\ 1\end{bmatrix}$, $Q = \diag(0, 1)$ and $R = 1$; $(Q^{1/2}, A)$ is observable. The stabilizing solution is $P = \begin{bmatrix}\sqrt5 & 2\\ 2 & \sqrt5\end{bmatrix}$: indeed $A^\T P + PA = \begin{bmatrix} 4 & 2\sqrt5\\ 2\sqrt5 & 4\end{bmatrix}$ and $Pbb^\T P = \begin{bmatrix} 4 & 2\sqrt5\\ 2\sqrt5 & 5\end{bmatrix}$ differ by $-Q$. So $K = [2\ \ \sqrt5]$, and the characteristic polynomial of $A - \beta bK$ is $s^2 + \sqrt5\,\beta s + 2\beta - 1$: Hurwitz exactly for $\beta &gt; 1/2$, with an eigenvalue at $0$ for $\beta = 1/2$. The Nyquist curve touches the disk at $L_K(0) = -2$, where $G_Q(0) = 0$.</li>
+<li>Discrete time. For $x_{k+1} = 2x_k + u_k$ with $q = r = 1$, the DARE $p = 1 + 4p/(1 + p)$ of <a class="xref" href="#ex-scalar-map"></a> gives $p = 2 + \sqrt5$ and the gain $k = 2p/(1 + p) = (1 + \sqrt5)/2 = \varphi$, the golden ratio. The closed-loop factor $2 - \beta\varphi$ has modulus less than 1 exactly for $1/\varphi &lt; \beta &lt; 3/\varphi$, about $0.618 &lt; \beta &lt; 1.854$: neither end of the continuous-time guarantee survives.</li>
+</ol>
+</div>
+
+<div class="blk cor" id="cor-srl" data-name="Symmetric root locus">
+<p>In the setting of <a class="xref" href="#thm-rd"></a>, let the input be single, $B = b \in \R^n$, and $R = \rho &gt; 0$. Write $d(s) = \det(sI - A)$, $d_\rho(s) = \det(sI - A + bK)$ and</p>
+<div class="eq">$$\psi(s) = d(s)\,d(-s)\,G_Q(-s)^\T G_Q(s) = b^\T \operatorname{adj}(-sI - A)^\T Q \operatorname{adj}(sI - A)\, b .$$</div>
+<p>Here $\operatorname{adj}$ is the adjugate (transposed cofactor matrix). Then $\psi$ is an even polynomial of degree at most $2n - 2$ with $\psi(i\omega) \ge 0$ for real $\omega$, and</p>
+<div class="eq">$$d_\rho(s)\, d_\rho(-s) = d(s)\, d(-s) + \rho^{-1}\psi(s),$$</div>
+<p>so the optimal closed-loop poles are the roots of the right-hand side in the open left half-plane. If $Q = c^\T c$ with $c \in \R^{1\times n}$ and $c(sI - A)^{-1}b = n(s)/d(s)$, then $\psi(s) = n(s)\,n(-s)$.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> Since $(sI - A)^{-1} = \operatorname{adj}(sI - A)/d(s)$ and $Q^{1/2}Q^{1/2} = Q$, the two expressions for $\psi$ agree. The entries of the adjugate have degree at most $n - 1$; $\psi(-s)$ is the transpose of the scalar $\psi(s)$, hence equal to it; and $\psi(i\omega) = \abs{d(i\omega)}^2\norm{G_Q(i\omega)}^2$. By the determinant identity $\det(I_n + XY) = \det(I_1 + YX)$, which is <a href="ch03_eigenvalues.html#thm-abba">the theorem on $AB$ and $BA$</a> (chapter 3) at $\lambda = -1$, applied with $X = (sI - A)^{-1}b$ and $Y = K$, $d_\rho(s) = d(s)\bigl(1 + L_K(s)\bigr)$. Substitute into <a class="xref" href="#thm-rd"></a> and multiply by $\rho^{-1} d(s)d(-s)$. The roots of $d_\rho$ lie in the open left half-plane and those of $d_\rho(-s)$ are their mirror images. For $Q = c^\T c$, $G_Q(-s)^\T G_Q(s)$ is the product of $c(-sI - A)^{-1}b = n(-s)/d(-s)$ and $c(sI - A)^{-1}b = n(s)/d(s)$.</p></div>
+
+<p>The two ends of the locus generalize <a class="xref" href="#prop-limits"></a>.</p>
+
+<div class="blk prop" id="prop-srl-limits" data-name="Limits of the symmetric root locus">
+<p>In the setting of <a class="xref" href="#cor-srl"></a>, let $\psi \not\equiv 0$ have degree $2n_z$ and leading coefficient $(-1)^{n_z}\gamma$. Then $\gamma &gt; 0$ and $n_z \le n - 1$, and:</p>
+<ol>
+<li>As $\rho \to \infty$, the optimal closed-loop poles tend to the roots of $d(s)d(-s)$ in the closed left half-plane: the stable open-loop poles, the mirror images $-\bar p$ of the unstable ones $p$, and the open-loop poles on the imaginary axis, with multiplicities.</li>
+<li>As $\rho \to 0$, $n_z$ of them tend to the roots of $\psi$ in the closed left half-plane, each root on the imaginary axis counted with half its multiplicity, and the other $n - n_z \ge 1$ tend to infinity in a Butterworth pattern: $\rho^{1/(2(n - n_z))}\,s$ tends to the roots in the open left half-plane of $\sigma^{2(n - n_z)} = (-1)^{n - n_z + 1}\gamma$. In particular $\norm K \to \infty$ as $\rho \to 0$.</li>
+</ol>
+</div>
+<details class="proof"><summary>Proof sketch</summary><p>As $\psi(i\omega) \ge 0$ for large $\omega$, $(-1)^{n_z}$ times the leading coefficient is positive, and $n_z \le n - 1$ by the degree bound of <a class="xref" href="#cor-srl"></a>. Roots of a polynomial depend continuously on its coefficients while the leading coefficient stays away from zero. (1) As $\rho \to \infty$ the right side of <a class="xref" href="#cor-srl"></a> tends to $d(s)d(-s)$, of the same degree $2n$ and leading coefficient $(-1)^n$. Its $2n$ roots are the $n$ closed-loop poles and their negatives, so the poles converge to the half of the roots of $d(s)d(-s)$ in the closed left half-plane; roots on the imaginary axis are shared equally between the poles and their negatives, by the symmetry of the pole set under conjugation. (2) Multiplying by $\rho$, $\rho\, d(s)d(-s) + \psi(s) \to \psi(s)$, so $2n_z$ roots stay bounded and converge to the roots of $\psi$, split as in (1), while the other $2(n - n_z)$ diverge. Substituting $s = \rho^{-1/(2(n - n_z))}\sigma$ into $d(s)d(-s) + \rho^{-1}\psi(s) = 0$ and multiplying by $\rho^{n/(n - n_z)}$ turns it into $(-1)^n\sigma^{2n} + (-1)^{n_z}\gamma\,\sigma^{2n_z} + o(1) = 0$, whose nonzero roots satisfy $\sigma^{2(n - n_z)} = (-1)^{n - n_z + 1}\gamma$; none of these lies on the imaginary axis. Diverging eigenvalues of $A - bK$ force $\norm K \to \infty$.</p></details>
+<p class="src">H. Kwakernaak and R. Sivan, <i>Linear Optimal Control Systems</i> (Wiley, 1972), ch. 3.</p>
+
+<div class="blk probe"><p>The extremes on the double integrator with $Q = I$ and $R = \rho$. Here $d(s) = s^2$ and $G_Q(-s)^\T G_Q(s) = (1 - s^2)/s^4$, so $\psi(s) = 1 - s^2$ and <a class="xref" href="#cor-srl"></a> gives $d_\rho(s)\,d_\rho(-s) = s^4 + \rho^{-1}(1 - s^2)$. For large $\rho$ the left-half-plane roots are close to $\rho^{-1/4}(-1 \pm i)/\sqrt 2$: expensive control pulls the double pole out of the origin at $45^\circ$, with speed $\rho^{-1/4}$ (at $\rho = 10^3$, about $-0.127 \pm 0.125i$). For small $\rho$ one root tends to $-1$, the left-half-plane root of $1 - s^2$, and the other is close to $-\rho^{-1/2}$: cheap control buys one very fast mode and leaves a slow one. Both ends are instances of <a class="xref" href="#prop-srl-limits"></a>, with $n_z = 1$ and $\gamma = 1$.</p></div>
+
+<div class="blk cex" id="cex-inverse">
+<p>Not every stabilizing gain is optimal for some cost. For the double integrator with $K = [k_1\ \ k_2]$, $L_K(s) = (k_2 s + k_1)/s^2$, and at $\omega = \sqrt{k_1}$ one finds $\abs{1 + L_K(i\omega)}^2 = k_2^2/k_1 = 4\zeta^2$, where $\zeta = k_2/(2\sqrt{k_1})$ is the closed-loop damping ratio. A pole placement with $\zeta &lt; 1/2$ violates the inequality of <a class="xref" href="#thm-rd"></a>, so it is not the regulator gain for any $Q \succeq 0$ and $\rho &gt; 0$, although it stabilizes. Over all frequencies, $\abs{1 + L_K(i\omega)}^2 - 1 = \bigl(k_1^2 + (k_2^2 - 2k_1)\omega^2\bigr)/\omega^4$, so a stabilizing gain ($k_1, k_2 &gt; 0$) satisfies the inequality at every $\omega \neq 0$ exactly when $k_2^2 \ge 2k_1$, that is $\zeta \ge 1/\sqrt2$. By <a class="xref" href="#prop-inverse"></a> below, these are exactly the regulator gains of the double integrator (a weight $\rho \neq 1$ can be absorbed into $Q$). Optimality is a strong structural constraint, and the margins of <a class="xref" href="#cor-margins"></a> are one of its consequences.</p>
+</div>
+
+<div class="blk prop" id="prop-inverse" data-name="Inverse optimality, single input">
+<p>Let $b \in \R^n$ with $(A, b)$ controllable, and let $K \in \R^{1\times n}$ make $A - bK$ Hurwitz. Then $K = b^\T P$ for the stabilizing solution $P$ of the CARE with some $Q \succeq 0$ and $R = 1$ if and only if $\abs{1 + K(i\omega I - A)^{-1}b} \ge 1$ for every real $\omega$ with $i\omega \notin \Lambda(A)$.</p>
+</div>
+<details class="proof"><summary>Proof sketch</summary><p>Necessity is <a class="xref" href="#thm-rd"></a>. Conversely, work in the coordinates of the <a href="ch10_feedback.html#lem-ccf">controllable canonical form</a> (chapter 10), which changes $Q$ only by a congruence; there $(sI - A)^{-1}b = (s^{n-1}, \dots, s, 1)^\T/d(s)$ with $d(s) = \det(sI - A)$, and the eigenvector of $A$ for an eigenvalue $\lambda$ is $(\lambda^{n-1}, \dots, \lambda, 1)^\T$. Let $d_K(s) = \det(sI - A + bK)$, so that $d_K(s) = d(s)\bigl(1 + L_K(s)\bigr)$. The even polynomial $\eta(s) = d_K(s)d_K(-s) - d(s)d(-s)$ has degree at most $2n - 2$, since both products have leading term $(-1)^ns^{2n}$, and $\eta(i\omega) = \abs{d(i\omega)}^2\bigl(\abs{1 + L_K(i\omega)}^2 - 1\bigr) \ge 0$. A real even polynomial that is nonnegative on the imaginary axis factors as $\eta(s) = \nu(s)\nu(-s)$ with $\nu$ real, of degree at most $n - 1$, and with all roots in the closed left half-plane (spectral factorization). Choose $c \in \R^{1\times n}$ with $c(sI - A)^{-1}b = \nu(s)/d(s)$, possible by the form of $(sI - A)^{-1}b$, and put $Q = c^\T c$. An unobservable eigenvalue $\lambda$ of $(c, A)$ is a common root of $\nu$ and $d$, because $c$ maps the eigenvector to $\nu(\lambda)$. A common root with $\Re\lambda \ge 0$ would lie on the imaginary axis and then be a root of $d_K$, which is Hurwitz; so $(c, A)$ is detectable. By <a class="xref" href="#cor-srl"></a> with $\rho = 1$, the optimal closed-loop polynomial $d_1$ satisfies $d_1(s)d_1(-s) = d(s)d(-s) + \nu(s)\nu(-s)$, which is $d_K(s)d_K(-s)$. Both $d_1$ and $d_K$ are monic with all roots in the open left half-plane, so $d_1 = d_K$, and the uniqueness in <a href="ch10_feedback.html#thm-place">single-input pole placement</a> (chapter 10) makes $K$ the optimal gain. (If $\nu \equiv 0$, then $\abs{d_K} = \abs d$ on the imaginary axis, so $A$ has no eigenvalues there; take $Q = 0$, for which the stabilizing solution still exists: Zhou, Doyle and Glover, ch. 13.)</p></details>
+<p class="src">R. E. Kalman, "When is a linear control system optimal?", <i>J. Basic Eng.</i> 86 (1964) 51–60.</p>
+
+<figure class="viz" id="viz-lqr">
+  <figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">Trading state error against effort</span><span class="viz-sub">Weights $Q = \diag(1, q_2)$ and $R = \rho$. The slider moves $\log_{10}\rho$; the complex plane shows the optimal closed-loop poles for every $\rho$ (the locus) with the current pair highlighted. Drag $x_0$ in the phase plane.</span></figcaption>
+  <div class="viz-plots cols-2">
+    <div class="plot" id="lqr-s"><div class="plot-cap">Locus of optimal poles for $10^{-3} \le \rho \le 10^{3}$ (grey), current poles (violet), open-loop poles (crosses), mirror images of unstable open-loop poles (red rings)</div></div>
+    <div class="plot" id="lqr-phase"><div class="plot-cap">Level sets of the value function $x^\T P x$ (blue) and the optimal trajectory from $x_0$ (violet)</div></div>
+  </div>
+  <div class="viz-plots cols-2" style="margin-top:14px">
+    <div class="plot" id="lqr-x"><div class="plot-cap">States $x_1$ (blue) and $x_2$ (orange) against $t$</div></div>
+    <div class="plot" id="lqr-u"><div class="plot-cap">Input $u(t) = -Kx(t)$</div></div>
+  </div>
+  <div class="viz-controls" id="lqr-controls"></div>
+  <div class="viz-notes">
+    <div><h5>Try this</h5><ol>
+      <li>Double integrator, $q_2 = 1$, $\log_{10}\rho = 0$: the readout shows $P = \begin{bmatrix}\sqrt3 & 1\\ 1 & \sqrt3\end{bmatrix} \approx \begin{bmatrix}1.73 & 1\\ 1 & 1.73\end{bmatrix}$ and $K = [1\ \ 1.73]$ (<a class="xref" href="#ex-dint-lqr"></a>).</li>
+      <li>Choose the unstable plant (poles $2$ and $-1$) and slide $\rho$ up: the poles move to $-1$ and $-2$, the stable pole and the mirror image of the unstable one (<a class="xref" href="#prop-srl-limits"></a>). The input part of the cost takes over.</li>
+      <li>Slide $\rho$ down: one pole races off to the left while the other settles near $-1$; the input peak grows and the cost shifts to the state part. All three plants have $A = \begin{bmatrix} 0 & 1\\ -a_0 & -a_1\end{bmatrix}$ and $b = (0, 1)^\T$, so $(sI - A)^{-1}b = (1, s)^\T/d(s)$ and $\psi(s) = 1 - q_2 s^2$, whose left-half-plane root $-1/\sqrt{q_2}$ is the limit of the slow pole (<a class="xref" href="#prop-srl-limits"></a>).</li>
+      <li>Watch the readout of $\min_\omega\abs{1 + L_K(i\omega)}$: it never drops below 1, for any plant and any weights (<a class="xref" href="#thm-rd"></a>).</li>
+    </ol></div>
+    <div><h5>What to notice</h5><p>One scalar knob replaces the <a href="ch10_feedback.html#thm-place">pole placement</a> of chapter 10, and every setting yields a stabilizing gain with margins from <a class="xref" href="#cor-margins"></a>. The poles move along the symmetric root locus of <a class="xref" href="#cor-srl"></a>. In the phase plane the trajectory crosses the level sets of $x^\T Px$ inward and never turns back: the value function is a Lyapunov function for the optimal loop, decreasing at the rate $x^\T Qx + u^\T Ru$ of <a class="xref" href="#prop-care-lyap"></a>, which is positive for $x \neq 0$ because $Q = \diag(1, q_2) \succ 0$ here. The cost split in the readout is item 1 of the same proposition.</p></div>
+  </div>
+</figure>
+</section>
+
+<section class="sec" id="s-kalman">
+<h2>The Kalman filter</h2>
+
+<div class="blk prob"><p>Given $x_{k+1} = Ax_k + w_k$ and $y_k = Cx_k + v_k$, compute recursively the best estimate of $x_k$ from the measurements $y_0, \dots, y_k$. (A known input $Bu_k$ added to the state equation is omitted here; <a class="xref" href="#thm-kalman"></a> shows that it only shifts the predicted mean.)</p></div>
+
+<div class="blk setting"><p>$x_0 \sim \mathcal N(\hat x_{0|-1}, \Sigma_{0|-1})$, $w_k \sim \mathcal N(0, W)$ and $v_k \sim \mathcal N(0, V)$ with $W \succeq 0$, $V \succ 0$, and $x_0, w_0, w_1, \dots, v_0, v_1, \dots$ mutually independent. "Best" means minimum mean-square error: among all functions $\hat x$ of the data, minimize $\mathbb E\norm{x_k - \hat x}^2$. The minimizer is the conditional mean $\mathbb E[x_k \mid y_0, \dots, y_k]$ (<a class="xref" href="#lem-mmse"></a>).</p></div>
+
+<div class="blk lem" id="lem-mmse" data-name="The conditional mean is the best estimate">
+<p>Let $x \in \R^n$ and $z$ be random vectors with $\mathbb E\norm{x}^2 &lt; \infty$, and let $m(z) = \mathbb E[x \mid z]$. For every estimate $\hat x = g(z)$ with $\mathbb E\norm{g(z)}^2 &lt; \infty$,</p>
+<div class="eq">$$\mathbb E\norm{x - \hat x}^2 = \mathbb E\norm{x - m(z)}^2 + \mathbb E\norm{m(z) - \hat x}^2 ,$$</div>
+<p>so the conditional mean minimizes the mean-square error, and every other minimizer equals it with probability 1.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> Write $x - \hat x = (x - m) + (m - \hat x)$. The cross term vanishes, because $m - \hat x$ is a function of $z$ and $\mathbb E[x - m \mid z] = 0$:</p>
+<div class="eq">$$\mathbb E\bigl[(m - \hat x)^\T(x - m)\bigr] = \mathbb E\bigl[(m - \hat x)^\T\,\mathbb E[x - m \mid z]\bigr] = 0 .$$</div>
+<p>Geometrically, $m(z)$ is the orthogonal projection of $x$ onto the closed subspace of square-integrable functions of $z$, as in <a href="ch05_hilbert_spaces.html#thm-projection">the projection theorem</a> (chapter 5).</p></div>
+
+<div class="blk probe"><p>A random walk observed in noise: $x_{k+1} = x_k + w_k$, $y_k = x_k + v_k$ with scalar variances $W &gt; 0$ and $V &gt; 0$. Anticipating <a class="xref" href="#cor-kalman-ss"></a>, the steady-state prior variance $\sigma$ is the positive root of $\sigma^2 = W(\sigma + V)$ and the gain is $L = \sigma/(\sigma + V)$. The steady-state estimate is $\hat x_{k|k} = (1 - L)\hat x_{k-1|k-1} + Ly_k$, so it weights the measurement taken $j$ steps back by $L(1 - L)^j$. If $W \ll V$, then $\sigma \approx \sqrt{WV}$ and $L \approx \sqrt{W/V}$ is small: the weights decay slowly, over roughly $1/L \approx \sqrt{V/W}$ steps. If $W \gg V$, then $L \to 1$: trust the latest measurement. Since $\sigma/V$ solves $(\sigma/V)^2 = (W/V)(\sigma/V + 1)$, the gain depends only on the ratio $W/V$, as the best observer speed did in <a href="ch10_feedback.html#ex-scalar-obs">the scalar observer example</a> of chapter 10.</p></div>
+
+<div class="blk lem" id="lem-gauss" data-name="Gaussian conditioning">
+<p>If $\begin{bmatrix} x\\ y\end{bmatrix} \sim \mathcal N\left(\begin{bmatrix}\mu_x\\ \mu_y\end{bmatrix}, \begin{bmatrix}\Sigma_{xx} & \Sigma_{xy}\\ \Sigma_{yx} & \Sigma_{yy}\end{bmatrix}\right)$ with $\Sigma_{yy} \succ 0$, then the conditional distribution of $x$ given $y$ is</p>
+<div class="eq">$$\mathcal N\bigl(\mu_x + \Sigma_{xy}\Sigma_{yy}^{-1}(y - \mu_y),\ \ \Sigma_{xx} - \Sigma_{xy}\Sigma_{yy}^{-1}\Sigma_{yx}\bigr).$$</div>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> Put $F = \Sigma_{xy}\Sigma_{yy}^{-1}$ and $z = x - \mu_x - F(y - \mu_y)$. The pair $(z, y)$ is jointly Gaussian, as an affine image of $(x, y)$, and $\mathbb E[z(y - \mu_y)^\T] = \Sigma_{xy} - F\Sigma_{yy} = 0$; uncorrelated jointly Gaussian vectors are independent, because their joint covariance is block diagonal, so the joint characteristic function factors (a density need not exist). So given $y$, $x = \mu_x + F(y - \mu_y) + z$ with $z$ still $\mathcal N(0, \Sigma_z)$, where</p>
+<div class="eq">$$\Sigma_z = \Sigma_{xx} - F\Sigma_{yx} - \Sigma_{xy}F^\T + F\Sigma_{yy}F^\T = \Sigma_{xx} - \Sigma_{xy}\Sigma_{yy}^{-1}\Sigma_{yx}.$$</div>
+<p>This is the claimed conditional distribution.</p></div>
+
+<div class="blk thm" id="thm-kalman" data-name="Kalman filter">
+<p>In the setting above, given $y_0, \dots, y_k$ the state $x_k$ is distributed as $\mathcal N(\hat x_{k|k}, \Sigma_{k|k})$ and $x_{k+1}$ as $\mathcal N(\hat x_{k+1|k}, \Sigma_{k+1|k})$. The update step is</p>
+<div class="eq">$$\begin{aligned} L_k &= \Sigma_{k|k-1}C^\T\bigl(C\Sigma_{k|k-1}C^\T + V\bigr)^{-1},\\ \hat x_{k|k} &= \hat x_{k|k-1} + L_k\bigl(y_k - C\hat x_{k|k-1}\bigr),\\ \Sigma_{k|k} &= \Sigma_{k|k-1} - L_kC\Sigma_{k|k-1},\end{aligned}$$</div>
+<p>and the prediction step is</p>
+<div class="eq">$$\hat x_{k+1|k} = A\hat x_{k|k}, \qquad \Sigma_{k+1|k} = A\Sigma_{k|k}A^\T + W.$$</div>
+<p>By <a class="xref" href="#lem-mmse"></a>, $\hat x_{k|k}$ is the minimum mean-square error estimate of $x_k$. With a known input, $x_{k+1} = Ax_k + Bu_k + w_k$ where $u_k$ is a function of $y_0, \dots, y_k$, all of this holds with $\hat x_{k+1|k} = A\hat x_{k|k} + Bu_k$ and the same covariances.</p>
+</div>
+<dl class="where">
+  <dt>$L_k$</dt><dd>the Kalman gain at step $k$</dd>
+  <dt>$y_k - C\hat x_{k|k-1}$</dt><dd>the innovation: the part of the new measurement that the past did not predict</dd>
+</dl>
+<div class="proof"><p><span class="proof-label">Proof.</span> Induction on $k$. Given $y_0, \dots, y_{k-1}$, the state $x_k$ is $\mathcal N(\hat x_{k|k-1}, \Sigma_{k|k-1})$ and $y_k = Cx_k + v_k$ with $v_k$ independent of $x_k$ and of the past data, so $(x_k, y_k)$ is jointly Gaussian with cross-covariance $\Sigma_{k|k-1}C^\T$ and $\operatorname{Cov}(y_k) = C\Sigma_{k|k-1}C^\T + V \succ 0$. <a class="xref" href="#lem-gauss"></a> gives the update. Then $x_{k+1} = Ax_k + w_k$ with $w_k$ independent of $x_k$ and of $y_0, \dots, y_k$, an affine image of a Gaussian plus independent Gaussian noise, which gives the prediction. A known input $u_k$ is a constant once $y_0, \dots, y_k$ are given, so it adds $Bu_k$ to the conditional mean and leaves the covariance unchanged.</p></div>
+<p class="src">R. E. Kalman, "A new approach to linear filtering and prediction problems", <i>J. Basic Eng.</i> 82 (1960) 35–45.</p>
+
+<div class="blk prop" id="prop-affine" data-name="Without Gaussian noise">
+<p>Keep the model $x_{k+1} = Ax_k + w_k$, $y_k = Cx_k + v_k$ of the setting above, without input, but assume only that $x_0, w_0, w_1, \dots, v_0, v_1, \dots$ are mutually uncorrelated, with the same means and covariances, not necessarily Gaussian. Then the recursion of <a class="xref" href="#thm-kalman"></a> still gives, for every $k$, the estimate $\hat x_{k|k}$ that minimizes $\mathbb E\norm{x_k - \hat x}^2$ among all estimates $\hat x$ that are affine functions of $y_0, \dots, y_k$, and $\Sigma_{k|k}$ is its error covariance; likewise for $\hat x_{k+1|k}$ and $\Sigma_{k+1|k}$.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> For an affine estimate, the error $x_k - \hat x$ is an affine function of $(x_0, w_0, \dots, w_{k-1}, v_0, \dots, v_k)$, so its mean and covariance, and hence $\mathbb E\norm{x_k - \hat x}^2$, depend only on the first and second moments of these variables, which are the same as in the Gaussian model. In the Gaussian model the Kalman estimate is affine in the data, because the gains do not depend on the data, and it is the best of all estimates by <a class="xref" href="#thm-kalman"></a>, so in particular the best affine one, with error covariance $\Sigma_{k|k}$. Both facts carry over to the uncorrelated model.</p></div>
+
+<div class="blk pattern"><p>The mean update is the <a href="ch10_feedback.html#def-observer">observer</a> of chapter 10, prediction plus gain times innovation, with a gain chosen by the noise statistics. The covariances do not depend on the data (<a class="xref" href="#thm-kalman"></a>) and can be computed in advance. Their recursion is the regulator recursion read in the other direction of time.</p></div>
+
+<div class="blk prop" id="prop-duality" data-name="Duality of the Riccati recursions">
+<p>Write $\mathcal R_{A,B,Q,R}$ for the Riccati map of <a class="xref" href="#thm-dlqr"></a>, the right-hand side of its recursion as a function of $P_{k+1}$. In the setting of <a class="xref" href="#thm-kalman"></a>,</p>
+<div class="eq">$$\begin{aligned}\Sigma_{k+1|k} &= A\Sigma_{k|k-1}A^\T + W - A\Sigma_{k|k-1}C^\T\bigl(C\Sigma_{k|k-1}C^\T + V\bigr)^{-1}C\Sigma_{k|k-1}A^\T\\ &= \mathcal R_{A^\T\!,\,C^\T\!,\,W,\,V}\bigl(\Sigma_{k|k-1}\bigr):\end{aligned}$$</div>
+<p>the prior covariances follow the regulator recursion for the dual data $(A^\T, C^\T, W, V)$, run forward from $\Sigma_{0|-1}$ in the role of the terminal weight, and the filter DARE is the regulator DARE for the dual data. Moreover, in continuous and in discrete time alike, $(A^\T, C^\T)$ is stabilizable if and only if $(C, A)$ is detectable, and $(W^{1/2}, A^\T)$ is detectable if and only if $(A, W^{1/2})$ is stabilizable, where $W^{1/2}$ is the positive semidefinite square root of $W$.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> Substitute $\Sigma_{k|k} = \Sigma_{k|k-1} - L_kC\Sigma_{k|k-1}$ into $\Sigma_{k+1|k} = A\Sigma_{k|k}A^\T + W$ and compare with $\mathcal R$ after replacing $A, B, Q, R$ by $A^\T, C^\T, W, V$. For the pairs: an eigenvalue $\lambda$ is uncontrollable for $(A^\T, C^\T)$ exactly when $\rank[\lambda I - A^\T,\ C^\T] &lt; n$, and unobservable for $(C, A)$ exactly when $\rank\begin{bmatrix}\lambda I - A\\ C\end{bmatrix} &lt; n$ (the <a href="ch09_controllability.html#thm-pbh">Popov–Belevitch–Hautus (PBH) test</a>, chapter 9). The two matrices are transposes of each other, so both notions single out the same eigenvalues, whatever region of the plane is required to contain them; likewise for $(W^{1/2}, A^\T)$ and $(A, W^{1/2})$, as $W^{1/2}$ is symmetric.</p></div>
+
+<div class="blk cor" id="cor-kalman-ss" data-name="Steady-state filter">
+<p>Let $W \succeq 0$ and $V \succ 0$. If $(C, A)$ is detectable and $(A, W^{1/2})$ stabilizable, both in the discrete-time sense, then $\Sigma_{k+1|k}$ converges from every $\Sigma_{0|-1} \succeq 0$ to the unique positive semidefinite solution $\Sigma$ of $\Sigma = A\Sigma A^\T + W - A\Sigma C^\T(C\Sigma C^\T + V)^{-1}C\Sigma A^\T$. With $L = \Sigma C^\T(C\Sigma C^\T + V)^{-1}$, the steady-state predictor $\hat x_{k+1|k} = A\hat x_{k|k-1} + AL(y_k - C\hat x_{k|k-1})$ has error dynamics governed by $A - ALC$, which is Schur stable.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> By <a class="xref" href="#prop-duality"></a>, $\Sigma_{k|k-1}$ follows the regulator recursion for $(A^\T, C^\T, W, V)$, and the hypotheses of <a class="xref" href="#thm-dare"></a> for that problem are exactly the present ones. So $\Sigma_{k+1|k}$ converges from every $\Sigma_{0|-1} \succeq 0$ to the unique positive semidefinite solution of the dual DARE, which is stabilizing for the dual problem: its gain is $(V + C\Sigma C^\T)^{-1}C\Sigma A^\T = (AL)^\T$, and $A^\T - C^\T(AL)^\T = (A - ALC)^\T$ is Schur stable, with the eigenvalues of $A - ALC$. The error $e_k = x_k - \hat x_{k|k-1}$ of the predictor obeys $e_{k+1} = (A - ALC)e_k + w_k - ALv_k$.</p></div>
+
+<div class="blk prop" id="prop-kalman-bucy" data-name="Steady-state Kalman–Bucy filter">
+<p>Let $\dot x = Ax + w$ and $y = Cx + v$ in continuous time, where $w$ and $v$ are independent zero-mean white Gaussian noises with intensities $W \succeq 0$ and $V \succ 0$, that is $\mathbb E[w(t)w(\tau)^\T] = W\delta(t - \tau)$ and $\mathbb E[v(t)v(\tau)^\T] = V\delta(t - \tau)$ with $\delta$ the Dirac delta, independent of a Gaussian initial state $x(0)$, and let $(C, A)$ be detectable and $(A, W^{1/2})$ stabilizable.</p>
+<ol>
+<li>The filter algebraic Riccati equation $A\Sigma + \Sigma A^\T - \Sigma C^\T V^{-1}C\Sigma + W = 0$ is the CARE for the dual data $(A^\T, C^\T, W, V)$. It has exactly one positive semidefinite solution $\Sigma$, and $A - LC$ is Hurwitz for $L = \Sigma C^\T V^{-1}$, the transpose of the dual regulator gain.</li>
+<li>The conditional mean of $x(t)$ given $y$ on $[0, t]$ is generated by the Kalman–Bucy filter $\dot{\hat x} = A\hat x + L(t)(y - C\hat x)$, started at $\hat x(0) = \mathbb E\,x(0)$, with $L(t) = \Sigma(t)C^\T V^{-1}$, where the error covariance $\Sigma(t)$ solves $\dot\Sigma = A\Sigma + \Sigma A^\T - \Sigma C^\T V^{-1}C\Sigma + W$ from the covariance of $x(0)$. As $t \to \infty$, $\Sigma(t) \to \Sigma$ and $L(t) \to L$, which gives the steady-state filter $\dot{\hat x} = A\hat x + L(y - C\hat x)$.</li>
+<li>For a single output, $\abs{1 + C(i\omega I - A)^{-1}L} \ge 1$ for every real $\omega$ with $i\omega \notin \Lambda(A)$.</li>
+</ol>
+</div>
+<details class="proof"><summary>Proof sketch</summary><p>(1) Substituting $A^\T, C^\T, W, V$ for $A, B, Q, R$ in the CARE gives the filter equation, and the dual gain is $V^{-1}C\Sigma = L^\T$. By <a class="xref" href="#prop-duality"></a> the hypotheses of <a class="xref" href="#thm-care-exist"></a> hold for the dual data, which gives existence and uniqueness, and the dual closed loop $A^\T - C^\T L^\T = (A - LC)^\T$ is Hurwitz. (2) This is the theorem of Kalman and Bucy, together with the convergence of the Riccati differential equation under the present hypotheses, proved in the sources below. (3) Apply <a class="xref" href="#thm-rd"></a> to the dual data: its loop is $L^\T(sI - A^\T)^{-1}C^\T = \bigl(C(sI - A)^{-1}L\bigr)^\T$, a scalar, and the weight is the scalar $V$.</p></details>
+<p class="src">R. E. Kalman and R. S. Bucy, "New results in linear filtering and prediction theory", <i>J. Basic Eng.</i> 83 (1961) 95–108; Kwakernaak and Sivan, ch. 4.</p>
+<p>For a scalar plant with $C = 1$ and $W &gt; 0$, the filter equation $2a\Sigma - \Sigma^2/V + W = 0$ has the positive root $\Sigma = V\bigl(a + \sqrt{a^2 + W/V}\bigr)$, so $L = \Sigma/V = a + \sqrt{a^2 + W/V}$: exactly the best observer gain found by direct minimization in <a href="ch10_feedback.html#ex-scalar-obs">the scalar observer example</a> of chapter 10.</p>
+
+<figure class="viz" id="viz-kalman">
+  <figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">A Kalman filter tracking a noisy oscillator</span><span class="viz-sub">State $x = (q, p)$, position and momentum, with $x_{k+1} = Ax_k + w_k$, $A$ the clockwise rotation by $0.1$ rad (the exact flow of $\dot q = p$, $\dot p = -q$ over a time step $0.1$), $W = \sigma_w^2 I$, and position measurements $y_k = q_k + v_k$ with $V = \sigma_v^2$. The true state starts at $x_0 = (1.5, 0)$, where the open-loop prediction also starts, with zero covariance; the filter starts from $\hat x_{0|-1} = 0$, $\Sigma_{0|-1} = I$. Shaded: the two-standard-deviation ellipse $\{x : (x - \hat x_{k|k})^\T\Sigma_{k|k}^{-1}(x - \hat x_{k|k}) \le 4\}$.</span></figcaption>
+  <div class="viz-plots cols-2">
+    <div class="plot" id="kf-phase"><div class="plot-cap">Phase plane: true state (blue), filter estimate and its ellipse (orange), open-loop prediction and its ellipse (grey, dashed)</div></div>
+    <div class="plot" id="kf-q"><div class="plot-cap">Position: true $q_k$ (blue), measurements $y_k$ (grey dots), estimate $\hat q_{k|k}$ (orange)</div></div>
+  </div>
+  <div class="viz-plots cols-1" style="margin-top:14px">
+    <div class="plot" id="kf-err"><div class="plot-cap">Squared error $\norm{x_k - \hat x_{k|k}}^2$ (red) and $\tr\Sigma_{k|k}$ (orange) for the filter; $\tr\Sigma$ of the open-loop prediction (grey, dashed); log scale</div></div>
+  </div>
+  <div class="viz-controls" id="kf-controls"></div>
+  <div class="viz-notes">
+    <div><h5>Try this</h5><ol>
+      <li>Press <i>Reset</i>, then <i>Run</i>. The ellipse first collapses along $q$, which is measured, then along $p$, as the rotation carries velocity uncertainty into position where the next measurement removes it. $\tr\Sigma_{k|k}$ settles at the steady-state value in the readout (<a class="xref" href="#cor-kalman-ss"></a>).</li>
+      <li>Raise $\sigma_v$: the gain falls, the estimate becomes smoother and lags the truth. Lower it: the estimate follows the measurements.</li>
+      <li>Follow the grey prediction, which never uses a measurement: its $\tr\Sigma$ grows by $\tr W$ every step, since $\tr(A\Sigma A^\T) = \tr(\Sigma A^\T A) = \tr\Sigma$ for the rotation $A$.</li>
+      <li>Step slowly: once the wrong initial guess is forgotten, the true state lies inside the shaded ellipse about 86% of the time, since for a two-dimensional Gaussian error the squared normalized error is a chi-square variable $\chi^2_2$ with two degrees of freedom and the probability $\Pr(\chi^2_2 \le 4)$ equals $1 - e^{-2}$.</li>
+    </ol></div>
+    <div><h5>What to notice</h5><p>The covariance sequence does not depend on the noise sample (press <i>New noise</i>: the orange trace curve is unchanged), as the formulas of <a class="xref" href="#thm-kalman"></a> show, and it converges to the solution of the filter DARE, as <a class="xref" href="#cor-kalman-ss"></a> predicts by duality. One position sensor is enough to pin down both coordinates because $(C, A)$ is <a href="ch09_controllability.html#thm-obs">observable</a>: the dynamics, not the sensor, deliver the velocity.</p></div>
+  </div>
+</figure>
+</section>
+
+<section class="sec" id="s-lqg">
+<h2>Duality and the linear quadratic Gaussian controller</h2>
+
+<div class="blk pattern"><p>Control and estimation are the same mathematics read in opposite directions of time. The dictionary:</p></div>
+<div class="tbl-wrap"><table class="tbl">
+  <thead><tr><th>Regulator (control)</th><th>Kalman filter (estimation)</th></tr></thead>
+  <tbody>
+    <tr><td>$A$, $B$</td><td>$A^\T$, $C^\T$</td></tr>
+    <tr><td>state weight $Q$, input weight $R$</td><td>process noise $W$, measurement noise $V$</td></tr>
+    <tr><td>value function matrix $P$</td><td>error covariance $\Sigma$</td></tr>
+    <tr><td>gain $K = R^{-1}B^\T P$ (continuous time)</td><td>gain $L = \Sigma C^\T V^{-1}$ (continuous time)</td></tr>
+    <tr><td>recursion backward from the terminal weight</td><td>recursion forward from the initial covariance</td></tr>
+    <tr><td>assumptions: $(A, B)$ stabilizable, $(Q^{1/2}, A)$ detectable</td><td>assumptions: $(C, A)$ detectable, $(A, W^{1/2})$ stabilizable</td></tr>
+    <tr><td>optimal closed loop $A - BK$</td><td>error dynamics $A - LC$ (continuous time; $A - ALC$ for the discrete-time predictor)</td></tr>
+    <tr><td>cheap control in continuous time ($R = \rho \to 0$, one input): some poles go to infinity, $\norm K \to \infty$</td><td>clean sensor in continuous time ($V \to 0$, one output): some poles of $A - LC$ go to infinity, $\norm L \to \infty$</td></tr>
+  </tbody>
+</table></div>
+<p>The rows are contained in the statements above: <a class="xref" href="#prop-duality"></a> and <a class="xref" href="#cor-kalman-ss"></a> in discrete time, <a class="xref" href="#prop-kalman-bucy"></a> in continuous time, and in the last row <a class="xref" href="#prop-srl-limits"></a> and its dual, which need $G_Q \not\equiv 0$, respectively $C(sI - A)^{-1}W^{1/2} \not\equiv 0$.</p>
+
+<div class="blk setting"><p>Linear quadratic Gaussian control: $\dot x = Ax + Bu + w$, $y = Cx + v$ with independent white Gaussian noises of intensities $W \succeq 0$ and $V \succ 0$, and the average cost $\lim_{T\to\infty}\frac1T\,\mathbb E\int_0^T (x^\T Q x + u^\T R u)\,\dd t$, minimized over causal controllers, in which $u(t)$ may depend only on $y$ over $[0, t]$. Both pairs satisfy the stabilizability and detectability assumptions above.</p></div>
+
+<div class="blk thm" id="thm-lqg" data-name="Separation and certainty equivalence">
+<p>In this setting the optimal controller is $u = -K\hat x$, where $K = R^{-1}B^\T P$ is the regulator gain of <a class="xref" href="#cor-lqr"></a> and $\hat x$ is the steady-state Kalman–Bucy estimate of <a class="xref" href="#prop-kalman-bucy"></a>, $\dot{\hat x} = A\hat x + Bu + L(y - C\hat x)$. The optimal average cost is</p>
+<div class="eq">$$J^\star = \tr(PW) + \tr\bigl(\Sigma K^\T R K\bigr) = \tr(Q\Sigma) + \tr\bigl(P L V L^\T\bigr),$$</div>
+<p>and its first term, $\tr(PW)$, is the optimal average cost of the same problem with the state measured exactly; the second is the price of estimating it.</p>
+</div>
+<details class="proof"><summary>Proof sketch</summary><p>Optimality is proved in the sources below; here are the two identities. With the state measured, $u = -Kx$ gives the closed loop $\dot x = (A - BK)x + w$, whose stationary covariance $X$ solves $(A - BK)X + X(A - BK)^\T + W = 0$, and the average cost is $\tr\bigl((Q + K^\T RK)X\bigr)$. By item 2 of <a class="xref" href="#prop-care-lyap"></a>, $Q + K^\T RK = -(A - BK)^\T P - P(A - BK)$, and moving $P$ around the trace gives $\tr\bigl((Q + K^\T RK)X\bigr) = \tr(PW)$. The two forms of $J^\star$ agree because their difference, $\tr\bigl(P(W - LVL^\T)\bigr) - \tr\bigl((Q - K^\T RK)\Sigma\bigr)$, vanishes: the filter equation gives $W - LVL^\T = -A\Sigma - \Sigma A^\T$, the CARE gives $Q - K^\T RK = -A^\T P - PA$, and $\tr(PA\Sigma + P\Sigma A^\T) = \tr\bigl((A^\T P + PA)\Sigma\bigr)$.</p></details>
+<p class="src">Statement and proof: Kwakernaak and Sivan, ch. 3 (state feedback with noise) and ch. 5; for discrete time, Bertsekas, vol. 1, chapter on problems with imperfect state information. By the <a href="ch10_feedback.html#thm-separation">separation theorem</a> of chapter 10, the closed-loop spectrum is $\Lambda(A - BK) \cup \Lambda(A - LC)$.</p>
+
+<div class="blk cex" id="cex-doyle">
+<p>Optimality does not give robustness. Each half of the controller is robust in its own loop: the regulator has the margins of <a class="xref" href="#cor-margins"></a>, and for a single output the filter loop $C(sI - A)^{-1}L$ satisfies the same inequality (item 3 of <a class="xref" href="#prop-kalman-bucy"></a>). J. C. Doyle ("Guaranteed margins for LQG regulators", <i>IEEE Trans. Autom. Control</i> 23 (1978) 756–757) exhibited a second-order plant for which, as the state weight and the process noise intensity grow, two reasonable design moves, the interval of input gains that the combined loop tolerates shrinks to the single point 1. The reason is structural. The controller is $u = -K_{\rm ob}(s)\,y$ with $K_{\rm ob}(s) = K(sI - A + BK + LC)^{-1}L$ (<a href="ch10_feedback.html#cor-output-fb">observer-based stabilization</a>, chapter 10), so the loop broken at the plant input is $K_{\rm ob}(s)\,C(sI - A)^{-1}B$, not $L_K(s)$. <a href="ch12_robustness.html#ex-doyle">Chapter 12 works the example</a> and describes loop transfer recovery.</p>
+</div>
+
+<div class="blk why"><p>Optimal feedback control of movement. E. Todorov and M. I. Jordan (<i>Nat. Neurosci.</i> 5 (2002) 1226–1235) modeled motor coordination as stochastic optimal feedback control: the optimal controller corrects only those deviations that interfere with the task goal (their minimal intervention principle), so variability accumulates along task-irrelevant directions, as observed in redundant movements. Their models use signal-dependent motor noise, under which estimation and control no longer separate exactly (Todorov, <i>Neural Comput.</i> 2005). The architecture is the one of <a class="xref" href="#thm-lqg"></a>: an internal model that predicts the consequences of motor commands, an estimate that fuses this prediction with noisy, delayed sensory feedback, and a feedback gain acting on the estimate.</p></div>
+
+<div class="blk why"><p>Kalman-filter decoders for brain–computer interfaces. The hidden state is the intended cursor or hand kinematics with a linear stochastic model, and the observation is the vector of binned firing rates, modeled as $y_k = Cx_k + v_k$ (linear tuning); $A$, $W$, $C$ and $V$ are fitted by least squares on training data and the decoder is the Kalman filter (W. Wu, Y. Gao, E. Bienenstock, J. P. Donoghue and M. J. Black, <i>Neural Comput.</i> 18 (2006) 80–118). V. Gilja and colleagues (<i>Nat. Neurosci.</i> 15 (2012) 1752–1757) improved closed-loop performance by refitting the filter on training data corrected for the user's intention. In closed-loop use the estimator sits inside a feedback loop whose other controller is the user's brain.</p></div>
+</section>
+
+<section class="selfcheck" id="s-selfcheck">
+<h2>Self-check</h2>
+<ol>
+<li><p>For $\dot x = x + u$ with $q = 3$ and $r = 1$, find the optimal cost coefficient $p$, the gain and the closed-loop pole.</p>
+<details><summary>Answer</summary><p>The CARE $2p - p^2 + 3 = 0$ has the positive root $p = 3$, so $k = bp/r = 3$ and the pole is $1 - 3 = -2 = -\sqrt{a^2 + b^2q/r}$. The other root, $p = -1$, gives the unstable pole $+2$.</p></details></li>
+<li><p>Show that along the optimal trajectory $\frac{\dd}{\dd t}\bigl(x^\T P x\bigr) = -(x^\T Q x + u^\T R u)$.</p>
+<details><summary>Answer</summary><p>Set $u = -Kx$ in the identity in the proof of <a class="xref" href="#thm-care"></a>: the right-hand side vanishes. Equivalently, the CARE is the closed-loop Lyapunov equation $(A - BK)^\T P + P(A - BK) + Q + K^\T RK = 0$ (<a class="xref" href="#prop-care-lyap"></a>).</p></details></li>
+<li><p>Why do the Kalman covariances not depend on the measurements, and what follows for implementation?</p>
+<details><summary>Answer</summary><p>The conditional covariance in <a class="xref" href="#lem-gauss"></a> involves only the joint covariance, not the observed value. The gains $L_k$ can therefore be computed offline, and under the hypotheses of <a class="xref" href="#cor-kalman-ss"></a> they converge, so in steady state a constant gain suffices.</p></details></li>
+<li><p>For the random walk $x_{k+1} = x_k + w_k$, $y_k = x_k + v_k$ with $W = 1$ and $V = 2$, find the steady-state prior variance, the gain and the posterior variance.</p>
+<details><summary>Answer</summary><p>$\sigma^2 = W(\sigma + V)$ gives $\sigma^2 - \sigma - 2 = 0$, so $\sigma = 2$. The gain is $\sigma/(\sigma + V) = 1/2$ and the posterior variance is $\sigma - L\sigma = 1$.</p></details></li>
+<li><p>The continuous-time regulator gain $K$ has a gain margin from $1/2$ to $\infty$. Does the linear quadratic Gaussian controller built with the same $K$?</p>
+<details><summary>Answer</summary><p>No. The margins of <a class="xref" href="#cor-margins"></a> hold for the loop $L_K(s)$ with the state measured. With an observer, the loop at the plant input is $K_{\rm ob}(s)C(sI - A)^{-1}B$, and Doyle's example shows its margins can be arbitrarily small (<a class="xref" href="#cex-doyle"></a>).</p></details></li>
+</ol>
+</section>
+
+<section class="refs" id="s-refs">
+<h2>Sources and further reading</h2>
+<ul>
+<li>B. D. O. Anderson and J. B. Moore, <i>Optimal Control: Linear Quadratic Methods</i> (Prentice Hall, 1989; Dover, 2007), ch. 2–5 for the regulator, its stability and its classical-control properties including the return difference, and the later chapters on state estimation. <a href="https://e-booksdirectory.com/details.php?ebook=3777">listing</a><span class="free">Free</span></li>
+<li>D. Liberzon, <i>Calculus of Variations and Optimal Control Theory</i> (Princeton, 2012), ch. 6: the linear quadratic regulator via the maximum principle and dynamic programming.</li>
+<li>K. J. Åström and R. M. Murray, <i>Feedback Systems</i>, 2nd ed. (2021), ch. 7 (linear quadratic regulator) and ch. 8 (Kalman filtering). <a href="https://www.cds.caltech.edu/~murray/amwiki/Second_Edition.html">book site</a><span class="free">Free</span></li>
+<li>E. D. Sontag, <i>Mathematical Control Theory</i>, 2nd ed. (1998), ch. 8: value functions and linear systems with quadratic cost. <a href="https://stuff.mit.edu/afs/athena.mit.edu/user/e/s/esontag/www/mct.html">author page</a><span class="free">Free</span></li>
+<li>H. Kwakernaak and R. Sivan, <i>Linear Optimal Control Systems</i> (Wiley, 1972), ch. 3–5: regulator asymptotics, optimal state reconstruction, output feedback. D. P. Bertsekas, <i>Dynamic Programming and Optimal Control</i>, vol. 1, chapters on perfect and imperfect state information.</li>
+<li>R. E. Kalman, <i>J. Basic Eng.</i> 82 (1960) 35–45 (the filter) and 86 (1964) 51–60 (inverse optimality); R. E. Kalman and R. S. Bucy, <i>J. Basic Eng.</i> 83 (1961) 95–108. J. C. Doyle, "Guaranteed margins for LQG regulators", <i>IEEE Trans. Autom. Control</i> 23 (1978) 756–757.</li>
+<li>B. Recht, "A tour of reinforcement learning: the view from continuous control", <i>Annu. Rev. Control Robot. Auton. Syst.</i> 2 (2019); arXiv:1806.09460: the regulator as a benchmark for learning a controller from data. <span class="free">Open access</span></li>
+<li>E. Todorov and M. I. Jordan, "Optimal feedback control as a theory of motor coordination", <i>Nat. Neurosci.</i> 5 (2002) 1226–1235; W. Wu et al., "Bayesian population decoding of motor cortical activity using a Kalman filter", <i>Neural Comput.</i> 18 (2006) 80–118; V. Gilja et al., "A high-performance neural prosthesis enabled by control algorithm design", <i>Nat. Neurosci.</i> 15 (2012) 1752–1757.</li>
+</ul>
+</section>
+
+</div>
+</main>
+</div>
+<script>LT.page.init();</script>
+<script>
+(function () {
+  'use strict';
+  const { Plot, ui, mat: M, sys: S, fmt, fmtC, fmtSig } = LT;
+  const capFirst = p => p.el.insertBefore(p.canvas, p.el.firstChild);
+  const sqrtm2 = (X, inv) => { const e = M.eigSym(X), U = e.vectors; const d = e.values.map(v => { const s = Math.sqrt(Math.max(v, 0)); return inv ? (s > 1e-12 ? 1 / s : 0) : s; }); return M.mul(M.mul(U, M.diag(d)), M.T(U)); };
+
+  /* ---------------- Visual 11.1: the Riccati map as a dynamical system ---------------- */
+  (function () {
+    const st = { a: 1.6, b: 0.8, q: 0.5, r: 1.3, p0: 0 };
+    const J = 30;
+    const map = new Plot('#ric-map', { xlim: [0, 8], ylim: [0, 8], equal: true, frame: true, maxH: 400, xlabel: 'p', label: 'Cobweb diagram of the scalar Riccati map' });
+    const conv = new Plot('#ric-conv', { xlim: [0, J], ylim: [1e-12, 10], logy: true, frame: true, aspect: 0.85, minH: 220, xlabel: 'iteration j', label: 'Distance to the fixed point on a log scale' });
+    [map, conv].forEach(capFirst);
+    const f = p => st.q + st.a * st.a * st.r * p / (st.r + st.b * st.b * p);
+    const acl = p => st.a * st.r / (st.r + st.b * st.b * p);
+    let R = null;
+    function fixedPoints() {
+      const { a, b, q, r } = st, out = [];
+      if (Math.abs(b) < 1e-12) { if (q === 0) out.push(0); if (Math.abs(a) < 1 && q > 0) out.push(q / (1 - a * a)); return out.sort((x, y) => y - x); }
+      const B2 = b * b, c1 = r - q * B2 - a * a * r, disc = c1 * c1 + 4 * B2 * q * r;
+      const s = Math.sqrt(Math.max(0, disc));
+      [(-c1 + s) / (2 * B2), (-c1 - s) / (2 * B2)].forEach(p => { if (p >= -1e-12 && !out.some(u => Math.abs(u - p) < 1e-9)) out.push(Math.max(0, p)); });
+      return out.sort((x, y) => y - x);
+    }
+    function compute() {
+      const fps = fixedPoints().map(p => ({ p, acl: acl(p), stab: Math.abs(acl(p)) < 1 - 1e-12 }));
+      const orbit = [st.p0]; for (let j = 0; j < J; j++) orbit.push(f(orbit[j]));
+      let target = null;
+      if (fps.length) target = (st.q === 0 && st.p0 <= 1e-12) ? (fps.find(z => z.p < 1e-12) || fps[0]) : fps[0];
+      if (target && Math.abs(target.acl) > 1 + 1e-12 && Math.abs(st.b) < 1e-12 && st.p0 > 1e-12) target = null;
+      R = { fps, orbit, star: target };
+      let top = 1.2; fps.forEach(z => { top = Math.max(top, 1.35 * z.p); }); top = Math.max(top, 1.15 * st.p0, 1.3 * st.q);
+      if (!fps.length) top = Math.max(top, 6);
+      top = Math.min(top, 60);
+      map.setLimits([0, top], [0, top]);
+    }
+    map.draw = g => {
+      if (!R) return;
+      const top = map.xlim[1];
+      g.line(0, 0, top, top, { color: 'ink-2', width: 1.25, dash: [6, 4] });
+      g.fn(f, { color: 'c1', width: 2.25 }, { x0: 0, x1: top });
+      const o = R.orbit, pts = [[o[0], 0]];
+      for (let j = 0; j < o.length - 1; j++) { pts.push([o[j], o[j + 1]]); pts.push([o[j + 1], o[j + 1]]); }
+      g.path(pts, { color: 'c7', width: 1.5 });
+      R.fps.forEach(z => g.dot([z.p, z.p], { r: 5.5, color: z.stab ? 'c3' : 'c8' }));
+    };
+    map.after = g => { g.text([map.X(map.xlim[1]) - 8, map.Y(map.ylim[1]) + 14], 'f(p)', { px: true, align: 'right', size: 13, color: 'ink-2' }); };
+    map.addHandle({ get: () => [st.p0, 0], set: x => { st.p0 = Math.max(0, x); update(); }, constrain: x => [x, 0], color: 'c7', snap: 0.01 });
+    conv.draw = g => {
+      if (!R) return;
+      if (!R.star) { g.text([J / 2, 1e-5], 'no attracting fixed point: the orbit diverges', { font: 'ui', italic: false, size: 12.5, color: 'ink-2', align: 'center' }); return; }
+      const j0 = 10, d0 = Math.abs(R.orbit[j0] - R.star.p), rate = R.star.acl * R.star.acl;
+      if (d0 > 1e-13) g.path(R.orbit.map((_, j) => [j, Math.max(1e-14, d0 * Math.pow(rate, j - j0))]), { color: 'muted', width: 1.25, dash: [6, 4] });
+      g.path(R.orbit.map((p, j) => [j, Math.max(1e-14, Math.abs(p - R.star.p))]), { color: 'c7', width: 2 });
+      R.orbit.forEach((p, j) => g.dot([j, Math.max(1e-14, Math.abs(p - R.star.p))], { r: 2.6, color: 'c7' }));
+    };
+    const panel = ui.panel('#ric-controls');
+    const presets = { unst: [1.6, 0.8, 0.5, 1.3], stab: [0.6, 1, 1, 1], noq: [1.6, 0.8, 0, 1.3], nob: [1.2, 0, 0.5, 1.3] };
+    panel.select({ id: 'ric-preset', label: 'Preset', value: 'unst', options: [['unst', 'Unstable plant'], ['stab', 'Stable plant'], ['noq', 'No state cost (q = 0)'], ['nob', 'No input (b = 0)']],
+      onChange: v => { const p = presets[v]; st.a = p[0]; st.b = p[1]; st.q = p[2]; st.r = p[3]; st.p0 = 0; sl.a.set(p[0]); sl.b.set(p[1]); sl.q.set(p[2]); sl.r.set(p[3]); update(); } });
+    const sl = {
+      a: panel.slider({ id: 'ric-a', label: 'Plant $a$', min: -2.5, max: 2.5, step: 0.05, value: st.a, onInput: v => { st.a = v; update(); } }),
+      b: panel.slider({ id: 'ric-b', label: 'Input $b$', min: 0, max: 2, step: 0.05, value: st.b, onInput: v => { st.b = v; update(); } }),
+      q: panel.slider({ id: 'ric-q', label: 'State weight $q$', min: 0, max: 3, step: 0.05, value: st.q, onInput: v => { st.q = v; update(); } }),
+      r: panel.slider({ id: 'ric-r', label: 'Input weight $r$', min: 0.05, max: 5, step: 0.05, value: st.r, onInput: v => { st.r = v; update(); } })
+    };
+    const out = panel.readout({});
+    panel.note(ui.legend([{ color: 'c1', label: 'map f' }, { color: 'ink-2', label: 'diagonal', kind: 'dash' }, { color: 'c7', label: 'orbit from p₀' }, { color: 'c3', label: 'stabilizing fixed point', kind: 'dot' }, { color: 'c8', label: 'non-stabilizing fixed point', kind: 'dot' }]));
+    function update() {
+      compute();
+      const z = R.star;
+      let html = `<span>fixed points <span class="num">${R.fps.length ? R.fps.map(u => fmt(u.p, 3)).join(', ') : 'none'}</span></span>`;
+      if (z) {
+        const k = Math.abs(st.b) < 1e-12 ? 0 : st.a * st.b * z.p / (st.r + st.b * st.b * z.p), h = 1e-6;
+        const slope = (f(z.p + h) - f(Math.max(0, z.p - h))) / (z.p + h - Math.max(0, z.p - h));
+        html += `<span><i>p</i>* <span class="num">${fmt(z.p, 4)}</span></span><span>gain <i>k</i> <span class="num">${fmt(k, 4)}</span></span>` +
+          `<span>closed-loop factor <i>a</i> − <i>bk</i> <span class="num">${fmt(z.acl, 4)}</span></span>` +
+          `<span><i>f</i>′(<i>p</i>*) <span class="num">${fmt(slope, 4)}</span> = (<i>a</i> − <i>bk</i>)² <span class="num">${fmt(z.acl * z.acl, 4)}</span></span>`;
+        if (st.q > 0 && Math.abs(st.b) > 1e-12) html += `<span>DARE solver <span class="num">${fmt(M.dare([[st.a]], [[st.b]], [[st.q]], [[st.r]])[0][0], 4)}</span></span>`;
+        html += z.stab ? '<span class="tag good">stabilizing</span>' : '<span class="tag bad">not stabilizing</span>';
+        if (R.fps.length > 1) html += '<span class="tag">two fixed points: not detectable in discrete time</span>';
+      } else html += '<span class="tag bad">no stabilizing solution: cost grows without bound</span>';
+      out.set(html);
+      map.redraw(); conv.redraw();
+    }
+    update();
+  })();
+
+  /* ---------------- Visual 11.2: trading state error against effort ---------------- */
+  (function () {
+    const plants = { dint: [[0, 1], [0, 0]], unst: [[0, 1], [2, 1]], osc: [[0, 1], [-1, -0.2]] };
+    const B = [[0], [1]];
+    const st = { plant: 'dint', rho: 1, q2: 1, x0: [1, 0] };
+    const T = 10, h = 0.02, N = Math.round(T / h), ws = S.logspace(-2, 2.5, 240);
+    const sp = new Plot('#lqr-s', { xlim: [-7, 3], ylim: [-5, 5], equal: true, maxH: 360, label: 'Locus of optimal closed-loop poles as rho varies' });
+    const ph = new Plot('#lqr-phase', { xlim: [-2.6, 2.6], ylim: [-2.6, 2.6], equal: true, maxH: 360, clip: true, xlabel: 'x₁', ylabel: 'x₂', label: 'Value function level sets and optimal trajectory' });
+    const px = new Plot('#lqr-x', { xlim: [0, T], ylim: [-1.5, 1.5], frame: true, aspect: 0.5, minH: 200, xlabel: 't', label: 'States against time' });
+    const pu = new Plot('#lqr-u', { xlim: [0, T], ylim: [-3, 3], frame: true, aspect: 0.5, minH: 200, xlabel: 't', label: 'Input against time' });
+    [sp, ph, px, pu].forEach(capFirst);
+    let locus = [], cur = null;
+    const Qm = () => [[1, 0], [0, st.q2]];
+    function computeLocus() {
+      const A = plants[st.plant]; locus = [];
+      for (let lr = -3; lr <= 3.0001; lr += 0.05) { const { K } = M.lqr(A, B, Qm(), [[Math.pow(10, lr)]]); M.eig2(M.sub(A, M.mul(B, K))).values.forEach(z => locus.push([z.re, z.im])); }
+    }
+    function compute() {
+      const A = plants[st.plant], Q = Qm(), Rm = [[st.rho]], { P, K } = M.lqr(A, B, Q, Rm), Acl = M.sub(A, M.mul(B, K));
+      const E = M.expm(M.scale(Acl, h)); let x = st.x0.slice(); const xs = [x.slice()], us = [-M.dot(K[0], x)];
+      for (let k = 0; k < N; k++) { x = M.mv(E, x); xs.push(x.slice()); us.push(-M.dot(K[0], x)); }
+      const XQ = M.lyap(M.T(Acl), Q), XR = M.lyap(M.T(Acl), M.mul(M.T(K), M.mul(Rm, K)));
+      const quad = X => M.dot(st.x0, M.mv(X, st.x0));
+      let rdMin = Infinity; ws.forEach(w => { const z = S.freq(A, B, K, 0, w); rdMin = Math.min(rdMin, Math.hypot(1 + z.re, z.im)); });
+      cur = { A, P, K, Acl, xs, us, ev: M.eig2(Acl).values, Jx: quad(XQ), Ju: quad(XR), J: quad(P), rdMin, Pih: sqrtm2(P, true) };
+    }
+    sp.draw = g => {
+      g.poly([[0, -20], [20, -20], [20, 20], [0, 20]], { fill: 'c8', fillAlpha: 0.06, stroke: false });
+      g.vline(0, { color: 'axis', width: 1.5 });
+      locus.forEach(q => g.dot(q, { r: 1.7, color: 'muted', ring: false, alpha: 0.8 }));
+      M.eig2(plants[st.plant]).values.forEach(z => { g.marker([z.re, z.im], { shape: 'x', size: 6, color: 'ink-2', width: 2 }); if (z.re > 1e-9) g.dot([-z.re, z.im], { r: 8, hollow: true, ring: false, color: 'c8', width: 1.75 }); });
+      if (cur) cur.ev.forEach(z => g.dot([z.re, z.im], { r: 6, color: 'c7' }));
+    };
+    ph.draw = g => {
+      if (!cur) return;
+      [1, 0.6, 0.35, 0.18, 0.08, 0.03].forEach((c, i) => g.ellipse([0, 0], M.scale(cur.Pih, Math.sqrt(c * cur.J)), { color: 'c1', width: i === 0 ? 1.75 : 1.1, alpha: i === 0 ? 0.9 : 0.55 }));
+      g.path(cur.xs, { color: 'c7', width: 2.25 });
+    };
+    ph.addHandle({ get: () => st.x0, set: (x, y) => { st.x0 = [x, y]; update(); }, color: 'c7', snap: 0.05 });
+    px.draw = g => { if (!cur) return; g.path(cur.xs.map((q, k) => [k * h, q[0]]), { color: 'c1', width: 2 }); g.path(cur.xs.map((q, k) => [k * h, q[1]]), { color: 'c2', width: 2 }); };
+    pu.draw = g => { if (cur) g.path(cur.us.map((u, k) => [k * h, u]), { color: 'c5', width: 2 }); };
+    const panel = ui.panel('#lqr-controls');
+    panel.select({ id: 'lqr-plant', label: 'Plant', value: 'dint', options: [['dint', 'Double integrator: q″ = u'], ['unst', 'Unstable: poles 2 and −1'], ['osc', 'Lightly damped oscillator']],
+      onChange: v => { st.plant = v; computeLocus(); update(); } });
+    panel.slider({ id: 'lqr-rho', label: 'Input weight $\\rho$', min: -3, max: 3, step: 0.05, value: st.rho, log: true, onInput: LT.throttle(v => { st.rho = v; update(); }) });
+    const recomputeLocus = LT.debounce(() => { computeLocus(); sp.redraw(); }, 120);
+    panel.slider({ id: 'lqr-q2', label: 'Velocity weight $q_2$', min: -2, max: 2, step: 0.05, value: st.q2, log: true, onInput: LT.throttle(v => { st.q2 = v; update(); recomputeLocus(); }) });
+    const out = panel.readout({});
+    panel.note(ui.legend([{ color: 'muted', label: 'locus over ρ', kind: 'dot' }, { color: 'c7', label: 'current poles, trajectory', kind: 'dot' }, { color: 'c1', label: 'x₁; level sets of xᵀPx' }, { color: 'c2', label: 'x₂' }, { color: 'c5', label: 'input u' }]));
+    function update() {
+      compute();
+      const mx = Math.min(40, cur.xs.reduce((m, q) => Math.max(m, Math.abs(q[0]), Math.abs(q[1])), 1));
+      px.setLimits(null, [-1.12 * mx, 1.12 * mx]);
+      const mu = Math.min(400, cur.us.reduce((m, u) => Math.max(m, Math.abs(u)), 0.5));
+      pu.setLimits(null, [-1.12 * mu, 1.12 * mu]);
+      const tot = cur.Jx + cur.Ju, wx = Math.round(120 * cur.Jx / tot), wu = 120 - wx;
+      out.set(
+        `${ui.mat(cur.P, 3, { name: 'P' })}${ui.mat(cur.K, 3, { name: 'K' })}` +
+        `<span>poles <span class="num">${cur.ev.map(z => fmtC(z, 2)).join(', ')}</span></span>` +
+        `<span>cost <i>x</i>₀ᵀ<i>Px</i>₀ <span class="num">${fmtSig(cur.J, 4)}</span> = state <span class="num">${fmtSig(cur.Jx, 3)}</span> + input <span class="num">${fmtSig(cur.Ju, 3)}</span></span>` +
+        `<span style="display:inline-flex;width:120px;height:9px;border-radius:2px;overflow:hidden"><span style="width:${wx}px;background:var(--c1)"></span><span style="width:${wu}px;background:var(--c5)"></span></span>` +
+        `<span>min<sub>ω</sub> |1 + <i>L<sub>K</sub></i>(<i>i</i>ω)| <span class="num">${fmt(cur.rdMin, 3)}</span></span>` +
+        (cur.rdMin >= 1 - 1e-6 ? '<span class="tag good">return difference ≥ 1</span>' : '<span class="tag bad">return difference below 1</span>')
+      );
+      sp.redraw(); ph.redraw(); px.redraw(); pu.redraw();
+    }
+    computeLocus(); update();
+  })();
+
+  /* ---------------- Visual 11.3: a Kalman filter tracking a noisy oscillator ---------------- */
+  (function () {
+    const A = M.rot(-0.1), C = [[1, 0]], kMax = 240, x0 = [1.5, 0];
+    const st = { w: Math.pow(10, -2.5), v: 0.1, seed: 5, k: 90 };
+    const ph = new Plot('#kf-phase', { xlim: [-2.6, 2.6], ylim: [-2.6, 2.6], equal: true, maxH: 380, xlabel: 'q', ylabel: 'p', label: 'Phase plane with true state, estimate and covariance ellipses' });
+    const pq = new Plot('#kf-q', { xlim: [0, kMax], ylim: [-2.5, 2.5], frame: true, aspect: 0.62, minH: 220, xlabel: 'step k', label: 'Position, measurements and estimate against step' });
+    const pe = new Plot('#kf-err', { xlim: [0, kMax], ylim: [1e-4, 20], logy: true, frame: true, aspect: 0.3, minH: 190, maxH: 280, xlabel: 'step k', label: 'Squared error and covariance traces on a log scale' });
+    [ph, pq, pe].forEach(capFirst);
+    let R = null;
+    function compute() {
+      const W = [[st.w, 0], [0, st.w]], V = [[st.v]], g = M.randn(st.seed), sw = Math.sqrt(st.w), sv = Math.sqrt(st.v);
+      let x = x0.slice(), xp = [0, 0], Sp = M.eye(2), xo = x0.slice(), So = M.zeros(2, 2);
+      const out = { x: [], y: [], xf: [], Sf: [], Lk: [], xo: [], So: [], e2: [], trf: [], tro: [] };
+      for (let k = 0; k <= kMax; k++) {
+        const y = x[0] + sv * g();
+        const Sy = M.mul(C, M.mul(Sp, M.T(C)))[0][0] + st.v, Lk = M.scale(M.mul(Sp, M.T(C)), 1 / Sy);
+        const xf = M.vadd(xp, M.vscale(M.col(Lk, 0), y - xp[0])), Sf = M.sym(M.sub(Sp, M.mul(Lk, M.mul(C, Sp))));
+        out.x.push(x.slice()); out.y.push(y); out.xf.push(xf); out.Sf.push(Sf); out.Lk.push(Lk); out.xo.push(xo.slice()); out.So.push(So);
+        out.e2.push(Math.max(1e-12, (x[0] - xf[0]) ** 2 + (x[1] - xf[1]) ** 2)); out.trf.push(M.trace(Sf)); out.tro.push(M.trace(So));
+        xp = M.mv(A, xf); Sp = M.sym(M.add(M.mul(A, M.mul(Sf, M.T(A))), W));
+        xo = M.mv(A, xo); So = M.sym(M.add(M.mul(A, M.mul(So, M.T(A))), W));
+        x = M.vadd(M.mv(A, x), [sw * g(), sw * g()]);
+      }
+      const Spri = M.dare(M.T(A), M.T(C), W, V), sy = Spri[0][0] + st.v;
+      const Spost = M.sym(M.sub(Spri, M.scale(M.outer(M.col(Spri, 0), Spri[0]), 1 / sy)));
+      out.trSS = M.trace(Spost);
+      R = out;
+    }
+    const ell = (c, Sg) => [c, M.scale(sqrtm2(Sg), 2)];
+    ph.draw = g => {
+      if (!R) return;
+      const k = st.k;
+      g.path(R.xo.slice(0, k + 1), { color: 'muted', width: 1.25, dash: [5, 4] });
+      if (k > 0) { const e = ell(R.xo[k], R.So[k]); g.ellipse(e[0], e[1], { color: 'muted', width: 1.25, dash: [5, 4] }); }
+      g.path(R.x.slice(0, k + 1), { color: 'c1', width: 1.75 });
+      g.path(R.xf.slice(0, k + 1), { color: 'c2', width: 1.5 });
+      const e = ell(R.xf[k], R.Sf[k]); g.ellipse(e[0], e[1], { fill: 'c2', fillAlpha: 0.16, color: 'c2', width: 1.5 });
+      g.dot(R.xo[k], { r: 4, color: 'muted' }); g.dot(R.xf[k], { r: 6, color: 'c2' }); g.dot(R.x[k], { r: 3.8, color: 'c1' });
+    };
+    pq.draw = g => {
+      if (!R) return;
+      const k = st.k;
+      g.vline(k, { color: 'muted', width: 1, dash: [3, 4] });
+      for (let j = 0; j <= k; j += 2) g.dot([j, R.y[j]], { r: 1.7, color: 'muted', alpha: 0.7, ring: false });
+      g.path(R.x.slice(0, k + 1).map((q, j) => [j, q[0]]), { color: 'c1', width: 2 });
+      g.path(R.xf.slice(0, k + 1).map((q, j) => [j, q[0]]), { color: 'c2', width: 1.75 });
+    };
+    pe.draw = g => {
+      if (!R) return;
+      const k = st.k;
+      g.hline(R.trSS, { color: 'ink-2', width: 1, dash: [2, 3], alpha: 0.7 });
+      g.path(R.tro.slice(1, k + 1).map((v, j) => [j + 1, v]), { color: 'muted', width: 1.5, dash: [6, 4] });
+      g.path(R.e2.slice(0, k + 1).map((v, j) => [j, v]), { color: 'c8', width: 1.5 });
+      g.path(R.trf.slice(0, k + 1).map((v, j) => [j, v]), { color: 'c2', width: 2.25 });
+    };
+    const panel = ui.panel('#kf-controls');
+    panel.slider({ id: 'kf-w', label: 'Process noise $\\sigma_w^2$', min: -4, max: -0.5, step: 0.05, value: st.w, log: true, onInput: LT.throttle(v => { st.w = v; update(); }) });
+    panel.slider({ id: 'kf-v', label: 'Measurement noise $\\sigma_v^2$', min: -3, max: 0.5, step: 0.05, value: st.v, log: true, onInput: LT.throttle(v => { st.v = v; update(); }) });
+    const anim = LT.animate(dt => { acc += dt * 12; while (acc >= 1) { acc -= 1; if (st.k < kMax) st.k++; else { anim.pause(); break; } } show(); }, { el: '#viz-kalman', onState: on => { runBtn.setLabel(on ? 'Pause' : 'Run'); } });
+    let acc = 0;
+    const btns = panel.buttons([
+      { label: 'Run', kind: 'primary', onClick: () => { if (st.k >= kMax) st.k = 0; anim.toggle(); } },
+      { label: 'Step', onClick: () => { anim.pause(); if (st.k < kMax) st.k++; show(); } },
+      { label: 'Reset', onClick: () => { anim.pause(); st.k = 0; show(); } },
+      { label: 'New noise', onClick: () => { st.seed = (st.seed * 31 + 17) % 10007; update(); } }
+    ]);
+    const runBtn = btns[0];
+    const out = panel.readout({});
+    panel.note(ui.legend([{ color: 'c1', label: 'true state' }, { color: 'c2', label: 'filter estimate, tr Σ' }, { color: 'muted', label: 'open-loop prediction', kind: 'dash' }, { color: 'c8', label: 'squared error' }]));
+    function show() {
+      const k = st.k;
+      out.set(
+        `<span>step <i>k</i> <span class="num">${k}</span></span>${ui.mat(R.Lk[k], 3, { name: 'L<sub>k</sub>' })}${ui.mat(R.Sf[k], 3, { name: 'Σ<sub>k|k</sub>' })}` +
+        `<span>tr Σ<sub>k|k</sub> <span class="num">${fmtSig(R.trf[k], 3)}</span>, steady state from the DARE <span class="num">${fmtSig(R.trSS, 3)}</span></span>` +
+        `<span>squared error <span class="num">${fmtSig(R.e2[k], 3)}</span></span><span>open-loop tr Σ <span class="num">${fmtSig(R.tro[k], 3)}</span></span>`
+      );
+      ph.redraw(); pq.redraw(); pe.redraw();
+    }
+    function update() { compute(); show(); }
+    update();
+  })();
+})();
+</script>
+</body>
+</html>

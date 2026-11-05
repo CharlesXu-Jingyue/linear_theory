@@ -1,0 +1,872 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>13 Neural circuits and beyond · Linear Theory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap">
+<link rel="stylesheet" href="assets/lt.css">
+<script src="assets/toc.js"></script>
+<script src="assets/lt.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+</head>
+<body>
+<div class="topbar"><button class="btn" id="lt-menu" type="button" aria-controls="lt-side" aria-expanded="false">Contents</button><span class="topbar-title">13 · Linear theory in neural circuits and beyond</span></div>
+<div class="shell">
+<nav class="side" id="lt-side" aria-label="Chapters"></nav>
+<main class="page" id="main" data-chapter="13">
+<div class="content">
+
+<header class="ch-head">
+  <div class="eyebrow">Part V · Bridges · Chapter 13</div>
+  <h1 class="ch-title">Linear theory in neural circuits and beyond</h1>
+  <p class="ch-lead">Recurrent circuits are nonlinear, but near an operating point they are linear systems, and much of what circuit models say about amplification, memory and instability is linear algebra of the connectivity matrix. This chapter derives those mechanisms in small models, states what particular papers showed with them, and ends with linear methods that reach nonlinear, data-driven and distributed problems.</p>
+  <p class="ch-meta"><span><b>Prerequisites</b> chapters 3, 6, 7, 9, 11 and 12</span><span><b>Leads to</b> the research literature</span><span><b>Visuals</b> 4</span></p>
+  <ol class="core-q">
+    <li>What do eigenvalues, Schur vectors and non-normality explain about recurrent neural dynamics, from balanced amplification to stability-optimized circuits (SOCs), and what do they miss?</li>
+    <li>Which circuit functions (amplification, memory, preparation) are linear mechanisms, and where does the linear account stop?</li>
+    <li>How do linear methods, from Koopman operators and dynamic mode decomposition (DMD) to system level synthesis (SLS), reach nonlinear, data-driven and distributed problems?</li>
+  </ol>
+  <details class="notation">
+    <summary>Notation introduced in this chapter</summary>
+    <div class="tbl-wrap"><table class="tbl">
+      <thead><tr><th>Symbol</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td>$r(t) \in \R^N$</td><td>activity of the $N$ units of a recurrent neural network (RNN)</td></tr>
+        <tr><td>$W$, $W_{ij}$</td><td>connectivity matrix; weight from unit $j$ to unit $i$</td></tr>
+        <tr><td>$\tau$, $\phi$, $u(t)$</td><td>single-unit time constant, gain function (applied entrywise), external input</td></tr>
+        <tr><td>$r^*$, $D$, $J$</td><td>fixed point, $D = \diag\phi'(r^*)$, Jacobian $J = (-I + WD)/\tau$</td></tr>
+        <tr><td>$w$, $k$</td><td>excitatory strength and inhibition dominance in the two-population excitatory and inhibitory (E/I) model</td></tr>
+        <tr><td>$e_\pm$, $a_\pm$, $w_{\mathrm{FF}}$, $\lambda_+$</td><td>sum and difference patterns, their amplitudes, feedforward weight between them, decay rate $1 + w(k - 1)$ of the sum pattern in units of $1/\tau$</td></tr>
+        <tr><td>$v$, $\ell$, $\tau_{\mathrm{eff}}$</td><td>right and left eigenvectors of a mode ($\ell^\T v = 1$), effective time constant $\tau/\abs{1 - \lambda}$</td></tr>
+        <tr><td>$\mathcal J(k)$</td><td>Fisher memory curve of a linear network (Ganguli, Huh and Sompolinsky write $J(k)$)</td></tr>
+        <tr><td>$g$, $f$, $\mu_E$, $\mu_I$, $m$</td><td>scale of random connectivity, excitatory fraction, mean excitatory and inhibitory weights, mean weight $f\mu_E + (1 - f)\mu_I$</td></tr>
+        <tr><td>$\Phi_x$, $\Phi_u$</td><td>closed-loop maps from disturbance to state and to input (SLS)</td></tr>
+        <tr><td>$\mathcal K$, $\psi$, $\Psi$</td><td>Koopman operator, observable, vector of observables</td></tr>
+        <tr><td>$X$, $X'$, $\hat A$, $\bar A$</td><td>snapshot matrices, the DMD estimate $X'X^+$, its first-order prediction under noise</td></tr>
+      </tbody>
+    </table></div>
+  </details>
+</header>
+
+<section class="sec" id="s-linear">
+<h2>Linearization of rate networks</h2>
+
+<div class="blk prob"><p>A recurrent network of $N$ units is a nonlinear ordinary differential equation. Near an operating point, which linear system does it become, and when does that linear system predict what the network does?</p></div>
+
+<div class="blk setting">
+<p>The rate network</p>
+<div class="eq">$$\tau\dot r = -r + W\phi(r) + u(t)$$</div>
+<dl class="where">
+  <dt>$r(t) \in \R^N$</dt><dd>activations of $N$ units (real $N$-vectors); in this form $r_i$ is an input variable and $\phi(r_i)$ the unit's rate</dd>
+  <dt>$W \in \R^{N\times N}$</dt><dd>connectivity, $W_{ij}$ the weight from unit $j$ to unit $i$</dd>
+  <dt>$\phi$</dt><dd>smooth increasing gain function, applied to each entry</dd>
+  <dt>$u(t)$, $\tau &gt; 0$</dt><dd>external input; single-unit time constant</dd>
+</dl>
+<p>For constant input $u_0$, a fixed point $r^*$ satisfies $r^* = W\phi(r^*) + u_0$. Write $I$ for the identity, $\diag(\cdot)$ for a diagonal matrix, $\Lambda(\cdot)$ for the spectrum and $\alpha(J) = \max\Re\Lambda(J)$ for the spectral abscissa ($\Re$ is the real part).</p>
+</div>
+
+<div class="blk prop" id="prop-jac" data-name="Jacobian of a rate network">
+<p>Let $D = \diag\big(\phi'(r_1^*), \dots, \phi'(r_N^*)\big)$. For deviations $\delta r = r - r^*$ and $\delta u = u - u_0$,</p>
+<div class="eq">$$\dot{\delta r} = J\,\delta r + \tau^{-1}\delta u + O(\norm{\delta r}^2),\qquad J = \frac{-I + WD}{\tau},$$</div>
+<p>so the eigenvalues of $J$ are $\big(\lambda_i(WD) - 1\big)/\tau$, with $\lambda_i(\cdot)$ the eigenvalues.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> Entrywise Taylor expansion gives $\phi(r^* + \delta r) = \phi(r^*) + D\,\delta r + O(\norm{\delta r}^2)$; substitute and use the fixed-point equation.</p></div>
+
+<div class="blk pattern">
+<p>An equivalence and its invariant. The other common form, $\tau\dot\rho = -\rho + \phi(W\rho + u)$, has the rates $\rho$ as its state. The substitution $r = W\rho + u_0$ matches its fixed points with those above, and the local spectrum is the invariant of the correspondence; the eigenvectors are not. This is <a class="xref" href="#prop-forms"></a>.</p>
+</div>
+
+<div class="blk prop" id="prop-forms" data-name="Two forms of the rate network">
+<p>Let $\phi$ be continuously differentiable and let the input $u = u_0$ be constant. (i) The maps $\rho^* \mapsto W\rho^* + u_0$ and $r^* \mapsto \phi(r^*)$ are mutually inverse bijections between the fixed points of $\tau\dot\rho = -\rho + \phi(W\rho + u_0)$ and those of $\tau\dot r = -r + W\phi(r) + u_0$. (ii) At corresponding fixed points the Jacobians are $(-I + DW)/\tau$ and $(-I + WD)/\tau$, with the same $D = \diag\phi'(r^*)$. They have the same characteristic polynomial; if $D$ is invertible they are similar, $-I + WD = D^{-1}(-I + DW)D$, and $v \mapsto Dv$ maps eigenvectors of the second to eigenvectors of the first.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> (i) If $\rho^* = \phi(W\rho^* + u_0)$, then $r^* = W\rho^* + u_0$ satisfies $\phi(r^*) = \rho^*$, hence $r^* = W\phi(r^*) + u_0$. If $r^* = W\phi(r^*) + u_0$, then $\rho^* = \phi(r^*)$ satisfies $W\rho^* + u_0 = r^*$, hence $\rho^* = \phi(W\rho^* + u_0)$. The two composites are the identity on the respective sets of fixed points. (ii) The chain rule gives the Jacobian $(-I + D'W)/\tau$ with $D' = \diag\phi'(W\rho^* + u_0)$, and $D' = D$ because $W\rho^* + u_0 = r^*$; <a class="xref" href="#prop-jac"></a> gives the other Jacobian. The characteristic polynomials of $DW$ and $WD$ agree by <a href="ch03_eigenvalues.html#thm-abba">the $AB$ and $BA$ theorem</a> (chapter 3) with square factors. Finally $D^{-1}(DW)D = WD$, and $(-I + DW)Dv = D(-I + WD)v$.</p></div>
+
+<div class="blk thm" id="thm-hg" data-name="Hartman–Grobman">
+<p>Suppose the fixed point is hyperbolic: no eigenvalue of $J$ has zero real part. Then there are neighbourhoods of $r^*$ and of $0$ and a homeomorphism between them that maps trajectories of the nonlinear network (with $u = u_0$) onto trajectories of $\dot\xi = J\xi$, preserving the direction of time. In particular $r^*$ is asymptotically stable if $\alpha(J) &lt; 0$ and unstable if $\alpha(J) &gt; 0$.</p>
+</div>
+<p class="src">Proof: Perko, <i>Differential Equations and Dynamical Systems</i>, 3rd ed., §2.8. The stability statement alone needs no hyperbolicity and is Lyapunov's indirect method: if $\alpha(J) &lt; 0$, the quadratic Lyapunov function of <a href="ch07_autonomous_systems.html#thm-lyapunov">Lyapunov's theorem</a> (chapter 7) is a local Lyapunov function for the nonlinear network; that $\alpha(J) &gt; 0$ implies instability is stated in Perko, §2.9.</p>
+
+<div class="blk cex" id="cex-nonhyp">
+<p>Without hyperbolicity the linearization is silent. The scalar equations $\dot x = -x^3$ and $\dot x = x^3$ both have Jacobian $0$ at $x = 0$; the first is asymptotically stable and the second unstable. A line attractor (<a class="xref" href="#s-memory"></a>) has exactly this defect: an eigenvalue of $J$ at $0$.</p>
+</div>
+
+<div class="blk rem"><p>What the conjugacy keeps and what it loses. By <a href="ch07_autonomous_systems.html#thm-topological">the topological classification of hyperbolic linear flows</a> (chapter 7), two such flows on $\R^N$ are topologically conjugate exactly when their stable subspaces have the same dimension. So the conjugacy keeps the dimensions of the stable and unstable manifolds, but not rotation and not transient growth: a stable node and a stable focus are conjugate, and so are a normal and a strongly non-normal stable $J$. The quantitative content of the next two sections, amplification and time constants, comes from the linearization itself, not from the theorem: by differentiable dependence on initial conditions (Perko, §2.3), $\delta r(t) = e^{tJ}\delta r(0) + o(\norm{\delta r(0)})$ uniformly for $t$ in any bounded interval, so the linear predictions hold for small deviations over finite times.</p></div>
+
+<div class="blk rem"><p>Slow points in trained networks. Sussillo and Barak (2013) locate fixed points of trained recurrent networks numerically, by minimizing $q(r) = \frac12\norm{F(r)}^2$ for the vector field $F(r) = \big(-r + W\phi(r) + u_0\big)/\tau$. Zeros of $q$ are fixed points; they call local minima with small positive $q$ slow points, and argue that near them the linearization still describes the dynamics over the time scales of the task. In a network trained to store three bits they found stable fixed points for the stored patterns, with saddles between them that mediate the transitions. Mante, Sussillo, Shenoy and Newsome (2013) used the same analysis on a network trained to integrate one of two sensory inputs depending on context, and found in each context a set of fixed points approximating a line attractor, with one eigenvalue of the linearization near zero and the others strongly negative.</p></div>
+
+<div class="blk pattern">
+<p>Inputs are read by left eigenvectors. Let $J$ be diagonalizable, $J = \sum_i \lambda_i v_i\ell_i^\T$, with right eigenvectors $v_i$ and left eigenvectors $\ell_i$ normalized by $\ell_i^\T v_j = \delta_{ij}$ (Kronecker delta). An input pulse $\delta u = b\,\delta(t)$ along a direction $b$ ($\delta(t)$ the Dirac delta) enters the linearization of <a class="xref" href="#prop-jac"></a> as $\tau^{-1}b\,\delta(t)$ and produces $\delta r(t) = \tau^{-1}e^{tJ}b = \tau^{-1}\sum_i e^{\lambda_i t}(\ell_i^\T b)\,v_i$ for $t &gt; 0$, by <a href="ch07_autonomous_systems.html#thm-modal">the modal expansion</a> (chapter 7). A slow mode keeps $\ell^\T b$, the projection of the input on its left eigenvector, not on the direction $v$ along which activity is stored. In Mante et al.'s networks both inputs had substantial projections onto the line attractor, yet these projections did not predict which input was integrated; that was decided by the projection on the left eigenvector of the slow mode, which they call the selection vector, and that vector changed with context, aligning with the relevant input and becoming orthogonal to the irrelevant one.</p>
+</div>
+</section>
+
+<section class="sec" id="s-amplify">
+<h2>Non-normal amplification in excitatory and inhibitory networks</h2>
+
+<div class="blk prob"><p>Cortical circuits combine strong recurrent excitation with strong inhibition. Can such a network be stable, with every eigenvalue safely in the left half-plane, and still amplify particular activity patterns without slowing them down?</p></div>
+
+<div class="blk setting">
+<p>Two populations, excitatory and inhibitory, with linear dynamics (gain absorbed into the weights) and time measured in units of $\tau$:</p>
+<div class="eq">$$\tau\frac{\dd}{\dd t}\begin{bmatrix} r_E\\ r_I\end{bmatrix} = -\begin{bmatrix} r_E\\ r_I\end{bmatrix} + W\begin{bmatrix} r_E\\ r_I\end{bmatrix} + u(t),\qquad W = \begin{bmatrix} w & -kw\\ w & -kw\end{bmatrix}.$$</div>
+<dl class="where">
+  <dt>$r_E$, $r_I$</dt><dd>deviations of the excitatory and inhibitory rates from baseline</dd>
+  <dt>$w \ge 0$</dt><dd>strength of the excitatory projections (to E and to I)</dd>
+  <dt>$k \ge 1$</dt><dd>inhibition dominance: the inhibitory projections have strength $kw$; Murphy and Miller write $k_I$</dd>
+</dl>
+<p>The columns respect Dale's law: the first column (outputs of E) is nonnegative and the second (outputs of I) nonpositive. Let $e_+ = (1, 1)^\T/\sqrt2$ (the sum pattern) and $e_- = (1, -1)^\T/\sqrt2$ (the difference pattern), and write $r = a_+e_+ + a_-e_-$.</p>
+</div>
+
+<div class="blk prop" id="prop-schur-ei" data-name="Schur form of the two-population model">
+<p>In the orthonormal basis $Q = [\,e_+\ \ e_-\,]$,</p>
+<div class="eq">$$Q^\T WQ = \begin{bmatrix} -w(k - 1) & w_{\mathrm{FF}}\\ 0 & 0\end{bmatrix},\qquad w_{\mathrm{FF}} = w(1 + k).$$</div>
+<p>This is a Schur form (chapter 3): the eigenvalues of $W$ are $-w(k-1)$, carried by the sum pattern, and $0$; the difference pattern drives the sum pattern through the feedforward weight $w_{\mathrm{FF}}$, and nothing feeds back.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> $W = w\,\mathbf 1 c^\T$ with $\mathbf 1 = (1, 1)^\T$ and $c = (1, -k)^\T$, a rank-one matrix. Hence</p>
+<div class="eq">$$We_\pm = w\,\mathbf 1\,(c^\T e_\pm) = w(1 \mp k)\,\mathbf 1/\sqrt2 = w(1 \mp k)\,e_+,$$</div>
+<p>which gives the two columns.</p></div>
+
+<div class="blk cor" id="cor-kick" data-name="Response to a difference-pattern kick">
+<p>With $u = 0$, $a_-(0) = 1$, $a_+(0) = 0$ and $\lambda_+ = 1 + w(k - 1)$, the amplitudes obey $\tau\dot a_- = -a_-$ and $\tau\dot a_+ = -\lambda_+a_+ + w_{\mathrm{FF}}\,a_-$, so $a_-(t) = e^{-t/\tau}$ and</p>
+<div class="eq">$$a_+(t) = \frac{1 + k}{k - 1}\Big(e^{-t/\tau} - e^{-\lambda_+ t/\tau}\Big)\quad (k &gt; 1),\qquad a_+(t) = 2w\,\frac{t}{\tau}\,e^{-t/\tau}\quad (k = 1).$$</div>
+<p>For $k = 1$ the peak is $2w/e$ at $t = \tau$. A sustained difference input $u = u_0e_-$ produces the steady state $a_- = u_0$ and $a_+ = \dfrac{w(1 + k)}{1 + w(k - 1)}\,u_0$.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> Variation of constants gives</p>
+<div class="eq">$$a_+(t) = \frac{w_{\mathrm{FF}}}{\tau}\int_0^t e^{-\lambda_+(t - s)/\tau}e^{-s/\tau}\,\dd s = \frac{w_{\mathrm{FF}}}{\lambda_+ - 1}\Big(e^{-t/\tau} - e^{-\lambda_+t/\tau}\Big),$$</div>
+<p>and $w_{\mathrm{FF}}/(\lambda_+ - 1) = (1 + k)/(k - 1)$; for $k = 1$, $\lambda_+ = 1$ and the integral is $w_{\mathrm{FF}}\,t\,e^{-t/\tau}/\tau$. The steady state solves the two equations with $\dot a_\pm = 0$.</p></div>
+
+<div class="blk probe">
+<p>Extreme cases. Exact balance, $k = 1$: $W$ is nilpotent, both eigenvalues of $J$ equal $-1/\tau$, and the amplification grows linearly with $w$. Strong excitation with $k &gt; 1$ fixed: as $w \to \infty$ the sum pattern decays ever faster ($\lambda_+ \to \infty$), yet the peak of $a_+$ saturates below $(1 + k)/(k - 1)$, so large gains need $k$ close to 1. Weak coupling: below a threshold no initial condition grows even transiently. The precise statements are <a class="xref" href="#prop-ei-regimes"></a>.</p>
+</div>
+
+<div class="blk prop" id="prop-ei-regimes" data-name="Gain, selectivity and threshold">
+<p>In the two-population model with $w &gt; 0$ and $u = 0$, let $\omega(J) = \lambda_{\max}\big((J + J^\T)/2\big)$ be the numerical abscissa, with $\lambda_{\max}$ the largest eigenvalue. (i) If $k = 1$, both eigenvalues of $J$ equal $-1/\tau$ and $J$ is a single $2\times 2$ Jordan block. (ii) After a unit difference kick ($a_-(0) = 1$, $a_+(0) = 0$), the sum amplitude peaks at $t^* = \tau\ln\lambda_+/(\lambda_+ - 1)$, with</p>
+<div class="eq">$$\max_{t\ge0}a_+(t) = w_{\mathrm{FF}}\,\lambda_+^{-\lambda_+/(\lambda_+ - 1)}\quad (k &gt; 1),\qquad \max_{t\ge0}a_+(t) = \frac{w_{\mathrm{FF}}}{e} = \frac{2w}{e}\ \text{ at } t^* = \tau\quad (k = 1).$$</div>
+<p>For $k &gt; 1$, $0 \le a_+(t) &lt; (1 + k)/(k - 1)$ for all $t \ge 0$, and the peak increases with $w$ toward this bound; hence a peak above $G &gt; 1$ requires $k &lt; (G + 1)/(G - 1)$. (iii) If $a_-(0) = 0$, then $\norm{r(t)} = \abs{a_+(0)}\,e^{-\lambda_+t/\tau}$: only initial states with a difference component can grow. (iv) $\omega(J) &gt; 0$ if and only if $w_{\mathrm{FF}}^2 &gt; 4\lambda_+$. If so, some initial state grows at first; otherwise $\norm{e^{tJ}} \le 1$ for all $t \ge 0$ and no initial state grows, even transiently.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> (i) $W^2 = w\,(c^\T\mathbf 1)\,W = w(1 - k)W$ vanishes for $k = 1$, so $\tau J + I = W \neq 0$ is nilpotent: $J$ has the single eigenvalue $-1/\tau$ and is not diagonalizable. (ii) For $k &gt; 1$, <a class="xref" href="#cor-kick"></a> gives $a_+(t) = \frac{w_{\mathrm{FF}}}{\lambda_+ - 1}\big(e^{-t/\tau} - e^{-\lambda_+t/\tau}\big)$ with $\lambda_+ &gt; 1$. Its derivative vanishes where $e^{(\lambda_+ - 1)t/\tau} = \lambda_+$, which gives $t^*$, and substituting gives the peak; the case $k = 1$ is in <a class="xref" href="#cor-kick"></a>. Since $0 \le e^{-t/\tau} - e^{-\lambda_+t/\tau} &lt; 1$ and $w_{\mathrm{FF}}/(\lambda_+ - 1) = (1 + k)/(k - 1)$, the bound follows. The peak equals $\frac{1 + k}{k - 1}h(\lambda_+)$ with $h(\lambda) = (\lambda - 1)\lambda^{-\lambda/(\lambda - 1)}$; $\frac{\dd}{\dd\lambda}\ln h(\lambda) = \ln\lambda/(\lambda - 1)^2 &gt; 0$, $h(\lambda) \to 1$ as $\lambda \to \infty$, and $\lambda_+ = 1 + w(k - 1)$ increases with $w$. (iii) $a_-(t) = a_-(0)e^{-t/\tau} = 0$, so $\tau\dot a_+ = -\lambda_+a_+$, and $\norm{r} = \norm{(a_+, a_-)}$ because $Q$ is orthogonal. (iv) The numerical abscissa is invariant under orthogonal similarity, and in the Schur basis the symmetric part of $\tau J$ is $S = \begin{bmatrix}-\lambda_+ & w_{\mathrm{FF}}/2\\ w_{\mathrm{FF}}/2 & -1\end{bmatrix}$. Its trace is negative, so it has a positive eigenvalue if and only if $\det S = \lambda_+ - w_{\mathrm{FF}}^2/4 &lt; 0$. The rest is <a href="ch06_nonnormality.html#thm-envelope">the envelope theorem</a> (chapter 6): $\norm{e^{tJ}} \le e^{t\omega(J)}$, and the right derivative of $\norm{e^{tJ}}$ at $t = 0$ is $\omega(J)$.</p></div>
+
+<div class="blk cex" id="cex-normal-twin">
+<p>Eigenvalues do not see the amplification. The normal network $\tau\dot r = Q\diag\big(-\lambda_+, -1\big)Q^\T r$, with Jacobian $J_N = Q\diag(-\lambda_+, -1)Q^\T/\tau$, has the same eigenvalues as the $J$ above, yet $\norm{e^{tJ_N}} = e^{-t/\tau} \le 1$ for all $t \ge 0$, and its steady-state response to a sustained difference input is that input pattern itself, with gain 1. The two networks are indistinguishable by their spectra, yet only the E/I network turns a sustained difference input into a sum-pattern response, of amplitude $w(1 + k)/(1 + w(k - 1))$ per unit input.</p>
+</div>
+
+<figure class="wide" aria-label="The two-population network and its Schur form">
+<svg viewBox="0 0 760 252" role="img" aria-label="Left: excitatory and inhibitory populations with weights w and minus k w. Right: the same network in the Schur basis, a difference pattern with self-coupling 0 feeding a sum pattern with self-coupling minus w times k minus 1 through the feedforward weight w times 1 plus k." style="width:100%;height:auto;max-width:860px;display:block;margin:6px 0 4px">
+  <defs>
+    <marker id="ei-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--ink-2)"/></marker>
+    <marker id="ei-bar" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="12" markerHeight="12" orient="auto"><path d="M5 0V10" stroke="var(--ink-2)" stroke-width="3"/></marker>
+  </defs>
+  <text x="190" y="22" text-anchor="middle" font-family="var(--font-ui)" font-size="12" letter-spacing="1.2" fill="var(--muted)">POPULATION BASIS</text>
+  <text x="570" y="22" text-anchor="middle" font-family="var(--font-ui)" font-size="12" letter-spacing="1.2" fill="var(--muted)">SCHUR BASIS</text>
+  <circle cx="120" cy="120" r="30" fill="none" stroke="var(--c2)" stroke-width="2"/>
+  <text x="120" y="126" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="18" fill="var(--ink)">E</text>
+  <circle cx="260" cy="120" r="30" fill="none" stroke="var(--c1)" stroke-width="2"/>
+  <text x="260" y="126" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="18" fill="var(--ink)">I</text>
+  <path d="M146 104 Q190 72 234 104" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#ei-arrow)"/>
+  <text x="190" y="76" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="15" fill="var(--ink)">w</text>
+  <path d="M234 136 Q190 168 146 136" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#ei-bar)"/>
+  <text x="190" y="176" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="15" fill="var(--ink)">−kw</text>
+  <path d="M92 108 C52 84 52 156 92 132" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#ei-arrow)"/>
+  <text x="44" y="125" text-anchor="end" font-family="var(--font-body)" font-style="italic" font-size="15" fill="var(--ink)">w</text>
+  <path d="M288 108 C328 84 328 156 288 132" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#ei-bar)"/>
+  <text x="336" y="125" font-family="var(--font-body)" font-style="italic" font-size="15" fill="var(--ink)">−kw</text>
+  <text x="190" y="216" text-anchor="middle" font-family="var(--font-ui)" font-size="12" fill="var(--muted)">eigenvalues of W: 0 and −w(k − 1)</text>
+  <text x="190" y="234" text-anchor="middle" font-family="var(--font-ui)" font-size="12" fill="var(--muted)">eigenvectors (1, 1), (k, 1): nearly parallel if k ≈ 1</text>
+  <line x1="380" y1="40" x2="380" y2="240" stroke="var(--rule-strong)" stroke-width="1"/>
+  <circle cx="480" cy="120" r="34" fill="none" stroke="var(--c7)" stroke-width="2"/>
+  <text x="480" y="117" text-anchor="middle" font-family="var(--font-ui)" font-size="12" fill="var(--ink)">difference</text>
+  <text x="480" y="134" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="15" fill="var(--ink)">a₋</text>
+  <circle cx="680" cy="120" r="34" fill="none" stroke="var(--c3)" stroke-width="2"/>
+  <text x="680" y="117" text-anchor="middle" font-family="var(--font-ui)" font-size="12" fill="var(--ink)">sum</text>
+  <text x="680" y="134" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="15" fill="var(--ink)">a₊</text>
+  <path d="M516 120 H642" fill="none" stroke="var(--ink-2)" stroke-width="2.4" marker-end="url(#ei-arrow)"/>
+  <text x="580" y="108" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="15" fill="var(--ink)">w(1 + k)</text>
+  <text x="580" y="142" text-anchor="middle" font-family="var(--font-ui)" font-size="11.5" fill="var(--muted)">one-way</text>
+  <path d="M462 90 C440 50 520 50 498 90" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#ei-arrow)"/>
+  <text x="480" y="50" text-anchor="middle" font-family="var(--font-body)" font-size="15" fill="var(--ink)">0</text>
+  <path d="M662 90 C640 50 720 50 698 90" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#ei-arrow)"/>
+  <text x="680" y="50" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="15" fill="var(--ink)">−w(k − 1)</text>
+  <text x="570" y="216" text-anchor="middle" font-family="var(--font-ui)" font-size="12" fill="var(--muted)">the same W in the orthonormal basis e₊, e₋</text>
+  <text x="570" y="234" text-anchor="middle" font-family="var(--font-ui)" font-size="12" fill="var(--muted)">is triangular: the coupling runs one way</text>
+</svg>
+</figure>
+
+<div class="blk rem"><p>What the papers showed. Murphy and Miller (2009) introduced this model and the Schur analysis: strong recurrent excitation stabilized by strong feedback inhibition amplifies difference patterns into sum patterns ("balanced amplification") without slowing the dynamics: every eigenvalue of $\tau J$ is at most $-1$ (<a class="xref" href="#prop-schur-ei"></a>), so no mode is slower than a single unit, and the sum pattern's own time constant, $\tau/\lambda_+$, is shorter still. They showed in a detailed biophysical model of cat primary visual cortex that this mechanism can account for spontaneous activity resembling orientation maps. Hennequin, Vogels and Gerstner (2014) started from strong random excitatory connectivity, which is unstable, and used control-theoretic optimization of the inhibitory connections, minimizing a smoothed spectral abscissa of $W$, to move every eigenvalue of $W$ to the left of $\Re\lambda = 1$, so that the linearized dynamics are stable; the resulting stability-optimized circuits are strongly non-normal, produce large transient responses from specific initial states after a preparatory phase, and can drive multidimensional movement-like outputs, with tightly balanced excitation and inhibition.</p></div>
+
+<figure class="viz" id="viz-ba">
+  <figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">Balanced amplification in the two-population model</span><span class="viz-sub">Rates after a kick at $t = 0$, computed from the closed forms above, for the E/I network and for the normal network with the same eigenvalues. Time is in units of $\tau$.</span></figcaption>
+  <div class="viz-plots cols-2">
+    <div class="plot" id="ba-time"><div class="plot-cap">$r_E(t)$, $r_I(t)$ and $\norm{r(t)}$; dashed: $\norm{r(t)}$ for the normal network</div></div>
+    <div class="plot" id="ba-phase"><div class="plot-cap">Phase plane $(r_E, r_I)$ with the Schur directions $e_\pm$ and the eigenvectors of $W$</div></div>
+  </div>
+  <div class="viz-plots cols-1">
+    <div class="plot" id="ba-peak"><div class="plot-cap">Peak of $\norm{r(t)}$ against $w$ at the current $k$: kick response (solid), worst initial condition $\max_t\norm{e^{tJ}}$ (dashed), normal network (dotted)</div></div>
+  </div>
+  <div class="viz-controls" id="ba-controls"></div>
+  <div class="viz-notes">
+    <div><h5>Try this</h5><ol>
+      <li>Press <i>Exact balance</i> ($k = 1$) and raise $w$: the sum amplitude peaks at $2w/e$ at $t = \tau$, while the eigenvalues stay at $-1$.</li>
+      <li>Set $w = 8$ and raise $k$ from 1 to 3: the sum pattern decays faster and the peak drops, since $a_+$ now stays below $(1 + k)/(k - 1)$ (<a class="xref" href="#prop-ei-regimes"></a>).</li>
+      <li>Switch the kick to the sum pattern: the response only decays. Amplification is selective: it needs a difference-pattern component.</li>
+      <li>Lower $w$ until the readout reports $\omega(J) &lt; 0$: no kick grows, even transiently.</li>
+    </ol></div>
+    <div><h5>What to notice</h5><p>The eigenvalues in the readout never move into the right half-plane, and the normal twin (dashed) only decays, as <a class="xref" href="#cex-normal-twin"></a> says. The amplification is carried by the off-diagonal Schur entry $w_{\mathrm{FF}}$ of <a class="xref" href="#prop-schur-ei"></a>; in the phase plane the trajectory leaves along the difference direction and is swept up the sum direction before decaying.</p></div>
+  </div>
+</figure>
+</section>
+
+<section class="sec" id="s-memory">
+<h2>Memory: integrators, line attractors and feedforward chains</h2>
+
+<div class="blk prob"><p>Hold a quantity, such as eye position or an accumulated decision variable, after its input has ended, using units whose own time constant $\tau$ is tens of milliseconds.</p></div>
+
+<div class="blk setting"><p>A linear network $\tau\dot r = -r + Wr + b\,u(t)$ with input weights $b \in \R^N$ and scalar input $u(t)$. Suppose $W$ has a real simple eigenvalue $\lambda$ with right eigenvector $v$ ($Wv = \lambda v$) and left eigenvector $\ell$ ($\ell^\T W = \lambda\ell^\T$), normalized so that $\ell^\T v = 1$; this is possible because $\ell^\T v \neq 0$ for a simple eigenvalue (<a href="ch06_nonnormality.html#thm-first-order">the first-order perturbation theorem</a>, chapter 6).</p></div>
+
+<div class="blk prop" id="prop-mode" data-name="One mode, three regimes">
+<p>The modal coordinate $a(t) = \ell^\T r(t)$ obeys, independently of the other modes,</p>
+<div class="eq">$$\tau\dot a = -(1 - \lambda)\,a + (\ell^\T b)\,u(t).$$</div>
+<p>For $\lambda = 1$ it is a perfect integrator, $a(t) = a(0) + \frac{\ell^\T b}{\tau}\int_0^t u(s)\,\dd s$; for $\lambda &lt; 1$ it forgets with the effective time constant $\tau_{\mathrm{eff}} = \tau/(1 - \lambda)$; for $\lambda &gt; 1$ it grows with time constant $\tau/(\lambda - 1)$. If $\lambda = 1$ and every other eigenvalue of $W$ has real part below 1, then with $u = 0$ the fixed points form the line $\spn(v)$ and every trajectory converges to $(\ell^\T r(0))\,v$: a line attractor.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> Multiply the network equation on the left by $\ell^\T$ and use $\ell^\T W = \lambda\ell^\T$. The scalar equation is solved by variation of constants. For the last claim, $J = (-I + W)/\tau$ has a simple eigenvalue $0$ with eigenvector $v$ and all other eigenvalues in the open left half-plane. The fixed points form $\Null(W - I) = \spn(v)$, since the eigenvalue $1$ of $W$ is simple. The subspace $\Null(\ell^\T)$ is invariant under $J$ and carries all its other eigenvalues, so $e^{Jt}(I - v\ell^\T) \to 0$, while $e^{Jt}v\ell^\T = v\ell^\T$; hence $e^{Jt} \to v\ell^\T$ as $t \to \infty$.</p></div>
+
+<div class="blk probe">
+<p>Simple and extreme cases, all read off <a class="xref" href="#prop-mode"></a>. With $\lambda = 0$ there is no feedback and the mode forgets with the single-unit time constant $\tau$. As $\lambda \to 1$ from below, $\tau_{\mathrm{eff}}$ grows without bound, continuously, but at $\lambda = 1$ the type of the flow changes: if the other eigenvalues of $W$ lie to the left of $\Re\lambda = 1$, an isolated stable equilibrium becomes a line of equilibria. Just above 1 the same mode runs away, so the integrator sits exactly on a stability boundary.</p>
+</div>
+
+<div class="blk ex" id="ex-tuning" data-name="How precise must the tuning be?">
+<p>With $\tau = 100$ ms, a memory with $\tau_{\mathrm{eff}} = 10$ s requires $\abs{1 - \lambda} = 0.01$; with $\tau = 10$ ms it requires $0.001$. Seung (1996) interpreted the persistent activity of the oculomotor neural integrator, which holds the eyes still between saccades, as a line of fixed points, and showed that linear and nonlinear networks produce line-attractor dynamics when learning tunes their positive feedback precisely.</p>
+</div>
+
+<div class="blk cex" id="cex-fragile">
+<p>A line attractor is not robust. Take $\lambda = 1$ in the setting above and perturb $W$ to $W + \eps\,v\ell^\T$ with a small real $\eps \neq 0$. Since $\ell^\T v = 1$, $(W + \eps v\ell^\T)v = (1 + \eps)v$ and $\ell^\T(W + \eps v\ell^\T) = (1 + \eps)\ell^\T$, so by <a class="xref" href="#prop-mode"></a> the stored mode now obeys $\tau\dot a = \eps a + (\ell^\T b)u$: memory decays for $\eps &lt; 0$ and grows for $\eps &gt; 0$, with time constant $\tau/\abs\eps$. Almost every perturbation acts this way: by <a href="ch06_nonnormality.html#thm-first-order">the first-order perturbation theorem</a> (chapter 6), $W + \eps E$ has an eigenvalue $1 + \eps\,\ell^\T Ev + o(\eps)$, which differs from 1 for all small $\eps \neq 0$ whenever $\ell^\T Ev \neq 0$, and $\abs{\ell^\T Ev} \le \norm{E}\,\norm{v}\norm{\ell}$, the size of $E$ times the condition number of the eigenvalue. The line attractor is also non-hyperbolic, so, as in <a class="xref" href="#cex-nonhyp"></a>, the linearization cannot decide whether the remembered value of a nonlinear network drifts, or in which direction; the nonlinear terms decide.</p>
+</div>
+
+<div class="blk prop" id="prop-chain" data-name="Memory in a feedforward chain">
+<p>Consider the chain $\tau\dot r_1 = -r_1 + u(t)$ and $\tau\dot r_j = -r_j + r_{j-1}$ for $j = 2, \dots, N$, so that $W$ is the shift with ones below the diagonal and every eigenvalue of $J$ equals $-1/\tau$. After an impulse that sets $r_1(0) = 1$,</p>
+<div class="eq">$$r_j(t) = \frac{(t/\tau)^{j-1}}{(j-1)!}\,e^{-t/\tau},\qquad s_N(t) = \sum_{j=1}^N r_j(t) = e^{-t/\tau}\sum_{i=0}^{N-1}\frac{(t/\tau)^i}{i!},\qquad \int_0^\infty s_N(t)\,\dd t = N\tau.$$</div>
+<p>The summed activity $s_N(t)$ is the probability that a Poisson variable with mean $t/\tau$ is at most $N - 1$. It decreases strictly from $s_N(0) = 1$ to $0$, satisfies $s_N(t) \ge 1 - t/(N\tau)$, and falls through $1/2$ at a time strictly between $(N - 1)\tau$ and $N\tau$.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> By induction on $j$,</p>
+<div class="eq">$$r_j(t) = \frac{1}{\tau}\int_0^t e^{-(t - s)/\tau}\,r_{j-1}(s)\,\dd s = \frac{e^{-t/\tau}}{\tau}\int_0^t \frac{(s/\tau)^{j-2}}{(j-2)!}\,\dd s,$$</div>
+<p>which is the stated formula. Each $r_j$ integrates to $\tau$, because $\int_0^\infty x^{j-1}e^{-x}\,\dd x = (j-1)!$. In matrix terms, $J = (-I + N_s)/\tau$ with the nilpotent shift $N_s$, and $e^{Jt} = e^{-t/\tau}\sum_i (t/\tau)^iN_s^i/i!$ is <a href="ch07_autonomous_systems.html#prop-jordan-exp">the exponential of a Jordan block</a> (chapter 7). Summing the chain equations gives $\tau\dot s_N = -r_N &lt; 0$ for $t &gt; 0$, so $s_N$ decreases strictly, and $s_N(t) \to 0$. Let $K$ be Poisson with mean $t/\tau$. Markov's inequality gives $1 - s_N(t) = \Pr(K \ge N) \le \mathbb E K/N = t/(N\tau)$, with $\mathbb E$ the expectation. Ramanujan's inequality $\sum_{i&lt;n}n^i/i! &lt; e^n/2 &lt; \sum_{i\le n}n^i/i!$ for integers $n \ge 1$ (proved by Szegő, 1928, and Watson, 1929) gives $s_N(N\tau) &lt; \frac12$ (take $n = N$) and, for $N \ge 2$, $s_N\big((N - 1)\tau\big) &gt; \frac12$ (take $n = N - 1$); for $N = 1$, $s_1(0) = 1$.</p></div>
+
+<div class="blk pattern">
+<p>Two kinds of memory, two linear signatures. The line attractor keeps information in an eigenvalue, $\lambda = 1$, and holds it indefinitely (<a class="xref" href="#prop-mode"></a>) at the price of fine tuning (<a class="xref" href="#cex-fragile"></a>). The chain keeps it in non-normal structure, a nilpotent part with every eigenvalue at $-1/\tau$, and holds it for a time proportional to its length, $N\tau$ (<a class="xref" href="#prop-chain"></a>). No parameter of the chain sits on a boundary: for every strictly lower-triangular $W$ the matrix $J = (-I + W)/\tau$ is triangular with diagonal $-1/\tau$, so changing the feedforward weights changes the amplitudes but leaves every eigenvalue at $-1/\tau$. Goldman (2009) showed that short-term memory can be maintained by such a purely feedforward mechanism, in which activity passes through a sequence of network states, in architecturally feedforward networks and in recurrent networks that are feedforward in a Schur basis, and that these networks can be tuned to integrate their inputs. Ganguli, Huh and Sompolinsky (2008) defined a Fisher memory curve for linear networks driven by noisy input; its total is exactly 1 for every normal connectivity matrix and at most $N$ for any network of $N$ neurons (<a class="xref" href="#prop-fisher"></a>), and they showed that a network whose total memory approaches the bound must have a hidden feedforward architecture that amplifies its input superlinearly for a time of order $N$, with input weights matched to that architecture.</p>
+</div>
+
+<div class="blk prop" id="prop-fisher" data-name="Total memory of a linear network">
+<p>Let $W \in \R^{N\times N}$ have spectral radius $\rho(W) &lt; 1$, let $b \in \R^N$ be a unit vector, let $C = \sum_{k\ge0}W^k(W^k)^\T$, and define the Fisher memory curve</p>
+<div class="eq">$$\mathcal J(k) = b^\T(W^k)^\T C^{-1}W^kb,\qquad k = 0, 1, 2, \dots$$</div>
+<p>For the discrete-time network $r_t = Wr_{t-1} + b\,u_t + \zeta_t$, driven by a scalar input $u_t$ and independent Gaussian noise $\zeta_t$ with mean zero and covariance $\nu I$ ($\nu &gt; 0$) and started in the infinite past, $\mathcal J(k)/\nu$ is the Fisher information that $r_t$ carries about the past input $u_{t-k}$, the other inputs being known. Then $\sum_{k\ge0}\mathcal J(k) \le N$, with strict inequality if $N \ge 2$, and $\sum_{k\ge0}\mathcal J(k) = 1$ if $W$ is normal. The bound is approached by an amplifying delay line: for $W = \alpha N_s$, with $N_s$ the shift with ones below the diagonal, and $b = e_1$, the first standard basis vector, the total tends to $N$ as $\alpha \to \infty$.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> The sums converge because $\norm{W^k} \to 0$ geometrically, and $C \succeq I$ is invertible. Fisher information: the state $r_t = \sum_{k\ge0}W^k(b\,u_{t-k} + \zeta_{t-k})$ is Gaussian with covariance $\nu C$ and mean linear in the inputs, the coefficient of $u_{t-k}$ being $W^kb$; for such a Gaussian the Fisher information about $u_{t-k}$ is $(W^kb)^\T(\nu C)^{-1}W^kb = \mathcal J(k)/\nu$. Bound: since $\norm b = 1$, $bb^\T \preceq I$ in <a href="ch04_svd.html#def-loewner">the Loewner order</a> (chapter 4), so $C_b = \sum_k W^kbb^\T(W^k)^\T \preceq C$. Then, with $\tr$ the trace, $\sum_k\mathcal J(k) = \tr(C^{-1}C_b) = \tr(C^{-1/2}C_bC^{-1/2})$, the trace of a symmetric matrix between $0$ and $I$, hence at most $N$. If $N \ge 2$, then $C - C_b = \sum_kW^k(I - bb^\T)(W^k)^\T \succeq I - bb^\T \neq 0$, so $N - \sum_k\mathcal J(k) = \tr\big(C^{-1/2}(C - C_b)C^{-1/2}\big) &gt; 0$. Normal case: write $W = U\Lambda U^*$ with $U$ unitary, $U^*$ its conjugate transpose, $\Lambda = \diag(\lambda_1, \dots, \lambda_N)$, and $\tilde b = U^*b$. Then $C = U\diag\big((1 - \abs{\lambda_i}^2)^{-1}\big)U^*$ and $\mathcal J(k) = \sum_i\abs{\lambda_i}^{2k}(1 - \abs{\lambda_i}^2)\abs{\tilde b_i}^2$, whose sum over $k$ is $\sum_i\abs{\tilde b_i}^2 = \norm b^2 = 1$. Delay line: $W^kb = \alpha^ke_{k+1}$ for $k &lt; N$ and $W^N = 0$, and $C$ is diagonal with $C_{ii} = \sum_{j&lt;i}\alpha^{2j}$, so $\mathcal J(k) = \alpha^{2k}/\sum_{j\le k}\alpha^{2j} \to 1$ for each $k &lt; N$.</p></div>
+
+<figure class="viz" id="viz-mem">
+  <figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">Integrators, leaks and feedforward memory</span><span class="viz-sub">One recurrent mode receiving three input pulses (with $\ell^\T b = 1$), or a feedforward chain receiving one pulse at $t = 0$. Time is in units of $\tau$; the right panel shows the eigenvalues of $\tau J$.</span></figcaption>
+  <div class="viz-plots main-side">
+    <div class="plot" id="mem-time"><div class="plot-cap">Activity against time; yellow bars are the input pulses</div></div>
+    <div class="plot" id="mem-eig"><div class="plot-cap">Eigenvalues of $\tau J$ in the complex plane</div></div>
+  </div>
+  <div class="viz-controls" id="mem-controls"></div>
+  <div class="viz-notes">
+    <div><h5>Try this</h5><ol>
+      <li>With <i>One recurrent mode</i>, set $\lambda = 1$: each pulse adds a step that stays, the integral of the input (dashed green).</li>
+      <li>Set $\lambda = 0.95$: the steps decay with $\tau_{\mathrm{eff}} = 20\tau$; at $\lambda = 1.05$ they grow without bound. The eigenvalue in the right panel crosses $0$ at $\lambda = 1$.</li>
+      <li>Switch to <i>Feedforward chain</i> and raise $N$: the summed activity (violet) stays near the input size for about $N\tau$, while all eigenvalues sit at $-1$.</li>
+    </ol></div>
+    <div><h5>What to notice</h5><p>In the recurrent mode the memory time is read off the spectrum, $\tau/\abs{1 - \lambda}$ by <a class="xref" href="#prop-mode"></a>; in the chain it cannot be, since the spectrum is the same for every $N$, and the readout shows the area $N\tau$ of <a class="xref" href="#prop-chain"></a> instead. The chain forgets eventually, the integrator never does, and only the integrator needs tuning.</p></div>
+  </div>
+</figure>
+</section>
+
+<section class="sec" id="s-random">
+<h2>Random connectivity, Dale's law and the edge of stability</h2>
+
+<div class="blk prob"><p>Real connectivity is too complex to specify. What does a random model predict about the spectrum of $W$, and therefore about the stability of the linearized network?</p></div>
+
+<div class="blk thm" id="thm-circular" data-name="Circular law">
+<p>Let $\xi_{ij}$, $i, j \ge 1$, be independent copies of a real random variable with mean 0 and variance 1, let $g &gt; 0$, and for each $N$ let $W = W_N$ have the entries $W_{ij} = g\,\xi_{ij}/\sqrt N$, $i, j \le N$; so the entries are independent and identically distributed (i.i.d.) with mean 0 and variance $g^2/N$. Then, almost surely, the empirical eigenvalue distribution $\frac1N\sum_{i=1}^N\delta_{\lambda_i(W_N)}$ ($\delta_z$ the unit point mass at $z$) converges weakly, as $N \to \infty$, to the uniform distribution on the disk $\{z \in \C : \abs z \le g\}$.</p>
+</div>
+<p class="src">Tao and Vu (2010) prove this under a finite variance alone, completing work of Ginibre (Gaussian entries), Girko and Bai; see also Bai and Silverstein, <i>Spectral Analysis of Large Dimensional Random Matrices</i>, 2nd ed., ch. 11. The circular law describes the bulk and allows $o(N)$ eigenvalues outside the disk. That the spectral radius $\rho(W_N)$ also converges to $g$ almost surely is a separate result: the circular law gives $\liminf_N\rho(W_N) \ge g$, and the matching upper bound is proved under moment conditions that Gaussian entries satisfy (Geman, 1986; Bai and Silverstein, ch. 5).</p>
+
+<div class="blk cor" id="cor-edge" data-name="The edge of stability">
+<p>Let $\phi$ be continuously differentiable with $\phi(0) = 0$ and $\phi'(0) = 1$, as for $\phi = \tanh$, and let $W = W_N$ be as in <a class="xref" href="#thm-circular"></a>. Then $r = 0$ is a fixed point of $\tau\dot r = -r + W\phi(r)$ with Jacobian $J = (-I + W)/\tau$, and almost surely: (i) the empirical eigenvalue distribution of $J$ converges weakly to the uniform distribution on the disk of radius $g/\tau$ centred at $-1/\tau$; (ii) if $g &gt; 1$, the fraction of eigenvalues of $J$ in the open right half-plane has limit inferior at least the positive share of that disk lying there, so for all large $N$, $\alpha(J) &gt; 0$ and $r = 0$ is unstable; (iii) if $g &lt; 1$ and $\rho(W_N) \to g$ (for example for Gaussian entries), then for all large $N$, $\alpha(J) &lt; 0$ and $r = 0$ is asymptotically stable.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> <a class="xref" href="#prop-jac"></a> with $D = \phi'(0)I = I$ gives $J$, whose eigenvalues are $(\lambda_i(W) - 1)/\tau$. This affine map carries the disk of <a class="xref" href="#thm-circular"></a> onto the stated disk and preserves weak convergence, which is (i). (ii) For $g &gt; 1$ the open half-plane $\{\Re z &gt; 0\}$ meets the limiting disk in a set of positive area, and weak convergence gives $\liminf_N\mu_N(U) \ge \mu(U)$ for every open set $U$ (the portmanteau theorem), where $\mu_N$ and $\mu$ are the empirical and limiting distributions. Hence $\alpha(J) &gt; 0$ for all large $N$, and instability follows from Lyapunov's indirect method (the source of <a class="xref" href="#thm-hg"></a>). (iii) $\rho(W_N) \to g &lt; 1$ forces $\Re\lambda_i(W_N) &lt; 1$ for every $i$ once $N$ is large, so $\alpha(J) &lt; 0$ and <a class="xref" href="#thm-hg"></a> applies.</p></div>
+
+<div class="blk probe">
+<p>Finite size and symmetry. The circular law is a statement about $N \to \infty$: the default sample in <a class="xref" href="#viz-rand"></a> ($N = 200$, $g = 0.8$) has spectral radius $0.836$ and rightmost eigenvalue $0.799$, so at this size the edge of the spectrum is not sharp at $g$, and a particular network with $g$ just below 1 can be unstable: in a simulation for this guide, about 8 percent of 1000 Gaussian samples with $N = 200$ and $g = 0.95$ had an eigenvalue of $W$ to the right of $\Re\lambda = 1$. Symmetry changes the answer: a symmetric $W$ whose off-diagonal entries have the same variance $g^2/N$ has real eigenvalues filling $[-2g, 2g]$, so $-I + W$ loses stability already at $g = 1/2$. This is <a class="xref" href="#thm-semicircle"></a>.</p>
+</div>
+
+<div class="blk thm" id="thm-semicircle" data-name="Wigner's semicircle law">
+<p>Let $g &gt; 0$ and let $W = W_N$ be real symmetric with $W_{ij} = W_{ji} = g\,\xi_{ij}/\sqrt N$ for $i \le j$, where the $\xi_{ij}$ are independent, those with $i &lt; j$ copies of a random variable with mean 0 and variance 1, and those with $i = j$ copies of one with mean 0 and finite variance. Then, almost surely, the empirical eigenvalue distribution of $W_N$ converges weakly to the semicircle law on $[-2g, 2g]$, with density $\sqrt{4g^2 - x^2}/(2\pi g^2)$. If the $\xi_{ij}$ also have finite fourth moments, the largest eigenvalue $\lambda_{\max}(W_N)$ converges to $2g$ almost surely. Consequently, almost surely, for all large $N$, $-I + W_N$ has an eigenvalue with positive real part if $g &gt; \frac12$, and, under the fourth-moment condition, is stable if $g &lt; \frac12$.</p>
+</div>
+<p class="src">Wigner, "On the distribution of the roots of certain symmetric matrices", <i>Ann. Math.</i> 67 (1958); almost sure convergence under a finite variance and the largest eigenvalue: Bai and Silverstein, 2nd ed., chs. 2 and 5. The consequences follow as in <a class="xref" href="#cor-edge"></a>, with real eigenvalues and the open interval $(1, \infty)$ in place of the right half-plane.</p>
+
+<div class="blk rem"><p>The transition to chaos. Sompolinsky, Crisanti and Sommers (1988) studied $\dot x_i = -x_i + \sum_j W_{ij}\tanh(x_j)$ with i.i.d. Gaussian $W_{ij}$ of variance $g^2/N$. The zero state is stable for $g &lt; 1$; at $g = 1$ it loses stability, as <a class="xref" href="#cor-edge"></a> predicts, and in the limit $N \to \infty$ a dynamic mean-field theory shows that for $g &gt; 1$ the network is chaotic. Linear theory locates the transition; the saturation of $\tanh$ decides what happens after it, bounded irregular fluctuations instead of exponential growth.</p></div>
+
+<div class="blk setting"><p>Dale's law. A fraction $f$ of the units is excitatory: their columns have mean $\mu_E$ and the remaining columns have mean $\mu_I &lt; 0$, both in units of $g/\sqrt N$, with fluctuations of variance $g^2/N$ as before. Then $W = \frac{g}{\sqrt N}(\mathbf 1\mu^\T + Z)$, where $\mathbf 1$ is the all-ones vector, $\mu_j \in \{\mu_E, \mu_I\}$ is the mean of column $j$, and $Z$ has i.i.d. standard Gaussian entries. The means are <dfn>balanced</dfn> if $f\mu_E + (1 - f)\mu_I = 0$, that is, $\mu^\T\mathbf 1 = 0$.</p></div>
+
+<p>The mean part $\frac{g}{\sqrt N}\mathbf 1\mu^\T$ has rank one, so its eigenvalues are $0$ and $g\sqrt N\,m$, with eigenvector $\mathbf 1$, where $m = \mu^\T\mathbf 1/N = f\mu_E + (1 - f)\mu_I$ is the mean weight (with $fN$ excitatory columns). If excitation dominates, $m &gt; 0$, and this eigenvalue survives the random part as a real outlier that grows like $\sqrt N$:</p>
+
+<div class="blk prop" id="prop-outlier" data-name="Unbalanced means give an outlier">
+<p>Let $W = \frac{g}{\sqrt N}(\mathbf 1\mu^\T + Z)$ as above, with $g &gt; 0$, mean weight $m = \mu^\T\mathbf 1/N &gt; 0$ and $s = \norm{\mu}/\sqrt N = \sqrt{f\mu_E^2 + (1 - f)\mu_I^2}$, and suppose that $\norm{Z} \le c\sqrt N$ for a constant $c &gt; 0$, where $\norm{\cdot}$ is the spectral norm. If $\sqrt N &gt; 4c\,(s + m/2)/m^2$, then $W$ has a real eigenvalue $\lambda &gt; \frac12 g\sqrt N\,m$ with</p>
+<div class="eq">$$\abs{\lambda - g\sqrt N\,m} \le \frac{g\,s\,c\,\sqrt N}{\sqrt N\,m/2 - c},$$</div>
+<p>a bound that tends to $2gsc/m$ as $N \to \infty$. If the entries of $Z$ are i.i.d. with mean 0, variance 1 and finite fourth moment, then $\norm{Z}/\sqrt N \to 2$ almost surely, so for every $g &gt; 0$, almost surely, $-I + W$ is unstable for all large $N$.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> Let $A = gZ/\sqrt N$, so $\norm A \le cg$, and $\theta = g\sqrt N\,m$. For real $\lambda &gt; \norm A$, $\lambda I - A$ is invertible, and the matrix determinant lemma gives $\det(\lambda I - W) = \det(\lambda I - A)\,\big(1 - h(\lambda)\big)$ with $h(\lambda) = \frac{g}{\sqrt N}\mu^\T(\lambda I - A)^{-1}\mathbf 1$, a continuous real function that tends to 0 as $\lambda \to \infty$. The Neumann series $(\lambda I - A)^{-1} = \sum_{k\ge0}A^k\lambda^{-k-1}$ gives $h(\lambda) = \theta/\lambda + R(\lambda)$, where</p>
+<div class="eq">$$\abs{R(\lambda)} \le \frac{g}{\sqrt N}\norm\mu\,\norm{\mathbf 1}\sum_{k\ge1}\frac{\norm A^k}{\lambda^{k+1}} \le \frac{g^2sc\sqrt N}{\lambda(\lambda - cg)}\qquad(\lambda &gt; cg).$$</div>
+<p>The hypothesis on $N$ is equivalent to $\theta/2 &gt; cg$ together with $g^2sc\sqrt N &lt; (\theta/2)(\theta/2 - cg)$, so $\abs{R(\theta/2)} &lt; 1$ and $h(\theta/2) &gt; 2 - 1 = 1$. By the intermediate value theorem $h(\lambda) = 1$ for some $\lambda &gt; \theta/2$, an eigenvalue of $W$. There $\lambda - \theta = \lambda R(\lambda)$, so $\abs{\lambda - \theta} \le g^2sc\sqrt N/(\theta/2 - cg)$, which is the bound. The limit $\norm Z/\sqrt N \to 2$ is the theorem on the largest eigenvalue of the sample covariance matrix $ZZ^\T/N$, which tends to 4 (Bai and Silverstein, ch. 5); with $c = 3$ the hypotheses then hold for all large $N$, and $\lambda &gt; \frac12 g\sqrt N\,m &gt; 1$ eventually.</p></div>
+
+<div class="blk cex" id="cex-dale">
+<p>Balanced means are not enough. If the means are balanced, $m = 0$ and <a class="xref" href="#prop-outlier"></a> says nothing: the mean part is nilpotent, $(\mathbf 1\mu^\T)^2 = \mathbf 1(\mu^\T\mathbf 1)\mu^\T = 0$, yet its norm, $g\sqrt{f\mu_E^2 + (1 - f)\mu_I^2}\,\sqrt N$, grows with $N$. Rajan and Abbott (2006) found that a few eigenvalues then lie outside the disk, at locations that vary from sample to sample, and that their number does not appear to go to zero as $N$ grows. In the default sample of <a class="xref" href="#viz-rand"></a> under <i>Dale: balanced means</i>, with $N = 200$, $g = 0.8$, $f = 0.8$ and $\mu_E = 3$, five eigenvalues lie beyond $1.1g$ and the rightmost is near $2.3$: the linearized network is unstable although the bulk radius is $0.8$.</p>
+</div>
+
+<div class="blk prop" id="prop-rowbal" data-name="Exact balance removes the mean from the spectrum">
+<p>Let $\mu^\T\mathbf 1 = 0$, let $P = I - \frac1N\mathbf 1\mathbf 1^\T$, and let $W = \frac{g}{\sqrt N}\big(\mathbf 1\mu^\T + ZP\big)$, so that every row of $W$ sums to zero. If the columns of $Q \in \R^{N\times(N-1)}$ are an orthonormal basis of $\mathbf 1^\perp$, then</p>
+<div class="eq">$$\Lambda(W) = \{0\}\ \cup\ \Lambda\Big(\tfrac{g}{\sqrt N}\,Q^\T ZQ\Big).$$</div>
+<p>The mean structure does not affect the spectrum. If $Z$ is Gaussian, $Q^\T ZQ$ is again an $(N-1)\times(N-1)$ matrix of i.i.d. standard Gaussian entries, so the spectrum is one zero plus a circular-law sample of radius about $g$.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> Let $e = \mathbf 1/\sqrt N$, so that $U = [\,e\ \ Q\,]$ is orthogonal. Since $\mu^\T e = 0$ and $Pe = 0$, $We = 0$; since $PQ = Q$ and $Q^\T\mathbf 1 = 0$, $Q^\T WQ = \frac{g}{\sqrt N}Q^\T ZQ$. Hence</p>
+<div class="eq">$$U^\T WU = \begin{bmatrix} 0 & e^\T WQ\\ 0 & \frac{g}{\sqrt N}Q^\T ZQ\end{bmatrix},$$</div>
+<p>which is block upper triangular. For Gaussian $Z$, $U^\T ZU$ has i.i.d. standard Gaussian entries (orthogonal invariance), and $Q^\T ZQ$ is one of its blocks.</p></div>
+<p>Rajan and Abbott imposed this constraint to force the outliers back inside the disk, and noted that it makes the spectrum that of the fluctuations alone, as <a class="xref" href="#prop-rowbal"></a> shows: under exact balance the spectrum depends on the variances of the weights, not on their means. They also computed what changes when the excitatory and inhibitory variances differ:</p>
+
+<div class="blk thm" id="thm-varprofile" data-name="Unequal variances">
+<p>Let $0 &lt; f &lt; 1$ and $\gamma_E, \gamma_I &gt; 0$ be fixed, let $Z$ have i.i.d. standard Gaussian entries, and let $W = \frac{1}{\sqrt N}Z\,\diag(\gamma_1, \dots, \gamma_N)$ with $\gamma_j = \gamma_E$ on a fraction $f$ of the columns (the excitatory ones) and $\gamma_j = \gamma_I$ on the others, so that the entry variances are $\sigma_E^2 = \gamma_E^2/N$ and $\sigma_I^2 = \gamma_I^2/N$. As $N \to \infty$, the empirical eigenvalue distribution of $W$ converges weakly in probability to a rotation-invariant distribution on the disk of radius</p>
+<div class="eq">$$R = \sqrt{f\gamma_E^2 + (1 - f)\gamma_I^2} = \sqrt{N\big(f\sigma_E^2 + (1 - f)\sigma_I^2\big)},$$</div>
+<p>which is uniform only if $\gamma_E = \gamma_I$.</p>
+</div>
+<p class="src">Rajan and Abbott (2006) derived the radius and the density, which has a high-density central region when the variances differ; a rigorous theory of non-Hermitian random matrices with a variance profile, whose results on separable profiles cover this column profile, is Cook, Hachem, Najim and Renfrew (2018).</p>
+
+<figure class="viz" id="viz-rand">
+  <figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">Spectra of random connectivity</span><span class="viz-sub">Eigenvalues of one sample of $W$, with the circle of radius $g$ and the line $\Re\lambda = 1$, to the right of which an eigenvalue of $W$ makes $-I + W$ unstable. Entries are Gaussian, so a small fraction of Dale's-law entries have the wrong sign; the readout reports it.</span></figcaption>
+  <div class="viz-plots cols-2">
+    <div class="plot" id="rand-plot"><div class="plot-cap">Eigenvalues of $W$; dashed circle of radius $g$, red dashed line $\Re\lambda = 1$</div></div>
+    <div class="plot" id="rand-cdf"><div class="plot-cap">Fraction of eigenvalues with $\abs{\lambda} \le \rho$ (blue) against the circular law $\min(1, \rho^2/g^2)$ (green dashed)</div></div>
+  </div>
+  <div class="viz-controls" id="rand-controls"></div>
+  <div class="viz-notes">
+    <div><h5>Try this</h5><ol>
+      <li>Choose <i>i.i.d., no Dale's law</i> and raise $g$ through 1: the disk crosses the line $\Re\lambda = 1$ and the tag turns to unstable; at larger $N$ the edge sharpens.</li>
+      <li>Choose <i>Dale: E-dominated means</i>: one real eigenvalue leaves far to the right (an arrow points to it if it is off the plot), close to the predicted $g\sqrt N(f\mu_E + (1 - f)\mu_I)$ of <a class="xref" href="#prop-outlier"></a>.</li>
+      <li>Choose <i>Dale: balanced means</i> and raise $\mu_E$: a few outliers escape the disk; press <i>New sample</i> and they move.</li>
+      <li>Choose <i>Dale: balanced in every row</i>: the outliers vanish and the disk of radius $g$ returns, with one eigenvalue at $0$.</li>
+    </ol></div>
+    <div><h5>What to notice</h5><p>The bulk is fixed by the variance, as in <a class="xref" href="#thm-circular"></a>: for a uniform disk the fraction of eigenvalues within radius $\rho$ is $\rho^2/g^2$, which the right panel tests directly. The means act through a rank-one, possibly nilpotent, perturbation. Stability of $-I + W$ is decided by the rightmost eigenvalue, which can be an outlier rather than the edge of the bulk; <a class="xref" href="#prop-rowbal"></a> explains why the last preset restores the disk exactly.</p></div>
+  </div>
+</figure>
+</section>
+
+<section class="sec" id="s-control">
+<h2>Control-theoretic views of neural circuits</h2>
+
+<div class="blk prob"><p>The previous sections treat a circuit as a dynamical system. The brain also controls a body and its own activity. Which control-theoretic ideas have been used as hypotheses about circuits, and what exactly did each study show?</p></div>
+
+<div class="blk pattern">
+<p>A taxonomy of the linear mechanisms in this chapter and the next ideas of this section, with the point where each linear account stops.</p>
+</div>
+<div class="tbl-wrap"><table class="tbl">
+  <thead><tr><th>Mechanism</th><th>Linear signature</th><th>Model and source</th><th>Where the linear account stops</th></tr></thead>
+  <tbody>
+    <tr><td>Selective amplification</td><td>large off-diagonal Schur entry, stable spectrum (<a class="xref" href="#prop-schur-ei"></a>)</td><td>E/I pair; Murphy and Miller (2009); SOCs, Hennequin et al. (2014)</td><td>rectification and saturation of rates</td></tr>
+    <tr><td>Integration, persistent memory</td><td>eigenvalue of $W$ at 1, of $J$ at 0 (<a class="xref" href="#prop-mode"></a>)</td><td>line attractor; Seung (1996); Mante et al. (2013)</td><td>fine tuning; non-hyperbolic, so nonlinear terms decide drift (<a class="xref" href="#cex-fragile"></a>)</td></tr>
+    <tr><td>Transient memory</td><td>nilpotent part, Jordan structure (<a class="xref" href="#prop-chain"></a>)</td><td>feedforward chain; Goldman (2009); Ganguli et al. (2008)</td><td>finite duration; total memory at most $N$ (<a class="xref" href="#prop-fisher"></a>)</td></tr>
+    <tr><td>Instability, onset of chaos</td><td>bulk or outlier crossing the imaginary axis (<a class="xref" href="#cor-edge"></a>, <a class="xref" href="#prop-outlier"></a>)</td><td>random $W$; Sompolinsky et al. (1988); Rajan and Abbott (2006)</td><td>beyond the transition only the nonlinearity bounds activity</td></tr>
+    <tr><td>Feedback control of movement</td><td>optimal feedback gain, Riccati equation (<a class="xref" href="#ex-mip"></a>)</td><td>Todorov and Jordan (2002)</td><td>nonlinear plants, signal-dependent noise</td></tr>
+    <tr><td>Preparation</td><td>choice of initial state, reachability (chapter 9)</td><td>Churchland et al. (2012); Kao et al. (2021)</td><td>how the initial state is reached and held</td></tr>
+    <tr><td>Distributed control with delays</td><td>affine constraint on closed-loop maps (<a class="xref" href="#thm-sls"></a>)</td><td>SLS; Anderson et al. (2019); Li et al. (2023)</td><td>requires a model of plant and delays</td></tr>
+  </tbody>
+</table></div>
+
+<div class="blk rem"><p>Optimal feedback control. Todorov and Jordan (2002) proposed that motor coordination is the output of an optimal feedback controller acting on state estimates, the linear quadratic Gaussian setting of chapter 11 extended with signal-dependent noise, and showed that such controllers obey a minimal intervention principle: they correct only deviations that interfere with the task and let variability accumulate in task-irrelevant directions, which matches the structure of motor variability in their experiments.</p></div>
+
+<div class="blk ex" id="ex-mip" data-name="Minimal intervention in two lines">
+<p>Two redundant effectors $x = (x_1, x_2)$ with $\dot x = u$ must keep the task variable $x_1 + x_2$ at zero, with cost $\int_0^\infty \big(q\,(x_1 + x_2)^2 + \rho\norm{u}^2\big)\dd t$, where $q, \rho &gt; 0$. The value function is $x^\T Px$ with $P = \gamma\,\mathbf 1\mathbf 1^\T$, $\gamma = \sqrt{\rho q/2}$, and the optimal feedback is</p>
+<div class="eq">$$u = -\tfrac{1}{\rho}Px = -\sqrt{\tfrac{q}{2\rho}}\,(x_1 + x_2)\,\mathbf 1.$$</div>
+<p>Indeed $P^2 = 2\gamma^2\mathbf 1\mathbf 1^\T = \rho q\,\mathbf 1\mathbf 1^\T$, so the Riccati equation $-P^2/\rho + q\,\mathbf 1\mathbf 1^\T = 0$ holds. Completing the square as in <a href="ch11_lqr_kalman.html#thm-care">the regulator theorem</a> (chapter 11) gives cost $x(0)^\T Px(0)$ for this $u$ and at least that for any other input with finite cost. That theorem assumes a stabilizing $P$, which this one is not, but its proof only needs the boundary term $x(T)^\T Px(T) = \gamma\,y(T)^2$, $y = x_1 + x_2$, to vanish as $T \to \infty$; finite cost makes $y$ and $\dot y = u_1 + u_2$ square integrable, so $y(T)^2$, whose derivative $2y\dot y$ is integrable, converges, and its limit is $0$ because $y^2$ is integrable. Both effectors receive the same correction, proportional to the task error, and the difference $x_1 - x_2$ receives none: with additive noise it diffuses freely while the task variable keeps a bounded variance. The problem fails the detectability assumption of <a href="ch11_lqr_kalman.html#thm-care-exist">the existence theorem for the Riccati equation</a> (chapter 11) exactly in the task-irrelevant direction, which is why that direction is left alone.</p>
+</div>
+
+<div class="blk rem"><p>Preparation as an initial condition. Churchland et al. (2012) found rotational structure in motor cortex population activity during reaching, consistent with a dynamical system whose state at movement onset is set by preparatory activity; Shenoy, Sahani and Churchland (2013) review this dynamical systems view, in which preparation chooses the initial condition and the intrinsic dynamics generate the movement. Kaufman, Churchland, Ryu and Shenoy (2014) showed that preparatory activity lies largely in output-null directions, the null space of the readout in chapter 1's language. Kao, Sadabadi and Hennequin (2021) formulate preparation as optimal anticipatory control of the upcoming movement and show that the solution requires internal feedback control of the cortical dynamics: unlike a simple feedforward strategy, feedback enables fast preparation by selectively controlling the cortical state in the small subspace that matters for the movement, and feedback, not feedforward control, explains the orthogonality between preparatory and movement activity observed in reaching monkeys. They propose a thalamo-cortical loop gated by the basal ganglia as the circuit that implements this control. In linear terms, reaching a prescribed state with least input energy is <a href="ch09_controllability.html#thm-minenergy">the minimum-energy problem</a> of chapter 9, and the unit initial state that the linearized network amplifies most at a given time $t$ is a top right singular vector of $e^{tJ}$, since $\max_{\norm{x_0} = 1}\norm{e^{tJ}x_0} = \norm{e^{tJ}}$ is the largest singular value (<a href="ch04_svd.html#thm-norms">norms from singular values</a>, chapter 4).</p></div>
+
+<div class="blk rem"><p>Controllability of brain networks, and its caveats. Gu et al. (2015) applied controllability measures, among them the Gramian-based average controllability, to linear network models whose state matrix is a diffusion-imaging connectome and whose inputs enter at chosen regions. Pasqualetti, Zampieri and Bullo (2014) had shown that the energy needed to control a network from few driver nodes can grow exponentially with its size (<a href="ch09_controllability.html#thm-pzb">their theorem</a> in chapter 9, for symmetric stable networks), so that rank tests mislead. Tu et al. (2018), applying the same methods to four datasets, found that the minimum set of driver nodes was always larger than one, contrary to single-node controllability, and that the reported relations between controllability measures and weighted degree also hold in randomized networks.</p></div>
+
+<div class="blk rem"><p>Spike-coding networks. Boerlin, Machens and Denève (2013) derive a network of integrate-and-fire neurons whose linear readout of filtered spike trains tracks the solution of a prescribed linear system $\dot x = Ax + c(t)$: each neuron fires only when its spike reduces the readout error, which produces tight balance of excitation and inhibition, fast recurrent connections that implement the error feedback, and slow recurrent connections that implement $A$.</p></div>
+
+<div class="blk setting"><p>System level synthesis. A discrete-time plant $x_{t+1} = Ax_t + Bu_t + d_t$, with integer time $t$, state $x_t \in \R^n$, input $u_t \in \R^m$ and disturbance $d_t$ (Anderson et al. write $w$), is controlled by causal linear state feedback. In the $z$-domain ($z$ the shift variable of chapter 8), the closed loop maps the disturbance to the state and to the input, $x = \Phi_xd$ and $u = \Phi_ud$. Write $\frac1z\mathcal{RH}_\infty$ for the strictly proper real-rational transfer matrices with poles in the open unit disk.</p></div>
+
+<div class="blk thm" id="thm-sls" data-name="Achievable closed-loop maps">
+<p>The pairs $(\Phi_x, \Phi_u)$ achieved by internally stabilizing state feedback are exactly those in $\frac1z\mathcal{RH}_\infty$ that satisfy</p>
+<div class="eq">$$\begin{bmatrix} zI - A & -B\end{bmatrix}\begin{bmatrix}\Phi_x\\ \Phi_u\end{bmatrix} = I,$$</div>
+<p>and the controller $K = \Phi_u\Phi_x^{-1}$ achieves them: as a transfer function it gives $x = \Phi_xd$ and $u = \Phi_ud$, and implemented through the realization built directly from $\Phi_x$ and $\Phi_u$ (cited below) it makes the loop internally stable.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof of necessity.</span> Internal stability makes $\Phi_x$ and $\Phi_u$ stable. They are strictly proper because, from zero initial state, $x_t$ depends only on $d_s$ with $s &lt; t$, and so does $u_t$, which a causal controller computes from $x_s$ with $s \le t$. With zero initial state the plant reads $zx = Ax + Bu + d$, that is, $(zI - A)x - Bu = d$. Substituting $x = \Phi_xd$ and $u = \Phi_ud$ for every $d$ gives the constraint. Sufficiency, and a realization of $K$ built directly from $\Phi_x$ and $\Phi_u$: Anderson, Doyle, Low and Matni (2019), state-feedback section.</p></div>
+
+<div class="blk deduce"><p>What the constraint means. On the impulse-response coefficients $\Phi_x[t]$ and $\Phi_u[t]$ of the closed loop (the coefficients of $z^{-t}$), the constraint is a recursion: the response to a unit disturbance is itself a trajectory of the plant, driven by the inputs $\Phi_u[t]$ (<a class="xref" href="#cor-sls-time"></a>). The constraint is linear in these coefficients, and so are requirements that the response to a disturbance at one node stay within a neighbourhood, vanish after a finite time, or start only after a communication delay: they are sparsity patterns on $\Phi_x[t]$ and $\Phi_u[t]$. Anderson et al. (2019) contrast this with imposing the same structure directly on $K$, which in general leads to a nonconvex problem.</p></div>
+
+<div class="blk cor" id="cor-sls-time" data-name="The constraint in the time domain">
+<p>Write $\Phi_x = \sum_{t\ge1}\Phi_x[t]z^{-t}$ and $\Phi_u = \sum_{t\ge1}\Phi_u[t]z^{-t}$. (i) The constraint of <a class="xref" href="#thm-sls"></a> holds if and only if $\Phi_x[1] = I$ and $\Phi_x[t + 1] = A\Phi_x[t] + B\Phi_u[t]$ for all $t \ge 1$; so for a unit disturbance $d_0 = e_j$ (the $j$th standard basis vector) and $d_t = 0$ otherwise, the closed-loop state $x_t = \Phi_x[t]e_j$ is the plant's trajectory under the inputs $u_t = \Phi_u[t]e_j$. (ii) For any subspaces $\mathcal S_x[t]$ and $\mathcal S_u[t]$ of matrices of the right sizes, such as sparsity patterns, the set of achievable pairs with $\Phi_x[t] \in \mathcal S_x[t]$ and $\Phi_u[t] \in \mathcal S_u[t]$ for all $t$ is convex, so minimizing a convex cost over it is a convex program.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> (i) Multiplying out,</p>
+<div class="eq">$$(zI - A)\Phi_x - B\Phi_u = \Phi_x[1] + \sum_{t\ge1}\big(\Phi_x[t + 1] - A\Phi_x[t] - B\Phi_u[t]\big)z^{-t},$$</div>
+<p>which equals $I$ exactly when the stated equations hold. (ii) By <a class="xref" href="#thm-sls"></a>, the achievable pairs are the solutions of a linear equation in the vector space $\frac1z\mathcal{RH}_\infty \times \frac1z\mathcal{RH}_\infty$, an affine set; the subspace conditions are linear, and an intersection of convex sets is convex.</p></div>
+
+<div class="blk ex" id="ex-deadbeat" data-name="A one-step response">
+<p>For the scalar plant $x_{t+1} = ax_t + u_t + d_t$, take $\Phi_x = z^{-1}$ and $\Phi_u = -az^{-1}$. Then $(z - a)z^{-1} + az^{-1} = 1$, so the pair is achievable, and $K = \Phi_u\Phi_x^{-1} = -a$: with $u_t = -ax_t$ the state is $x_{t+1} = d_t$, and each disturbance affects the state for exactly one step.</p>
+</div>
+
+<div class="blk rem"><p>Internal feedback. Li, Sarma, Sejnowski and Doyle (2023), building on this line of distributed control theory, argue that the cortex's internal feedback, from motor toward sensory areas, compensates for internal delays: it filters out self-generated and other predictable changes in early sensory areas, so that unpredicted, actionable information reaches the fast motor pathways. Their models build in a speed–accuracy trade-off for neural channels (tracts of fast, large neurons convey less accurate signals than tracts of many small ones), and internal feedback lets the fastest components carry only the compressed, unpredicted part of the input; they argue that internal feedback is needed for state estimation, localization of function and attention, and relate the model to observations such as motor signals in visual cortex.</p></div>
+</section>
+
+<section class="sec" id="s-beyond">
+<h2>Linear methods beyond linear systems: Koopman operators and DMD</h2>
+
+<div class="blk prob"><p>For nonlinear dynamics, or for data without a model, can linear operators still be used, and what do they recover?</p></div>
+
+<div class="blk def" id="def-koopman" data-name="Koopman operator">
+<p>For a map $x_{t+1} = F(x_t)$ on a state space $\mathcal X$, the Koopman operator acts on observables $\psi: \mathcal X \to \C$ by $(\mathcal K\psi)(x) = \psi(F(x))$; it acts on a space of functions, usually infinite-dimensional. A Koopman eigenfunction is an observable $\psi \neq 0$ with $\mathcal K\psi = \lambda\psi$ for a scalar $\lambda$. For a flow $\dot x = f(x)$ with time-$s$ map $\varphi_s$ ($x(s) = \varphi_s(x(0))$), the Koopman operators are $\mathcal K^s\psi = \psi\circ\varphi_s$ for $s \ge 0$.</p>
+</div>
+
+<div class="blk prop" id="prop-koopman" data-name="Koopman operators are linear">
+<p>(i) $\mathcal K(\alpha\psi_1 + \beta\psi_2) = \alpha\,\mathcal K\psi_1 + \beta\,\mathcal K\psi_2$ for all observables $\psi_1, \psi_2$ and scalars $\alpha, \beta$, even when $F$ is nonlinear. (ii) If $\mathcal K\psi = \lambda\psi$, then $\psi(x_t) = \lambda^t\psi(x_0)$ along every trajectory. (iii) Let $f$ be continuously differentiable with solutions defined for all $s \ge 0$. Then $\mathcal K^{s + s'} = \mathcal K^s\mathcal K^{s'}$ for $s, s' \ge 0$, and for every continuously differentiable $\psi$, $\frac{\dd}{\dd s}(\mathcal K^s\psi)(x)\big|_{s=0} = \nabla\psi(x)\cdot f(x)$: the generator of the semigroup acts as $\psi \mapsto \nabla\psi\cdot f$. If $\nabla\psi\cdot f = \lambda\psi$, then $\psi(x(s)) = e^{\lambda s}\psi(x(0))$ along every trajectory.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> (i) Both sides take the value $\alpha\psi_1(F(x)) + \beta\psi_2(F(x))$ at $x$. (ii) $\psi(x_{t+1}) = (\mathcal K\psi)(x_t) = \lambda\psi(x_t)$; induct on $t$. (iii) $\mathcal K^s(\mathcal K^{s'}\psi) = \psi\circ\varphi_{s'}\circ\varphi_s = \psi\circ\varphi_{s + s'}$ by the flow property, and the chain rule gives $\frac{\dd}{\dd s}\psi(\varphi_s(x)) = \nabla\psi(\varphi_s(x))\cdot f(\varphi_s(x))$, which is the generator formula at $s = 0$. If $\nabla\psi\cdot f = \lambda\psi$, the same identity reads $\frac{\dd}{\dd s}\psi(x(s)) = \lambda\psi(x(s))$.</p></div>
+
+<div class="blk ex" id="ex-koopman" data-name="A finite invariant subspace">
+<p>For $\dot x_1 = a_1x_1$ and $\dot x_2 = a_2(x_2 - x_1^2)$ with real parameters $a_1, a_2$, the observables $(x_1, x_2, x_1^2)$ satisfy</p>
+<div class="eq">$$\frac{\dd}{\dd t}\begin{bmatrix} x_1\\ x_2\\ x_1^2\end{bmatrix} = \begin{bmatrix} a_1 & 0 & 0\\ 0 & a_2 & -a_2\\ 0 & 0 & 2a_1\end{bmatrix}\begin{bmatrix} x_1\\ x_2\\ x_1^2\end{bmatrix},$$</div>
+<p>because $\frac{\dd}{\dd t}x_1^2 = 2x_1\dot x_1 = 2a_1x_1^2$. A nonlinear flow becomes an exact three-dimensional linear system, with generator eigenvalues $a_1$, $a_2$ and $2a_1$: a left eigenvector $w$ of the matrix gives the eigenfunction $w^\T(x_1, x_2, x_1^2)^\T$ of <a class="xref" href="#prop-koopman"></a>. This example is standard in the Koopman literature (Brunton, Budišić, Kaiser and Kutz, 2022). Not every system closes up like this: for a bistable system no finite set of continuous observables containing the state does (<a class="xref" href="#prop-nofinite"></a>, a precise form of an observation of Brunton, Brunton, Proctor and Kutz, 2016), and every finite linear model of it is an approximation.</p>
+</div>
+
+<div class="blk prop" id="prop-nofinite" data-name="Bistability has no finite linear model">
+<p>Let $f$ be continuously differentiable on a connected open set $\mathcal X \subseteq \R^n$, with the solutions of $\dot x = f(x)$ defined for all $t \ge 0$. Suppose that continuous observables $\Psi = (\psi_1, \dots, \psi_k)^\T: \mathcal X \to \R^k$ satisfy $\Psi(x(t)) = e^{tL}\Psi(x(0))$ along every trajectory, for a matrix $L \in \R^{k\times k}$, and contain the state linearly: $x = C\Psi(x)$ for a matrix $C \in \R^{n\times k}$. Then every asymptotically stable equilibrium attracts every initial state in $\mathcal X$. In particular, a system with two asymptotically stable equilibria has no such finite linear representation.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> Let $x^*$ be asymptotically stable, with basin of attraction $B$, which is open by continuous dependence on initial conditions. The set $\mathcal L$ of $y \in \R^k$ for which $e^{tL}y$ converges as $t \to \infty$ is a linear subspace, hence closed, and $Py = \lim_{t\to\infty}e^{tL}y$ is linear on it, hence continuous. For $x_0 \in B$, $e^{tL}\Psi(x_0) = \Psi(x(t)) \to \Psi(x^*)$, so $\Psi(B) \subseteq \mathcal L$ and $P\Psi = \Psi(x^*)$ on $B$. If $\bar x \in \mathcal X$ is a limit of points of $B$, continuity gives $\Psi(\bar x) \in \mathcal L$ and $P\Psi(\bar x) = \Psi(x^*)$, so the trajectory from $\bar x$ satisfies $x(t) = Ce^{tL}\Psi(\bar x) \to C\Psi(x^*) = x^*$, that is, $\bar x \in B$. Thus $B$ is open and closed in the connected set $\mathcal X$, and nonempty, so $B = \mathcal X$.</p></div>
+
+<div class="blk def" id="def-dmd" data-name="Dynamic mode decomposition">
+<p>Given snapshot pairs $(x_t, x_{t+1})$ for $t = 0, \dots, m - 1$, collected in $X = [\,x_0\ \cdots\ x_{m-1}\,]$ and $X' = [\,x_1\ \cdots\ x_m\,]$, DMD takes the least-squares operator</p>
+<div class="eq">$$\hat A = X'X^+ = \operatorname*{arg\,min}_{A}\ \norm{X' - AX}_F,$$</div>
+<p>the minimizer of smallest Frobenius norm $\norm{\cdot}_F$, with $X^+$ the Moore–Penrose pseudoinverse, by <a href="ch02_least_squares.html#cor-matrix-ls">the matrix least-squares corollary</a> (chapter 2). Its eigenvalues and eigenvectors are the DMD eigenvalues and modes. For high-dimensional data one computes them from a truncated singular value decomposition (SVD) of $X$ (chapter 4) through a small matrix (<a class="xref" href="#prop-exact-dmd"></a>; Schmid, 2010; Tu et al., 2014).</p>
+</div>
+
+<div class="blk prop" id="prop-exact-dmd" data-name="DMD through a reduced SVD">
+<p>Let $1 \le p \le \rank X$, let $U_p\Sigma_pV_p^\T$ be the truncated SVD of $X$ that keeps its $p$ largest singular values, and set $\hat A_p = X'V_p\Sigma_p^{-1}U_p^\T$ and $\tilde A_p = U_p^\T X'V_p\Sigma_p^{-1} \in \R^{p\times p}$. Then $\hat A_p$ and $\tilde A_p$ have the same nonzero eigenvalues, with the same algebraic multiplicities. If $\tilde A_py = \lambda y$ with $\lambda \neq 0$ and $y \neq 0$, then $\phi = X'V_p\Sigma_p^{-1}y$ is nonzero and $\hat A_p\phi = \lambda\phi$. For $p = \rank X$, $\hat A_p = X'X^+ = \hat A$.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> With $E = X'V_p\Sigma_p^{-1}$ and $H = U_p^\T$, $\hat A_p = EH$ and $\tilde A_p = HE$, so <a href="ch03_eigenvalues.html#thm-abba">the $AB$ and $BA$ theorem</a> (chapter 3) gives the eigenvalues. Then $\hat A_p\phi = EHEy = E\tilde A_py = \lambda\phi$, and $H\phi = \tilde A_py = \lambda y \neq 0$, so $\phi \neq 0$. For $p = \rank X$, $V_p\Sigma_p^{-1}U_p^\T = X^+$ by <a href="ch04_svd.html#prop-pinv">the pseudoinverse from the SVD</a> (chapter 4).</p></div>
+
+<div class="blk prop" id="prop-dmd-exact" data-name="What DMD recovers from exact data">
+<p>If the data come from a linear system, $X' = AX$, then $\hat A = A\,P_{\Range(X)}$, where $P_{\Range(X)} = XX^+$ is the orthogonal projector onto the span of the snapshots. Hence $\hat A = A$ whenever the snapshots span the state space; otherwise DMD reproduces $A$ on the explored subspace and sets it to zero on the orthogonal complement.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> $X'X^+ = AXX^+$, and $XX^+$ is the orthogonal projector onto $\Range(X)$ by <a href="ch02_least_squares.html#thm-pinv">the pseudoinverse theorem</a> (chapter 2).</p></div>
+
+<div class="blk probe">
+<p>Simple and extreme cases. With a single snapshot pair ($m = 1$), $X$ has rank at most one and so has $\hat A$, whatever the true $A$. In the plane, two pairs suffice when $x_0$ and $x_1$ are independent, and noise-free data then give $\hat A = A$ exactly, by <a class="xref" href="#prop-dmd-exact"></a>. A trajectory that starts on an eigenvector never leaves its span, so only that eigenvalue can be recovered (see the last <a href="#s-selfcheck">self-check</a> question).</p>
+</div>
+
+<div class="blk prop" id="prop-dmd-bias" data-name="Noise biases DMD toward decay">
+<p>Let $x_{t+1} = Ax_t$ with $A \in \R^{n\times n}$, and let the snapshots be observed with noise, $y_t = x_t + \eta_t$ for $t = 0, \dots, m$, where the $\eta_t$ are independent with mean zero and covariance $\sigma^2 I$, $\sigma &gt; 0$. Let $S = \sum_{t&lt;m}x_tx_t^\T$ and let $\mathbb E$ denote the expectation. When $\sum_{t&lt;m}y_ty_t^\T$ is invertible, the DMD estimate from the noisy snapshots is</p>
+<div class="eq">$$\hat A = \Big(\sum_{t&lt;m} y_{t+1}y_t^\T\Big)\Big(\sum_{t&lt;m} y_ty_t^\T\Big)^{-1},\qquad \mathbb E\sum_{t&lt;m} y_{t+1}y_t^\T = AS,\qquad \mathbb E\sum_{t&lt;m} y_ty_t^\T = S + m\sigma^2 I.$$</div>
+<p>Replacing both sums by their expectations gives the first-order prediction $\bar A = A\,S\,\big(S + m\sigma^2 I\big)^{-1}$, and $\norm{\bar A} \le \frac{s_1}{s_1 + m\sigma^2}\norm{A}$, with $s_1$ the largest eigenvalue of $S$. So if $A$ is normal and nonzero, every eigenvalue of $\bar A$ has modulus at most $\frac{s_1}{s_1 + m\sigma^2}\,\rho(A) &lt; \rho(A)$: DMD reports too much damping. If $S = sI$, as in the scalar case, $\bar A = \frac{s}{s + m\sigma^2}A$, and every eigenvalue is shrunk toward zero by the same factor. For a decaying scalar transient ($\abs a &lt; 1$, $x_0 \neq 0$), the factor $\frac{S}{S + m\sigma^2}$ decreases strictly as $m$ grows and tends to $0$: more snapshots make the bias worse.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> With $Y = [\,y_0\ \cdots\ y_{m-1}\,]$ and $Y' = [\,y_1\ \cdots\ y_m\,]$, $\hat A = Y'Y^\T(YY^\T)^{-1} = Y'Y^+$ by the full-row-rank formula of <a href="ch02_least_squares.html#thm-pinv">the pseudoinverse theorem</a> (chapter 2). The noise is independent across time and of the signal, so the cross terms have mean zero, $\mathbb E\,\eta_{t+1}\eta_t^\T = 0$ and $\mathbb E\,\eta_t\eta_t^\T = \sigma^2I$; with $\sum_t x_{t+1}x_t^\T = A\sum_t x_tx_t^\T = AS$ this gives the two expectations. The matrix $M = S(S + m\sigma^2I)^{-1}$ is symmetric, because $S \succeq 0$ commutes with $(S + m\sigma^2I)^{-1}$, with eigenvalues $s_i/(s_i + m\sigma^2) \in [0, 1)$ for the eigenvalues $s_i$ of $S$, so $\norm{\bar A} \le \norm{A}\,\norm{M} = \norm{A}\,s_1/(s_1 + m\sigma^2)$. For normal $A$, $\norm{A} = \rho(A)$ by <a href="ch04_svd.html#thm-normal">unitary diagonalization</a> (chapter 4), and every eigenvalue of $\bar A$ has modulus at most $\norm{\bar A}$ (<a href="ch05_hilbert_spaces.html#prop-rho">the spectral radius is below every induced norm</a>, chapter 5). In the scalar case $S = S_m = \sum_{t&lt;m}c_t$ with $c_t = x_0^2a^{2t}$, a nonincreasing sequence with $c_t &lt; c_0$ for $t \ge 1$. Hence $c_m &lt; S_m/m$, so $\frac{S_{m+1}}{m + 1} = \frac{S_m + c_m}{m + 1} &lt; \frac{S_m}{m}$: the ratio $m\sigma^2/S_m$ increases strictly, and without bound because $S_m \le x_0^2/(1 - a^2)$. The prediction replaces the expectation of a ratio by the ratio of expectations, which is accurate when the sums concentrate; the visual checks it against repeated noisy samples.</p></div>
+<p class="src">This is the errors-in-variables bias of least squares. Dawson, Hemati, Williams and Rowley (2016) characterize it for DMD, including its dependence on the number of snapshots and the noise level, and propose corrections; total DMD, a total-least-squares formulation (Hemati, Rowley, Deem and Cattafesta, 2017), is designed to remove it.</p>
+
+<div class="blk pattern">
+<p>What DMD can and cannot recover. It recovers a linear system exactly from noise-free data that span the state space (<a class="xref" href="#prop-dmd-exact"></a>). It cannot see directions that the data never explore, it reports biased eigenvalues from noisy snapshots (<a class="xref" href="#prop-dmd-bias"></a>), and for a nonlinear system it fits a linear operator on the chosen observables, which represents the Koopman operator on their span only when that span is invariant, as in <a class="xref" href="#ex-koopman"></a>; then it is recovered exactly (<a class="xref" href="#prop-dmd-koopman"></a>), and for a bistable system no such span of continuous observables contains the state (<a class="xref" href="#prop-nofinite"></a>).</p>
+</div>
+
+<div class="blk prop" id="prop-dmd-koopman" data-name="DMD on invariant observables">
+<p>Let $x_{t+1} = F(x_t)$, and let real observables $\Psi = (\psi_1, \dots, \psi_k)^\T$ satisfy $\Psi(F(x)) = K\Psi(x)$ for every $x$, for a matrix $K \in \R^{k\times k}$, so that their span is invariant under $\mathcal K$. DMD applied to the lifted snapshots, $X = [\,\Psi(x_0)\ \cdots\ \Psi(x_{m-1})\,]$ and $X' = [\,\Psi(x_1)\ \cdots\ \Psi(x_m)\,]$, returns $\hat K = X'X^+ = K\,P_{\Range(X)}$; if the columns of $X$ span $\R^k$, then $\hat K = K$, and every left eigenvector $w$ of $K$, $w^\T K = \lambda w^\T$, gives the Koopman eigenfunction $w^\T\Psi$ with eigenvalue $\lambda$.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> The lifted snapshot matrices satisfy $X' = KX$, so <a class="xref" href="#prop-dmd-exact"></a> gives $\hat K$. If the columns of $X$ span $\R^k$, no nonzero $c \in \C^k$ has $c^\T\Psi(x_t) = 0$ for all $t &lt; m$, so $w^\T\Psi$ is not the zero function; and $\mathcal K(w^\T\Psi) = w^\T\Psi\circ F = w^\T K\Psi = \lambda\,w^\T\Psi$.</p></div>
+
+<figure class="viz" id="viz-dmd">
+  <figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">DMD as least squares</span><span class="viz-sub">Noisy snapshots of the damped rotation $x_{t+1} = \rho_0 R_\theta x_t$, with $R_\theta$ the rotation by $\theta = 0.35$ and decay factor $\rho_0$, so the true eigenvalues are $\rho_0e^{\pm i\theta}$. DMD is applied to one sample and to 100 independent samples.</span></figcaption>
+  <div class="viz-plots cols-2">
+    <div class="plot" id="dmd-eig"><div class="plot-cap">Complex plane: true eigenvalues (green), estimates from 100 samples (orange cloud), this sample (orange dot)</div></div>
+    <div class="plot" id="dmd-traj"><div class="plot-cap">State plane: true trajectory (blue), noisy snapshots (grey), DMD reconstruction from the first snapshot (orange)</div></div>
+  </div>
+  <div class="viz-controls" id="dmd-controls"></div>
+  <div class="viz-notes">
+    <div><h5>Try this</h5><ol>
+      <li>Set the noise to $0$: the estimate sits exactly on the true eigenvalues, as <a class="xref" href="#prop-dmd-exact"></a> predicts for data that span the plane.</li>
+      <li>Raise the noise to $0.1$: the cloud is centred inside the true eigenvalue, closer to the origin, while its angle is nearly right.</li>
+      <li>At fixed noise, raise the number of snapshots from 20 to 100: the bias grows, because the later snapshots are mostly noise (<a class="xref" href="#prop-dmd-bias"></a>).</li>
+    </ol></div>
+    <div><h5>What to notice</h5><p>The readout compares the mean modulus of the 100 estimates with the first-order prediction of <a class="xref" href="#prop-dmd-bias"></a>; they agree closely. The reconstruction from the first snapshot decays too fast, which is how biased eigenvalues show up in practice.</p></div>
+  </div>
+</figure>
+</section>
+
+<section class="selfcheck" id="s-selfcheck">
+<h2>Self-check</h2>
+<ol>
+<li><p>In the two-population model take $w = 4$ and $k = 1$. What are the eigenvalues of $\tau J$, the peak of the sum amplitude after a unit difference kick, and the steady-state sum response to a sustained unit difference input?</p>
+<details><summary>Answer</summary><p>$W$ is nilpotent, so both eigenvalues of $\tau J$ are $-1$. The peak of $a_+$ is $2w/e = 8/e \approx 2.94$ at $t = \tau$, and the steady state is $a_+ = w(1 + k)/(1 + w(k - 1)) = 2w = 8$.</p></details></li>
+<li><p>A line-attractor model with $\tau = 20$ ms must hold a value with an effective time constant of at least 20 s. How close to 1 must the eigenvalue be?</p>
+<details><summary>Answer</summary><p>$\tau/\abs{1 - \lambda} \ge 20$ s requires $\abs{1 - \lambda} \le 0.001$.</p></details></li>
+<li><p>A feedforward chain has $N = 10$ units with $\tau = 50$ ms. What do its eigenvalues say about memory, and what does the chain actually do?</p>
+<details><summary>Answer</summary><p>Every eigenvalue of $J$ is $-1/\tau = -20$ s$^{-1}$, which suggests a memory of 50 ms. The summed activity has area $N\tau = 0.5$ s: it stays near its initial value for a few hundred milliseconds and falls through half of it between $(N - 1)\tau = 0.45$ s and $N\tau = 0.5$ s (<a class="xref" href="#prop-chain"></a>).</p></details></li>
+<li><p>A large random network has i.i.d. Gaussian weights with $g = 0.9$. Is $-I + W$ stable? What changes with Dale's law and balanced means, and what with balance in every row?</p>
+<details><summary>Answer</summary><p>Without Dale's law the spectrum fills the disk of radius about $0.9$, so $-I + W$ is stable with high probability (<a class="xref" href="#cor-edge"></a>). With balanced means only, outliers can leave the disk and cross $\Re\lambda = 1$, so stability is not guaranteed (<a class="xref" href="#cex-dale"></a>). With every row balanced the mean drops out of the spectrum (<a class="xref" href="#prop-rowbal"></a>) and stability returns.</p></details></li>
+<li><p>DMD is applied to noise-free snapshots of one trajectory of $x_{t+1} = Ax_t$ that starts on an eigenvector $v$ of $A$ with eigenvalue $\lambda$. What is $\hat A$?</p>
+<details><summary>Answer</summary><p>All snapshots are multiples of $v$, so $\Range(X) = \spn(v)$ and, by <a class="xref" href="#prop-dmd-exact"></a>, $\hat A = \lambda\,vv^\T/(v^\T v)$: the eigenvalue $\lambda$ is recovered, and every other eigenvalue is reported as $0$.</p></details></li>
+</ol>
+</section>
+
+<section class="refs" id="s-refs">
+<h2>Sources and further reading</h2>
+<ul>
+<li>P. Dayan and L. F. Abbott, <i>Theoretical Neuroscience</i> (MIT Press, 2001), ch. 7 (network models); L. Perko, <i>Differential Equations and Dynamical Systems</i>, 3rd ed. (Springer, 2001), ch. 2.</li>
+<li>D. Sussillo and O. Barak, "Opening the black box: low-dimensional dynamics in high-dimensional recurrent neural networks", <i>Neural Comput.</i> 25(3) (2013) 626–649; V. Mante, D. Sussillo, K. V. Shenoy and W. T. Newsome, "Context-dependent computation by recurrent dynamics in prefrontal cortex", <i>Nature</i> 503 (2013) 78–84.</li>
+<li>B. K. Murphy and K. D. Miller, "Balanced amplification: a new mechanism of selective amplification of neural activity patterns", <i>Neuron</i> 61(4) (2009) 635–648; G. Hennequin, T. P. Vogels and W. Gerstner, "Optimal control of transient dynamics in balanced networks supports generation of complex movements", <i>Neuron</i> 82(6) (2014) 1394–1406.</li>
+<li>H. S. Seung, "How the brain keeps the eyes still", <i>PNAS</i> 93 (1996) 13339–13344; M. S. Goldman, "Memory without feedback in a neural network", <i>Neuron</i> 61(4) (2009) 621–634; S. Ganguli, D. Huh and H. Sompolinsky, "Memory traces in dynamical systems", <i>PNAS</i> 105(48) (2008) 18970–18975 <span class="free">Open access</span>; for Ramanujan's inequality used in the chain proposition: G. Szegő, "Über einige von S. Ramanujan gestellte Aufgaben", <i>J. London Math. Soc.</i> 3 (1928) 225–232, and G. N. Watson, "Theorems stated by Ramanujan (V): approximations connected with $e^x$", <i>Proc. London Math. Soc.</i> (2) 29 (1929) 293–308.</li>
+<li>T. Tao and V. Vu, "Random matrices: universality of ESDs and the circular law", <i>Ann. Probab.</i> 38(5) (2010) 2023–2065; S. Geman, "The spectral radius of large random matrices", <i>Ann. Probab.</i> 14(4) (1986) 1318–1328; Z. Bai and J. W. Silverstein, <i>Spectral Analysis of Large Dimensional Random Matrices</i>, 2nd ed. (Springer, 2010), ch. 2 (semicircular law), ch. 5 (extreme eigenvalues), ch. 11 (circular law); E. P. Wigner, "On the distribution of the roots of certain symmetric matrices", <i>Ann. Math.</i> 67(2) (1958) 325–327; N. Cook, W. Hachem, J. Najim and D. Renfrew, "Non-Hermitian random matrices with a variance profile (I): deterministic equivalents and limiting ESDs", <i>Electron. J. Probab.</i> 23 (2018), doi:10.1214/18-EJP230 <span class="free">Open access</span>; K. Rajan and L. F. Abbott, "Eigenvalue spectra of random matrices for neural networks", <i>Phys. Rev. Lett.</i> 97 (2006) 188104; H. Sompolinsky, A. Crisanti and H. J. Sommers, "Chaos in random neural networks", <i>Phys. Rev. Lett.</i> 61 (1988) 259–262.</li>
+<li>E. Todorov and M. I. Jordan, "Optimal feedback control as a theory of motor coordination", <i>Nat. Neurosci.</i> 5(11) (2002) 1226–1235.</li>
+<li>M. M. Churchland et al., "Neural population dynamics during reaching", <i>Nature</i> 487 (2012) 51–56; K. V. Shenoy, M. Sahani and M. M. Churchland, "Cortical control of arm movements: a dynamical systems perspective", <i>Annu. Rev. Neurosci.</i> 36 (2013) 337–359; M. T. Kaufman, M. M. Churchland, S. I. Ryu and K. V. Shenoy, "Cortical activity in the null space: permitting preparation without movement", <i>Nat. Neurosci.</i> 17(3) (2014) 440–448; T.-C. Kao, M. S. Sadabadi and G. Hennequin, "Optimal anticipatory control as a theory of motor preparation: a thalamo-cortical circuit model", <i>Neuron</i> 109(9) (2021) 1567–1581 <span class="free">Open access</span></li>
+<li>S. Gu et al., "Controllability of structural brain networks", <i>Nat. Commun.</i> 6 (2015) 8414; F. Pasqualetti, S. Zampieri and F. Bullo, "Controllability metrics, limitations and algorithms for complex networks", <i>IEEE Trans. Control Netw. Syst.</i> 1(1) (2014) 40–52; C. Tu, R. P. Rocha, M. Corbetta, S. Zampieri, M. Zorzi and S. Suweis, "Warnings and caveats in brain controllability", <i>NeuroImage</i> 176 (2018) 83–91.</li>
+<li>M. Boerlin, C. K. Machens and S. Denève, "Predictive coding of dynamical variables in balanced spiking networks", <i>PLoS Comput. Biol.</i> 9(11) (2013) e1003258 <span class="free">Open access</span></li>
+<li>J. Anderson, J. C. Doyle, S. H. Low and N. Matni, "System level synthesis", <i>Annu. Rev. Control</i> 47 (2019) 364–393, <a href="https://arxiv.org/abs/1904.01634">arXiv:1904.01634</a><span class="free">Free</span>; J. S. Li, A. A. Sarma, T. J. Sejnowski and J. C. Doyle, "Internal feedback in the cortical perception–action loop enables fast and accurate behavior", <i>PNAS</i> 120(39) (2023) e2300445120.</li>
+<li>P. J. Schmid, "Dynamic mode decomposition of numerical and experimental data", <i>J. Fluid Mech.</i> 656 (2010) 5–28; J. H. Tu, C. W. Rowley, D. M. Luchtenburg, S. L. Brunton and J. N. Kutz, "On dynamic mode decomposition: theory and applications", <i>J. Comput. Dyn.</i> 1(2) (2014) 391–421; S. L. Brunton, M. Budišić, E. Kaiser and J. N. Kutz, "Modern Koopman theory for dynamical systems", <i>SIAM Rev.</i> 64(2) (2022) 229–340; S. L. Brunton, B. W. Brunton, J. L. Proctor and J. N. Kutz, "Koopman invariant subspaces and finite linear representations of nonlinear dynamical systems for control", <i>PLoS ONE</i> 11(2) (2016) e0150171 <span class="free">Open access</span>; S. L. Brunton and J. N. Kutz, <i>Data-Driven Science and Engineering</i>, 2nd ed. (Cambridge, 2022), ch. 7.</li>
+<li>S. T. M. Dawson, M. S. Hemati, M. O. Williams and C. W. Rowley, "Characterizing and correcting for the effect of sensor noise in the dynamic mode decomposition", <i>Exp. Fluids</i> 57 (2016) 42; M. S. Hemati, C. W. Rowley, E. A. Deem and L. N. Cattafesta, "De-biasing the dynamic mode decomposition for applied Koopman spectral analysis of noisy datasets", <i>Theor. Comput. Fluid Dyn.</i> 31 (2017) 349–368.</li>
+<li>L. N. Trefethen and M. Embree, <i>Spectra and Pseudospectra</i> (Princeton, 2005), the parts on non-normal dynamics; T.-C. Kao and G. Hennequin, "Neuroscience out of control: control-theoretic perspectives on neural circuit dynamics", <i>Curr. Opin. Neurobiol.</i> 58 (2019) 122–129.</li>
+</ul>
+</section>
+
+</div>
+</main>
+</div>
+<script>LT.page.init();</script>
+<script>
+(function () {
+  'use strict';
+  const { Plot, ui, mat: M, fmt, fmtSig } = LT;
+
+  /* ---------------- Visual 13.1: balanced amplification ---------------- */
+  (function () {
+    const st = { w: 4, k: 1.1, kick: 'diff' };
+    const T = 8, NT = 600;
+    // Closed forms in the Schur basis (time in units of tau). Returns amplitudes (a+, a-) at time t from initial (p0, m0).
+    function amps(w, k, p0, m0, t) {
+      const lp = 1 + w * (k - 1), wff = w * (1 + k), em = Math.exp(-t);
+      const am = m0 * em;
+      let ap = p0 * Math.exp(-lp * t);
+      if (Math.abs(lp - 1) < 1e-9) ap += wff * m0 * t * em; else ap += m0 * wff / (lp - 1) * (em - Math.exp(-lp * t));
+      return [ap, am];
+    }
+    const s2 = Math.SQRT1_2;
+    const toRates = (ap, am) => [s2 * (ap + am), s2 * (ap - am)];
+    function kick() {
+      if (st.kick === 'diff') return [0, 1];
+      if (st.kick === 'sum') return [1, 0];
+      return [s2, s2]; // E only: r = (1, 0) gives a+ = a- = 1/sqrt2
+    }
+    function peakKick(w, k) { const [p0, m0] = kick(); let pk = 0; for (let i = 0; i <= 400; i++) { const t = T * i / 400, a = amps(w, k, p0, m0, t); pk = Math.max(pk, Math.hypot(a[0], a[1])); } return pk; }
+    // ||e^{tJ}||_2 in the Schur basis: [[e^{-lp t}, c(t)], [0, e^{-t}]]
+    function normExp(w, k, t) { const a = Math.exp(-(1 + w * (k - 1)) * t), b = Math.exp(-t), c = amps(w, k, 0, 1, t)[0]; const s = a * a + b * b + c * c; return Math.sqrt((s + Math.sqrt(Math.max(0, s * s - 4 * a * a * b * b))) / 2); }
+    function peakAll(w, k) { let pk = 0; for (let i = 0; i <= 400; i++) pk = Math.max(pk, normExp(w, k, T * i / 400)); return pk; }
+    let cur = null;
+    function compute() {
+      const [p0, m0] = kick(), pts = [];
+      for (let i = 0; i <= NT; i++) { const t = T * i / NT, a = amps(st.w, st.k, p0, m0, t), r = toRates(a[0], a[1]); pts.push({ t, rE: r[0], rI: r[1], n: Math.hypot(a[0], a[1]), nN: Math.hypot(p0 * Math.exp(-(1 + st.w * (st.k - 1)) * t), m0 * Math.exp(-t)), ap: a[0] }); }
+      let pk = 0, tp = 0; pts.forEach(q => { if (q.n > pk) { pk = q.n; tp = q.t; } });
+      const lp = 1 + st.w * (st.k - 1), wff = st.w * (1 + st.k);
+      const om = -(lp + 1) / 2 + Math.sqrt(((lp - 1) / 2) ** 2 + wff * wff / 4);
+      const curve = [], curveAll = [];
+      for (let i = 0; i <= 120; i++) { const w = 12 * i / 120; curve.push([w, peakKick(w, st.k)]); curveAll.push([w, peakAll(w, st.k)]); }
+      let span = 1.2; pts.forEach(q => { span = Math.max(span, Math.abs(q.rE), Math.abs(q.rI)); });
+      cur = { pts, pk, tp, lp, wff, om, curve, curveAll, ss: wff / lp, span: span * 1.12 };
+    }
+    const pt = new Plot('#ba-time', { xlim: [0, T], ylim: [-1, 3], frame: true, height: 270, xlabel: 't / τ', label: 'Excitatory and inhibitory rates and the norm of the state after a kick' });
+    const pp = new Plot('#ba-phase', { xlim: [-2.6, 3.4], ylim: [-1.6, 3.4], equal: true, maxH: 330, clip: true, label: 'Phase plane of excitatory and inhibitory rates' });
+    const pk = new Plot('#ba-peak', { xlim: [0, 12], ylim: [0, 10], frame: true, height: 220, xlabel: 'excitatory strength w', label: 'Peak amplification against w' });
+    [pt, pp, pk].forEach(p => p.el.insertBefore(p.canvas, p.el.firstChild));
+    const panel = ui.panel('#ba-controls');
+    const sw = panel.slider({ id: 'ba-w', label: 'Strength $w$', min: 0, max: 12, step: 0.05, value: st.w, onInput: v => { st.w = v; update(); } });
+    const sk = panel.slider({ id: 'ba-k', label: 'Inhibition dominance $k$', min: 1, max: 3, step: 0.01, value: st.k, onInput: v => { st.k = v; update(); } });
+    panel.select({ id: 'ba-kick', label: 'Kick', value: st.kick, options: [['diff', 'Difference pattern (E up, I down)'], ['sum', 'Sum pattern'], ['e', 'Excitatory population only']], onChange: v => { st.kick = v; update(); } });
+    panel.buttons([
+      { label: 'Exact balance (k = 1)', onClick: () => { st.k = 1; sk.set(1); update(); } },
+      { label: 'w = 8, k = 1.1', onClick: () => { st.w = 8; st.k = 1.1; sw.set(8); sk.set(1.1); update(); } },
+      { label: 'Weak coupling', onClick: () => { st.w = 0.6; st.k = 1.5; sw.set(0.6); sk.set(1.5); update(); } }
+    ]);
+    const out = panel.readout({});
+    panel.note(ui.legend([{ color: 'c2', label: 'excitatory rate' }, { color: 'c1', label: 'inhibitory rate' }, { color: 'c7', label: 'norm of the state' }, { color: 'c3', label: 'normal network', kind: 'dash' }, { color: 'c8', label: 'worst initial condition', kind: 'dash' }]));
+    pt.draw = g => {
+      if (!cur) return;
+      const P = cur.pts;
+      g.path(P.map(q => [q.t, q.nN]), { color: 'c3', width: 2, dash: [6, 4] });
+      g.path(P.map(q => [q.t, q.rE]), { color: 'c2', width: 2 });
+      g.path(P.map(q => [q.t, q.rI]), { color: 'c1', width: 2 });
+      g.path(P.map(q => [q.t, q.n]), { color: 'c7', width: 2.5 });
+      g.dot([cur.tp, cur.pk], { color: 'c7', r: 4.5 });
+    };
+    pp.draw = g => {
+      if (!cur) return;
+      const ep = [s2, s2], em = [s2, -s2];
+      g.ray([0, 0], ep, { color: 'c3', width: 1.25, dash: [6, 4] });
+      g.ray([0, 0], em, { color: 'c7', width: 1.25, dash: [6, 4] });
+      // eigenvectors of W: e+ (eigenvalue -w(k-1)) and (k, 1) (eigenvalue 0)
+      g.ray([0, 0], [st.k, 1], { color: 'muted', width: 1.25, dash: [2, 3] });
+      g.path(cur.pts.map(q => [q.rE, q.rI]), { color: 'c7', width: 2.5 });
+      const [p0, m0] = kick();
+      const N = cur.pts.map(q => { const ap = p0 * Math.exp(-cur.lp * q.t), am = m0 * Math.exp(-q.t); return toRates(ap, am); });
+      g.path(N, { color: 'c3', width: 2, dash: [6, 4] });
+      g.dot(cur.pts[0] ? [cur.pts[0].rE, cur.pts[0].rI] : [0, 0], { color: 'c7', r: 5 });
+      const Lp = cur.span;
+      g.text([0.82 * Lp * s2, 0.82 * Lp * s2], 'sum e₊', { font: 'ui', italic: false, size: 12, color: 'ink-2', dx: -10, dy: -8, align: 'right' });
+      g.text([0.68 * Lp * s2, -0.68 * Lp * s2], 'difference e₋', { font: 'ui', italic: false, size: 12, color: 'ink-2', dx: 10, dy: 4 });
+      const kv = M.unit([st.k, 1]);
+      g.text([-0.5 * Lp * kv[0], -0.5 * Lp * kv[1]], 'eigenvector (k, 1)', { font: 'ui', italic: false, size: 12, color: 'ink-2', dx: 10, dy: 14 });
+    };
+    pp.after = g => { g.text([pp.W - 8, pp.H - 14], 'E rate →', { px: true, align: 'right', font: 'ui', italic: false, size: 11.5, color: 'muted' }); g.text([10, 14], '↑ I rate', { px: true, font: 'ui', italic: false, size: 11.5, color: 'muted' }); };
+    pk.draw = g => {
+      if (!cur) return;
+      g.hline(1, { color: 'c3', width: 1.75, dash: [2, 3] });
+      g.path(cur.curveAll, { color: 'c8', width: 1.75, dash: [6, 4] });
+      g.path(cur.curve, { color: 'c7', width: 2.25 });
+      g.vline(st.w, { color: 'muted', width: 1, dash: [3, 3] });
+      g.dot([st.w, cur.pk], { color: 'c7', r: 5 });
+    };
+    function update() {
+      compute();
+      const ymax = Math.max(1.5, cur.pk * 1.15, ...cur.pts.map(q => Math.abs(q.rE)), ...cur.pts.map(q => Math.abs(q.rI)));
+      const ymin = Math.min(-0.5, ...cur.pts.map(q => q.rI), ...cur.pts.map(q => q.rE)) * 1.1;
+      pt.setLimits(null, [ymin, ymax]);
+      const pmax = Math.max(4, ...cur.curveAll.map(q => q[1])) * 1.08;
+      pk.setLimits(null, [0, pmax]);
+      pp.setLimits([-0.75 * cur.span, cur.span], [-0.62 * cur.span, cur.span]);
+      const apk = st.k === 1 ? 2 * st.w / Math.E : null;
+      out.set(
+        `<span>eigenvalues of <i>τJ</i> <span class="num">−1</span>, <span class="num">${fmt(-cur.lp, 3)}</span></span>` +
+        `<span><i>w</i><sub>FF</sub> <span class="num">${fmt(cur.wff, 2)}</span></span>` +
+        `<span>peak ‖<i>r</i>‖ <span class="num">${fmt(cur.pk, 3)}</span> at <i>t</i>/<i>τ</i> <span class="num">${fmt(cur.tp, 2)}</span></span>` +
+        (apk !== null && st.kick === 'diff' ? `<span>sum amplitude peak 2<i>w</i>/e <span class="num">${fmt(apk, 3)}</span></span>` : '') +
+        `<span>steady sum response to a unit difference input <span class="num">${fmt(cur.ss, 2)}</span> (normal network: 0)</span>` +
+        `<span><i>ω</i>(<i>τJ</i>) <span class="num">${fmt(cur.om, 3)}</span></span>` +
+        (cur.om > 0 ? '<span class="tag">transient growth possible</span>' : '<span class="tag good">no transient growth</span>')
+      );
+      pt.redraw(); pp.redraw(); pk.redraw();
+    }
+    update();
+  })();
+
+  /* ---------------- Visual 13.2: integrators and feedforward memory ---------------- */
+  (function () {
+    const st = { mode: 'rec', lam: 1, N: 6 };
+    const TM = 30, h = 0.01;
+    const pulses = [[2, 1], [8, 0.6], [15, -0.8]]; // [start time, amplitude], each of duration 1
+    const uOf = t => { let u = 0; pulses.forEach(([t0, a]) => { if (t >= t0 && t < t0 + 1) u += a; }); return u; };
+    let sim = null;
+    function compute() {
+      if (st.mode === 'rec') {
+        const c = -(1 - st.lam), pts = [], ideal = []; let a = 0, I = 0;
+        for (let i = 0; i <= TM / h; i++) {
+          const t = i * h; pts.push([t, a]); ideal.push([t, I]);
+          // exact update of a' = c a + u over one step with piecewise-constant u
+          const u = uOf(t + h / 2), e = Math.exp(c * h);
+          a = Math.abs(c) < 1e-12 ? a + u * h : e * a + (e - 1) / c * u; I += u * h;
+        }
+        sim = { pts, ideal };
+      } else {
+        const N = st.N, cols = [], sum = []; let area = 0, half = null;
+        for (let i = 0; i <= TM / h; i++) {
+          const t = i * h; let term = 1, s = 0; const row = [];
+          for (let j = 0; j < N; j++) { if (j > 0) term *= t / j; const rj = term * Math.exp(-t); row.push(rj); s += rj; }
+          cols.push(row); sum.push([t, s]); area += s * h; if (half === null && s < 0.5) half = t;
+        }
+        sim = { cols, sum, area, half };
+      }
+    }
+    const pt = new Plot('#mem-time', { xlim: [0, TM], ylim: [-1, 2.6], frame: true, height: 300, xlabel: 't / τ', label: 'Memory activity against time' });
+    const pe = new Plot('#mem-eig', { xlim: [-1.6, 0.6], ylim: [-1, 1], frame: true, height: 300, xlabel: 'Re', label: 'Eigenvalues of tau J' });
+    [pt, pe].forEach(p => p.el.insertBefore(p.canvas, p.el.firstChild));
+    const panel = ui.panel('#mem-controls');
+    panel.select({ id: 'mem-mode', label: 'Model', value: st.mode, options: [['rec', 'One recurrent mode'], ['ff', 'Feedforward chain']], onChange: v => { st.mode = v; update(); } });
+    const sl = panel.slider({ id: 'mem-lam', label: 'Eigenvalue $\\lambda$ of $W$', min: 0.8, max: 1.2, step: 0.005, value: st.lam, digits: 3, onInput: v => { st.lam = v; if (st.mode !== 'rec') { st.mode = 'rec'; document.getElementById('mem-mode').value = 'rec'; } update(); } });
+    panel.slider({ id: 'mem-n', label: 'Chain length $N$', min: 1, max: 10, step: 1, value: st.N, digits: 0, onInput: v => { st.N = Math.round(v); if (st.mode !== 'ff') { st.mode = 'ff'; document.getElementById('mem-mode').value = 'ff'; } update(); } });
+    panel.buttons([
+      { label: 'λ = 1', onClick: () => { st.lam = 1; sl.set(1); st.mode = 'rec'; document.getElementById('mem-mode').value = 'rec'; update(); } },
+      { label: 'λ = 0.95', onClick: () => { st.lam = 0.95; sl.set(0.95); st.mode = 'rec'; document.getElementById('mem-mode').value = 'rec'; update(); } },
+      { label: 'λ = 1.05', onClick: () => { st.lam = 1.05; sl.set(1.05); st.mode = 'rec'; document.getElementById('mem-mode').value = 'rec'; update(); } }
+    ]);
+    const out = panel.readout({});
+    const leg = panel.note('');
+    pt.draw = g => {
+      if (!sim) return;
+      if (st.mode === 'rec') {
+        pulses.forEach(([t0, a]) => g.poly([[t0, 0], [t0 + 1, 0], [t0 + 1, 0.35 * a], [t0, 0.35 * a]], { fill: 'c4', fillAlpha: 0.45, color: 'c4', width: 1 }));
+        g.path(sim.ideal, { color: 'c3', width: 1.75, dash: [6, 4] });
+        g.path(sim.pts, { color: 'c7', width: 2.5 });
+      } else {
+        g.poly([[0, 0], [0.25, 0], [0.25, 0.35], [0, 0.35]], { fill: 'c4', fillAlpha: 0.45, color: 'c4', width: 1 });
+        for (let j = 0; j < st.N; j++) g.path(sim.cols.map((row, i) => [i * h, row[j]]), { color: 'c1', width: 1.25, alpha: 0.35 + 0.6 * (j + 1) / st.N });
+        g.path(sim.sum, { color: 'c7', width: 2.5 });
+        g.vline(st.N, { color: 'muted', width: 1, dash: [3, 3] });
+      }
+    };
+    pe.draw = g => {
+      g.vline(0, { color: 'c8', width: 1.25, dash: [4, 4] });
+      if (st.mode === 'rec') g.dot([st.lam - 1, 0], { color: 'c7', r: 6 });
+      else { g.dot([-1, 0], { color: 'c1', r: 6 }); g.text([-1, 0], `×${st.N}`, { font: 'ui', italic: false, size: 12, color: 'ink-2', dy: -16, align: 'center' }); }
+    };
+    function update() {
+      compute();
+      if (st.mode === 'rec') {
+        const vals = sim.pts.map(q => q[1]); const hi = Math.max(1.6, ...vals.filter(Number.isFinite)) , lo = Math.min(-0.6, ...vals.filter(Number.isFinite));
+        pt.setLimits(null, [lo - 0.1, Math.min(hi, 4) + 0.2]);
+        const te = st.lam === 1 ? Infinity : 1 / Math.abs(1 - st.lam);
+        out.set(`<span>eigenvalue of <i>τJ</i> <span class="num">${fmt(st.lam - 1, 3)}</span></span>` +
+          `<span><i>τ</i><sub>eff</sub>/<i>τ</i> <span class="num">${Number.isFinite(te) ? fmt(te, 1) : '∞'}</span></span>` +
+          (Math.abs(st.lam - 1) < 1e-9 ? '<span class="tag good">perfect integrator</span>' : st.lam < 1 ? '<span class="tag">leaky: forgets</span>' : '<span class="tag bad">unstable: runaway</span>') +
+          `<span>value at <i>t</i> = 30<i>τ</i> <span class="num">${fmtSig(sim.pts[sim.pts.length - 1][1], 3)}</span> (ideal integral <span class="num">${fmt(sim.ideal[sim.ideal.length - 1][1], 2)}</span>)</span>`);
+        leg.innerHTML = ui.legend([{ color: 'c7', label: 'mode amplitude a(t)' }, { color: 'c3', label: 'integral of the input', kind: 'dash' }, { color: 'c4', label: 'input pulses', kind: 'area' }]);
+      } else {
+        pt.setLimits(null, [-0.1, 1.25]);
+        out.set(`<span>all eigenvalues of <i>τJ</i> at <span class="num">−1</span> (×${st.N})</span>` +
+          `<span>area under the summed activity <span class="num">${fmt(sim.area, 3)}</span><i>τ</i> (theory <span class="num">${st.N}</span><i>τ</i>)</span>` +
+          `<span>summed activity falls below 1/2 at <i>t</i>/<i>τ</i> <span class="num">${sim.half === null ? '>30' : fmt(sim.half, 2)}</span></span>`);
+        leg.innerHTML = ui.legend([{ color: 'c1', label: 'units 1 to N (darker downstream)' }, { color: 'c7', label: 'summed activity' }, { color: 'muted', label: 't = Nτ', kind: 'dash' }]);
+      }
+      pt.redraw(); pe.redraw();
+    }
+    update();
+  })();
+
+  /* ---------------- Visual 13.3: random-matrix spectra ---------------- */
+  (function () {
+    const st = { N: 200, g: 0.8, mode: 'iid', f: 0.8, muE: 3, seed: 3 };
+    let base = null, key = '';
+    function sample() {
+      const N = st.N, NE = Math.round(st.f * N), rn = M.randn(st.seed * 7919 + N);
+      const muI = st.mode === 'unbal' ? -0.5 * st.f * st.muE / (1 - st.f) : -st.f * st.muE / (1 - st.f);
+      const W = M.zeros(N, N); let wrong = 0, nE = 0;
+      for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+        const mu = st.mode === 'iid' ? 0 : (j < NE ? st.muE : muI), z = rn();
+        W[i][j] = (mu + z) / Math.sqrt(N);
+        if (st.mode !== 'iid' && j < NE) { nE++; if (mu + z < 0) wrong++; }
+      }
+      if (st.mode === 'row') for (let i = 0; i < N; i++) { let s = 0; for (let j = 0; j < N; j++) s += W[i][j]; for (let j = 0; j < N; j++) W[i][j] -= s / N; }
+      const ev = M.eigvals(W);
+      base = { ev, wrongE: nE ? wrong / nE : 0, muI, outlier: Math.sqrt(N) * (st.f * st.muE + (1 - st.f) * muI) };
+    }
+    const p = new Plot('#rand-plot', { xlim: [-1.9, 2.3], ylim: [-1.7, 1.7], equal: true, maxH: 420, clip: true, label: 'Eigenvalues of a random connectivity matrix in the complex plane' });
+    const pc = new Plot('#rand-cdf', { xlim: [0, 1.6], ylim: [0, 1.05], frame: true, height: 300, xlabel: '|λ| / g', label: 'Fraction of eigenvalues within a radius against the circular law' });
+    [p, pc].forEach(pl => pl.el.insertBefore(pl.canvas, pl.el.firstChild));
+    pc.draw = g => {
+      if (!base) return;
+      g.fn(x => Math.min(1, x * x), { color: 'c3', width: 2, dash: [6, 4] });
+      const rs = base.ev.map(z => Math.hypot(z.re, z.im)).sort((a, b) => a - b), n = rs.length, pts = [[0, 0]];
+      rs.forEach((v, i) => { pts.push([v, i / n]); pts.push([v, (i + 1) / n]); });
+      pts.push([1.6, pts[pts.length - 1][1]]);
+      g.path(pts, { color: 'c1', width: 2 });
+    };
+    const panel = ui.panel('#rand-controls');
+    panel.select({ id: 'rand-mode', label: 'Structure', value: st.mode, options: [['iid', 'i.i.d., no Dale’s law'], ['unbal', 'Dale: E-dominated means'], ['bal', 'Dale: balanced means'], ['row', 'Dale: balanced in every row']], onChange: v => { st.mode = v; refresh(true); } });
+    panel.slider({ id: 'rand-n', label: 'Size $N$', min: 50, max: 300, step: 10, value: st.N, digits: 0, onInput: v => { st.N = Math.round(v); refresh(false); } });
+    panel.slider({ id: 'rand-g', label: 'Scale $g$', min: 0.2, max: 1.6, step: 0.01, value: st.g, onInput: v => { st.g = v; update(); } });
+    panel.slider({ id: 'rand-f', label: 'Excitatory fraction $f$', min: 0.5, max: 0.9, step: 0.01, value: st.f, onInput: v => { st.f = v; if (st.mode !== 'iid') refresh(false); } });
+    panel.slider({ id: 'rand-mu', label: 'Mean weight $\\mu_E$', min: 1, max: 5, step: 0.05, value: st.muE, onInput: v => { st.muE = v; if (st.mode !== 'iid') refresh(false); } });
+    panel.buttons([{ label: 'New sample', onClick: () => { st.seed += 1; refresh(true); } }]);
+    const out = panel.readout({});
+    panel.note(ui.legend([{ color: 'c1', label: 'eigenvalues of W', kind: 'dot' }, { color: 'muted', label: 'circle of radius g', kind: 'dash' }, { color: 'c8', label: 'Re λ = 1 and the rightmost eigenvalue', kind: 'dash' }]));
+    const full = () => { const k = [st.N, st.mode, st.f, st.muE, st.seed].join('|'); if (k !== key) { sample(); key = k; } update(); };
+    const deb = LT.debounce(full, 220);
+    function refresh(now) { if (now) full(); else { out.set('<span>computing eigenvalues…</span>'); deb(); } }
+    p.draw = g => {
+      if (!base) return;
+      g.circle([0, 0], st.g, { color: 'muted', width: 1.5, dash: [6, 4] });
+      g.vline(1, { color: 'c8', width: 1.5, dash: [5, 4] });
+      const ev = base.ev.map(z => [st.g * z.re, st.g * z.im]);
+      ev.forEach(q => g.dot(q, { color: 'c1', r: 2.4, ring: false, alpha: 0.8 }));
+      let ri = 0; ev.forEach((q, i) => { if (q[0] > ev[ri][0]) ri = i; });
+      const R = ev[ri], xmax = p.xlim[1];
+      if (R[0] < xmax - 0.05) g.dot(R, { color: 'c8', r: 6, hollow: true, width: 2 });
+      else { g.arrow([xmax - 0.75, 0.25], [xmax - 0.08, 0.25], { color: 'c8', width: 2 }); g.text([xmax - 0.1, 0.48], `outlier at ${fmt(R[0], 2)}`, { font: 'ui', italic: false, size: 12, color: 'ink-2', align: 'right' }); }
+    };
+    function update() {
+      if (!base) return;
+      const ev = base.ev.map(z => ({ re: st.g * z.re, im: st.g * z.im }));
+      const rho = Math.max(...ev.map(z => Math.hypot(z.re, z.im))), right = Math.max(...ev.map(z => z.re));
+      const outside = ev.filter(z => Math.hypot(z.re, z.im) > 1.1 * st.g).length;
+      out.set(
+        `<span>rightmost Re <i>λ</i> <span class="num">${fmt(right, 3)}</span></span>` +
+        `<span>spectral radius <span class="num">${fmt(rho, 3)}</span> (bulk radius <i>g</i> = <span class="num">${fmt(st.g, 2)}</span>)</span>` +
+        `<span>beyond 1.1<i>g</i> <span class="num">${outside}</span></span>` +
+        (st.mode === 'unbal' ? `<span>predicted outlier <i>g</i>√<i>N</i>(<i>fμ</i><sub>E</sub> + (1 − <i>f</i>)<i>μ</i><sub>I</sub>) <span class="num">${fmt(st.g * base.outlier, 2)}</span></span>` : '') +
+        (st.mode !== 'iid' ? `<span><i>μ</i><sub>I</sub> <span class="num">${fmt(base.muI, 2)}</span>; wrong-sign E entries <span class="num">${fmt(100 * base.wrongE, 2)}%</span></span>` : '') +
+        (right < 1 ? '<span class="tag good">−I + W stable</span>' : '<span class="tag bad">−I + W unstable</span>')
+      );
+      p.redraw(); pc.redraw();
+    }
+    full();
+  })();
+
+  /* ---------------- Visual 13.4: DMD as least squares ---------------- */
+  (function () {
+    const st = { rho: 0.95, sig: 0.05, m: 40, seed: 1, cloud: true };
+    const TH = 0.35, X0 = [1.5, 0.3];
+    let D = null;
+    function dmd(Y) { return M.mul(M.fromCols(Y.slice(1)), M.pinv(M.fromCols(Y.slice(0, -1)))); }
+    function compute() {
+      const A = M.scale(M.rot(TH), st.rho);
+      const X = []; let x = X0.slice(); for (let t = 0; t <= st.m; t++) { X.push(x.slice()); x = M.mv(A, x); }
+      const noisy = seed => { const g = M.randn(seed); return X.map(q => [q[0] + st.sig * g(), q[1] + st.sig * g()]); };
+      const Y = noisy(st.seed * 1009), Ah = dmd(Y), evh = M.eig2(Ah).values;
+      const recon = []; let z = Y[0].slice(); for (let t = 0; t <= st.m; t++) { recon.push(z.slice()); z = M.mv(Ah, z); }
+      const cloud = []; let sm = 0, sa = 0;
+      if (st.cloud) for (let s = 1; s <= 100; s++) { const e = M.eig2(dmd(noisy(50000 + 131 * s + st.seed))).values; cloud.push(e[0], e[1]); sm += Math.hypot(e[0].re, e[0].im); sa += Math.abs(Math.atan2(e[0].im, e[0].re)); }
+      let S = M.zeros(2, 2); for (let t = 0; t < st.m; t++) S = M.add(S, M.outer(X[t], X[t]));
+      const Ap = M.mul(A, M.mul(S, M.inv(M.add(S, M.scale(M.eye(2), st.m * st.sig * st.sig))))), evp = M.eig2(Ap).values[0];
+      const res = M.normFro(M.sub(M.fromCols(Y.slice(1)), M.mul(Ah, M.fromCols(Y.slice(0, -1))))) / M.normFro(M.fromCols(Y.slice(1)));
+      D = { X, Y, evh, recon, cloud, mean: st.cloud ? sm / 100 : null, meanAng: st.cloud ? sa / 100 : null, pred: Math.hypot(evp.re, evp.im), res };
+    }
+    const pe = new Plot('#dmd-eig', { xlim: [-0.3, 1.25], ylim: [-0.65, 0.65], equal: true, maxH: 330, label: 'DMD eigenvalue estimates against the true eigenvalues' });
+    const px = new Plot('#dmd-traj', { xlim: [-1.4, 1.7], ylim: [-1.1, 1.4], equal: true, maxH: 330, clip: true, label: 'True trajectory, noisy snapshots and DMD reconstruction' });
+    [pe, px].forEach(p => p.el.insertBefore(p.canvas, p.el.firstChild));
+    const panel = ui.panel('#dmd-controls');
+    const ss = panel.slider({ id: 'dmd-sig', label: 'Noise $\\sigma$', min: 0, max: 0.3, step: 0.005, value: st.sig, digits: 3, onInput: v => { st.sig = v; upd(); } });
+    const sm = panel.slider({ id: 'dmd-m', label: 'Snapshots $m$', min: 10, max: 120, step: 1, value: st.m, digits: 0, onInput: v => { st.m = Math.round(v); upd(); } });
+    panel.slider({ id: 'dmd-rho', label: 'Decay $\\rho_0$', min: 0.85, max: 1, step: 0.005, value: st.rho, digits: 3, onInput: v => { st.rho = v; upd(); } });
+    panel.toggle({ id: 'dmd-cloud', label: 'Show 100 noisy repeats', value: st.cloud, onChange: v => { st.cloud = v; upd(); } });
+    panel.buttons([
+      { label: 'New noise', onClick: () => { st.seed += 1; update(); } },
+      { label: 'Noise 0', onClick: () => { st.sig = 0; ss.set(0); update(); } },
+      { label: 'Noise 0.1, m = 100', onClick: () => { st.sig = 0.1; st.m = 100; ss.set(0.1); sm.set(100); update(); } }
+    ]);
+    const out = panel.readout({});
+    pe.draw = g => {
+      if (!D) return;
+      g.circle([0, 0], 1, { color: 'muted', width: 1, dash: [3, 4] });
+      if (D.cloud.length) D.cloud.forEach(z => g.dot([z.re, z.im], { color: 'c2', r: 2.2, ring: false, alpha: 0.35 }));
+      [1, -1].forEach(sgn => g.marker([st.rho * Math.cos(TH), sgn * st.rho * Math.sin(TH)], { shape: 'x', size: 7, color: 'c3', width: 2.5 }));
+      D.evh.forEach(z => g.dot([z.re, z.im], { color: 'c2', r: 5 }));
+    };
+    px.draw = g => {
+      if (!D) return;
+      g.path(D.X, { color: 'c1', width: 2 });
+      D.Y.forEach(q => g.dot(q, { color: 'muted', r: 2.6, ring: false, alpha: 0.85 }));
+      g.path(D.recon, { color: 'c2', width: 2, dash: [6, 4] });
+      g.dot(D.X[0], { color: 'c1', r: 4.5 });
+    };
+    function update() {
+      compute();
+      const z = D.evh[0], mod = Math.hypot(z.re, z.im), ang = Math.abs(Math.atan2(z.im, z.re));
+      out.set(
+        `<span>true |<i>λ</i>| <span class="num">${fmt(st.rho, 3)}</span>, angle <span class="num">${fmt(TH, 3)}</span></span>` +
+        `<span>this sample |<i>λ̂</i>| <span class="num">${fmt(mod, 3)}</span>, angle <span class="num">${fmt(ang, 3)}</span></span>` +
+        (D.mean !== null ? `<span>mean of 100 samples |<i>λ̂</i>| <span class="num">${fmt(D.mean, 3)}</span>, angle <span class="num">${fmt(D.meanAng, 3)}</span></span>` : '') +
+        `<span>first-order prediction |<i>λ</i>| <span class="num">${fmt(D.pred, 3)}</span></span>` +
+        `<span>relative residual ‖<i>X</i>′ − <i>ÂX</i>‖<sub>F</sub>/‖<i>X</i>′‖<sub>F</sub> <span class="num">${fmt(D.res, 3)}</span></span>`
+      );
+      pe.redraw(); px.redraw();
+    }
+    const upd = LT.throttle(update);
+    update();
+  })();
+})();
+</script>
+</body>
+</html>

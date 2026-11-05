@@ -1,0 +1,1244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>8 Input–output systems · Linear Theory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap">
+<link rel="stylesheet" href="assets/lt.css">
+<style>
+  /* chapter 8 only: a column of stacked plots inside a two-column figure */
+  #viz-pz .lt-stack, #viz-sine .lt-stack, #viz-mimo .lt-stack { display: grid; gap: 12px; min-width: 0; align-content: start; }
+  #fig-cascade .svg-scroll { overflow-x: auto; }
+  #fig-cascade .svg-scroll > svg { min-width: 600px; }
+</style>
+<script src="assets/toc.js"></script>
+<script src="assets/lt.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+</head>
+<body>
+<div class="topbar"><button class="btn" id="lt-menu" type="button" aria-controls="lt-side" aria-expanded="false">Contents</button><span class="topbar-title">8 · Input–output systems: convolution, transfer functions and frequency response</span></div>
+<div class="shell">
+<nav class="side" id="lt-side" aria-label="Chapters"></nav>
+<main class="page" id="main" data-chapter="8">
+<div class="content">
+
+<header class="ch-head">
+  <div class="eyebrow">Part III · Linear dynamical systems · Chapter 8</div>
+  <h1 class="ch-title">Input–output systems: convolution, transfer functions and frequency response</h1>
+  <p class="ch-lead">Driven by an input, a linear time-invariant (LTI) system acts on signals as convolution with its impulse response; exponentials are eigenfunctions of every such operator, and the transfer function, their eigenvalue, turns convolution into multiplication and makes poles, zeros and frequency response the natural coordinates. A real zero in the right half-plane (RHP) leaves the gain untouched yet forces a wrong-way response, and an unstable mode can hide from the input–output description altogether. With several inputs and outputs, poles, zeros and gains acquire directions: a transfer matrix can have zeros that none of its entries has, and its gain at each frequency ranges between its extreme singular values.</p>
+  <p class="ch-meta"><span><b>Prerequisites</b> chapters 4, 5 and 7 (singular values, shift-invariant operators, matrix exponential, stability)</span><span><b>Leads to</b> chapters 9, 10 and 12</span><span><b>Visuals</b> 5</span></p>
+  <ol class="core-q">
+    <li>How does a linear system respond to an arbitrary input, and which part of the response belongs to the system alone?</li>
+    <li>Why do exponentials and sinusoids diagonalize linear time-invariant systems, what do poles and zeros say about the gain at each frequency, and what becomes of these notions when there are several inputs and outputs?</li>
+    <li>What does the input–output description capture of the internal state description, and when does bounded-input bounded-output (BIBO) stability coincide with internal stability?</li>
+  </ol>
+  <details class="notation">
+    <summary>Notation introduced in this chapter</summary>
+    <div class="tbl-wrap"><table class="tbl">
+      <thead><tr><th>Symbol</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td>$(A, B, C, D)$</td><td>state-space system $\dot x = Ax + Bu$, $y = Cx + Du$, with state $x \in \R^n$, input $u \in \R^m$, output $y \in \R^p$</td></tr>
+        <tr><td>$\mathbb 1(t)$, $\delta(t)$</td><td>unit step (1 for $t \ge 0$, 0 for $t &lt; 0$); Dirac impulse</td></tr>
+        <tr><td>$h(t)$; $h_k$</td><td>impulse response $Ce^{At}B\,\mathbb 1(t) + D\delta(t)$; Markov parameters $h_0 = D$, $h_k = CA^{k-1}B$</td></tr>
+        <tr><td>$(h * u)(t)$</td><td>convolution $\int_0^t h(t-\tau)\,u(\tau)\,\dd\tau$</td></tr>
+        <tr><td>$\hat f(s)$, $s$</td><td>Laplace transform $\int_0^\infty f(t)e^{-st}\,\dd t$; the complex Laplace variable</td></tr>
+        <tr><td>$G(s)$</td><td>transfer function $C(sI-A)^{-1}B + D$</td></tr>
+        <tr><td>$G(i\omega)$, $\abs{G(i\omega)}$, $\arg G(i\omega)$</td><td>frequency response at angular frequency $\omega$; gain; phase</td></tr>
+        <tr><td>$p_i$, $z_j$, $k$</td><td>poles, zeros and gain in $G(s) = k\prod_j(s - z_j)/\prod_i(s - p_i)$</td></tr>
+        <tr><td>$\zeta$, $\omega_n$; $\omega_r$, $M_r$</td><td>damping ratio and natural frequency of a second-order system; resonance frequency and peak gain</td></tr>
+        <tr><td>$G_{\rm mp}$, $G_{\rm ap}$</td><td>minimum-phase and all-pass factors of a stable transfer function</td></tr>
+        <tr><td>$T$</td><td>invertible change of state coordinates, $\tilde x = Tx$</td></tr>
+        <tr><td>$G \in \R(s)^{p\times m}$, $\operatorname{normrank} G$</td><td>transfer matrix with real rational entries $g_{ij}$; its normal rank</td></tr>
+        <tr><td>$\varepsilon_i/\psi_i$; $\psi_G$, $\varepsilon_G$</td><td>diagonal of the Smith–McMillan form; pole polynomial $\psi_1\cdots\psi_r$ and zero polynomial $\varepsilon_1\cdots\varepsilon_r$; McMillan degree $\deg\psi_G$</td></tr>
+        <tr><td>$u_z$, $y_z$</td><td>input and output zero directions: $G(z)u_z = 0$, $y_z^*G(z) = 0$</td></tr>
+        <tr><td>$P(s)$</td><td>Rosenbrock system matrix $\begin{bmatrix}sI - A & -B\\ C & D\end{bmatrix}$; its rank drops are the invariant zeros</td></tr>
+        <tr><td>$\sigma_i(G(i\omega))$, $\sigma_{\max}$, $\sigma_{\min}$; $v_i$, $u_i$; $\kappa$</td><td>principal gains; input and output directions, $G(i\omega)v_i = \sigma_iu_i$; condition number $\sigma_{\max}/\sigma_{\min}$</td></tr>
+      </tbody>
+    </table></div>
+  </details>
+</header>
+
+<section class="sec" id="s-io">
+<h2>Systems with inputs: variation of constants and convolution</h2>
+
+<div class="blk prob"><p>Given an input signal $u(t)$ for $t \ge 0$ and an initial state, find the output of a linear system, and separate the part of the answer that belongs to the system from the part that belongs to its initial condition.</p></div>
+
+<div class="blk def" id="def-ss" data-name="State-space system">
+<p>A <dfn>linear time-invariant state-space system</dfn> is</p>
+<div class="eq">$$\dot x(t) = Ax(t) + Bu(t),\qquad y(t) = Cx(t) + Du(t),\qquad x(0) = x_0,$$</div>
+<p>written $(A, B, C, D)$. It is <dfn>single-input single-output (SISO)</dfn> when $m = p = 1$ and <dfn>multiple-input multiple-output (MIMO)</dfn> otherwise.</p>
+</div>
+<dl class="where">
+  <dt>$x(t) \in \R^n$</dt><dd>the state, $\R$ denoting the real numbers; $n$ is the order of the realization</dd>
+  <dt>$u(t) \in \R^m$, $y(t) \in \R^p$</dt><dd>the input and the output</dd>
+  <dt>$A, B, C, D$</dt><dd>real constant matrices of sizes $n\times n$, $n\times m$, $p\times n$, $p\times m$: dynamics, input, output and feedthrough</dd>
+  <dt>$\dot x$</dt><dd>the time derivative $\dd x/\dd t$</dd>
+</dl>
+<p>Inputs are locally integrable, for instance piecewise continuous, so that the integrals below exist.</p>
+
+<div class="blk thm" id="thm-voc" data-name="Variation of constants">
+<p>For every initial state $x_0$ and every input $u$, the state equation has exactly one solution,</p>
+<div class="eq">$$x(t) = e^{At}x_0 + \int_0^t e^{A(t-\tau)}Bu(\tau)\,\dd\tau,$$</div>
+<p>and the output is the sum of a zero-input response and a zero-state response:</p>
+<div class="eq">$$y(t) = \underbrace{Ce^{At}x_0}_{\text{zero-input}} + \underbrace{\int_0^t Ce^{A(t-\tau)}Bu(\tau)\,\dd\tau + Du(t)}_{\text{zero-state}} .$$</div>
+</div>
+<dl class="where">
+  <dt>$e^{At}$</dt><dd>the matrix exponential $\sum_{k \ge 0}(At)^k/k!$; by <a href="ch07_autonomous_systems.html#thm-expm">its properties</a> (chapter 7), $\frac{\dd}{\dd t}e^{At} = Ae^{At}$ and $e^{-At} = (e^{At})^{-1}$</dd>
+</dl>
+<div class="proof"><p><span class="proof-label">Proof.</span> If $x$ is a solution, then $\frac{\dd}{\dd t}\big(e^{-At}x(t)\big) = e^{-At}\big(\dot x(t) - Ax(t)\big) = e^{-At}Bu(t)$. Integrating from $0$ to $t$ and multiplying by $e^{At}$ gives the formula, so there is at most one solution. Conversely, differentiating the formula (for continuous $u$; almost everywhere in general) gives $\dot x = Ax + Bu$.</p></div>
+
+<div class="blk def" id="def-impulse" data-name="Impulse response and convolution">
+<p>The <dfn>impulse response</dfn> of $(A, B, C, D)$ is the $p\times m$ matrix function</p>
+<div class="eq">$$h(t) = Ce^{At}B\,\mathbb 1(t) + D\,\delta(t),$$</div>
+<p>where $\mathbb 1$ is the unit step and $\delta$ the Dirac impulse. By <a class="xref" href="#thm-voc"></a>, the zero-state response is the <dfn>convolution</dfn> $y = h * u$, $(h*u)(t) = \int_0^t h(t-\tau)\,u(\tau)\,\dd\tau$, in which the impulse contributes $Du(t)$.</p>
+</div>
+
+<p>The name comes from a limit of short pulses.</p>
+<div class="blk prop" id="prop-pulse" data-name="Impulses as limits of pulses">
+<p>For $\eps &gt; 0$ and an input index $j$, let $u_\eps(t) = \eps^{-1}e_j$ for $0 \le t &lt; \eps$ and $u_\eps(t) = 0$ for $t \ge \eps$, a pulse of area $1$ in input $j$, where $e_j$ is the $j$-th standard basis vector of $\R^m$. From $x(0) = 0$, the state satisfies $x(\eps) \to Be_j$ as $\eps \to 0$, and for every $t &gt; 0$ the output $y_\eps(t)$ tends to $Ce^{At}Be_j$, column $j$ of $Ce^{At}B$.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> By <a class="xref" href="#thm-voc"></a>, $x(\eps) = \eps^{-1}\int_0^\eps e^{A\sigma}\,\dd\sigma\;Be_j$, an average of $e^{A\sigma}$ over $[0, \eps]$ applied to $Be_j$, and the average tends to $e^{0} = I$ by continuity. For $t \ge \eps$ the input is zero, so $y_\eps(t) = Ce^{A(t - \eps)}x(\eps)$, which tends to $Ce^{At}Be_j$ for each fixed $t &gt; 0$.</p></div>
+<p>So an impulse in input $j$ makes the state jump by $Be_j$, after which the state evolves freely, and column $j$ of $Ce^{At}B$ is the output that follows.</p>
+
+<div class="blk probe"><p>Scalar probes, $\dot x = -ax + bu$, $y = cx$, so that $h(t) = cb\,e^{-at}$ for $t \ge 0$. For $a &gt; 0$ the system is a leaky integrator: a low-pass filter that weights past input by $e^{-a(t-\tau)}$ and forgets it on the time scale $1/a$. At $a = 0$ it is a pure integrator, $y(t) = cb\int_0^t u$, which never forgets. For $a &lt; 0$ the impulse response grows, and old inputs matter more and more. At the other extreme, $B = 0$ leaves only the feedthrough, $h = D\delta$: a static gain without memory.</p></div>
+
+<div class="blk pattern"><p>The zero-state map $u \mapsto y$ has three structural properties, and together they explain the convolution form.</p></div>
+
+<div class="blk prop" id="prop-zs-map" data-name="Linear, time-invariant, causal">
+<p>The zero-state map $u \mapsto y = h * u$ of $(A, B, C, D)$, on locally integrable inputs on $[0, \infty)$, is</p>
+<ol>
+<li><i>linear</i>;</li>
+<li><i>time-invariant</i>: for $T_0 &gt; 0$, let $u_{T_0}(t) = u(t - T_0)$ for $t \ge T_0$ and $u_{T_0}(t) = 0$ for $t &lt; T_0$; then the output for $u_{T_0}$ is $y_{T_0}$, the output for $u$ delayed in the same way;</li>
+<li><i>causal</i>: if two inputs agree on $[0, t_1]$, their outputs agree on $[0, t_1]$.</li>
+</ol>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> (1) Both $\int_0^t h(t - \tau)u(\tau)\,\dd\tau$ and $Du(t)$ are linear in $u$. (2) For $t \ge T_0$ the substitution $\tau = T_0 + \sigma$ gives</p>
+<div class="eq">$$\int_{T_0}^{t}Ce^{A(t - \tau)}Bu(\tau - T_0)\,\dd\tau = \int_0^{t - T_0}Ce^{A(t - T_0 - \sigma)}Bu(\sigma)\,\dd\sigma,$$</div>
+<p>and $Du_{T_0}(t) = Du(t - T_0)$; for $t &lt; T_0$ both terms vanish. This uses that $A, B, C, D$ do not depend on time. (3) $y(t)$ involves $u$ only on $[0, t]$.</p></div>
+
+<div class="blk rem"><p>Heuristically, convolution is what these properties produce: write $u(t) = \int u(\tau)\,\delta(t - \tau)\,\dd\tau$ as a superposition of shifted impulses, send each to a shifted impulse response by linearity and time invariance, and cut the integral at $\tau = t$ by causality. Oppenheim and Willsky (ch. 2) build the theory of LTI systems on this argument; <a class="xref" href="#viz-conv"></a> computes the superposition as a Riemann sum.</p></div>
+
+<div class="blk prop" id="prop-dt" data-name="Discrete time: Markov parameters">
+<p>For $x_{k+1} = Ax_k + Bu_k$, $y_k = Cx_k + Du_k$ with integer time $k \ge 0$,</p>
+<div class="eq">$$y_k = CA^kx_0 + \sum_{j=0}^{k} h_{k-j}\,u_j,\qquad h_0 = D,\qquad h_k = CA^{k-1}B\quad (k \ge 1).$$</div>
+<p>Stacking $u_0, \dots, u_N$ and $y_0, \dots, y_N$, the zero-state map is multiplication by the block lower triangular Toeplitz matrix whose $(i, j)$ block is $h_{i-j}$ for $i \ge j$.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> By induction, $x_k = A^kx_0 + \sum_{j=0}^{k-1}A^{k-1-j}Bu_j$; apply $C$ and add $Du_k$.</p></div>
+<p>The matrices $h_k$ are the <dfn>Markov parameters</dfn>. Time invariance is the Toeplitz structure (blocks constant along diagonals) and causality is the lower triangular shape; chapter 5 compared such Toeplitz matrices with circulant ones.</p>
+
+<figure class="viz" id="viz-conv">
+  <figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">Convolution as a sum of impulse responses</span><span class="viz-sub">The input (top) is replaced by impulses of area $u(\tau_k)\Delta$ at the midpoints $\tau_k$ of a grid of width $\Delta$. Each launches a scaled, shifted copy of $h$ (bottom, thin); their sum approaches $y = h * u$ as $\Delta \to 0$. The slider $t_0$ reads the same number as an overlap integral of the input with the flipped kernel.</span></figcaption>
+  <div class="viz-plots cols-1">
+    <div class="plot" id="conv-in"><div class="plot-cap">Input $u(\tau)$, its impulses, and the flipped kernel $h(t_0 - \tau)$ (rescaled); the shaded overlap is proportional to $y(t_0)$</div></div>
+    <div class="plot" id="conv-out"><div class="plot-cap">Scaled shifted impulse responses, their sum, and the exact output</div></div>
+  </div>
+  <div class="viz-controls" id="conv-controls"></div>
+  <div class="viz-notes">
+    <div><h5>Try this</h5><ol>
+      <li>Raise $\Delta$ to about 1.5: a few impulses fire, the thin responses are visible one by one, and their sum is a rough copy of the dashed exact output. Lower $\Delta$ to 0.1: the two curves merge.</li>
+      <li>Choose <i>Square pulse</i> with the first-order system: the output rises while the pulse is on and decays exponentially after it ends.</li>
+      <li>Move $t_0$. The shaded overlap on top changes sign and size exactly as the output at $t_0$ does below; the readout prints both numbers.</li>
+      <li>Choose the system with a zero at $s = 1$: its impulse response $(2t - 1)e^{-t}$ is negative for $t &lt; 1/2$, so the output to any positive input is negative for $0 &lt; t &lt; 1/2$.</li>
+    </ol></div>
+    <div><h5>What to notice</h5><p>The bottom plot is linearity and time invariance made visible: each impulse contributes a copy of $h$ scaled by its area and delayed to its time, and the output is their sum. The top plot reads the same integral the other way, as the overlap of the input with the time-reversed kernel. Both are $\int_0^t h(t-\tau)\,u(\tau)\,\dd\tau$ from <a class="xref" href="#def-impulse"></a>.</p></div>
+  </div>
+</figure>
+</section>
+
+<section class="sec" id="s-tf">
+<h2>Exponentials are eigenfunctions: the transfer function</h2>
+
+<div class="blk prob"><p>Find input signals that every LTI system returns unchanged in shape, multiplied by a factor. In the language of chapter 5: find the eigenfunctions of the convolution operator.</p></div>
+
+<div class="blk probe"><p>Take $\dot x = -ax + u$, $y = x$, and the input $u = e^{st}$ for a complex number $s \neq -a$. The guess $x = Xe^{st}$ gives $sX = -aX + 1$, so $X = 1/(s+a)$, and the general solution is $x(t) = \frac{e^{st}}{s+a} + e^{-at}\big(x_0 - \frac{1}{s+a}\big)$. The output is the input multiplied by the number $1/(s+a)$, plus a free response that fades relative to $e^{st}$ whenever the real part $\Re s &gt; -a$.</p></div>
+
+<div class="blk conj"><p>For every LTI system and every $s$ outside the spectrum of $A$, the input $e^{st}u_0$ produces $G(s)e^{st}u_0$ plus a free response, where the matrix $G(s)$ does not depend on $t$.</p></div>
+
+<p>Complex signals are allowed, because the coefficients are real.</p>
+<div class="blk lem" id="lem-real-parts" data-name="Real and imaginary parts">
+<p>Let $A, B, C, D$ be real, let $u$ be a complex input, and let $x$ be the complex solution of $\dot x = Ax + Bu$, with output $y = Cx + Du$. Then $\Re x$ is the solution with input $\Re u$ and initial state $\Re x(0)$, and its output is $\Re y$; likewise for the imaginary parts.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> Take real parts on both sides of $\dot x = Ax + Bu$ and $y = Cx + Du$: since the matrices are real, $\Re(Ax) = A\Re x$, and so on. Uniqueness is <a class="xref" href="#thm-voc"></a>.</p></div>
+
+<div class="blk thm" id="thm-exp" data-name="Exponential response">
+<p>Let $s \in \C$ lie outside the spectrum $\Lambda(A)$ (the set of eigenvalues of $A$; $\C$ denotes the complex numbers), let $u_0 \in \C^m$ and $u(t) = e^{st}u_0$. The solution from $x(0) = x_0$ is</p>
+<div class="eq">$$x(t) = e^{st}(sI - A)^{-1}Bu_0 + e^{At}\big(x_0 - (sI-A)^{-1}Bu_0\big),$$</div>
+<div class="eq">$$y(t) = G(s)\,e^{st}u_0 + Ce^{At}\big(x_0 - (sI - A)^{-1}Bu_0\big),\qquad G(s) = C(sI - A)^{-1}B + D .$$</div>
+<p>In particular, from $x_0 = (sI - A)^{-1}Bu_0$ the output is exactly $G(s)e^{st}u_0$ for all $t \ge 0$. If $\Re s &gt; \alpha(A)$, the spectral abscissa $\max_{\lambda \in \Lambda(A)} \Re\lambda$, then $e^{-st}\big(y(t) - G(s)e^{st}u_0\big) \to 0$ for every $x_0$.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> The candidate $x_p(t) = e^{st}(sI - A)^{-1}Bu_0$ satisfies $\dot x_p = sx_p$, and since $A$ commutes with $(sI-A)^{-1}$, $Ax_p + Bu = e^{st}(sI - A)^{-1}(A + sI - A)Bu_0 = sx_p$. The difference $x - x_p$ solves $\dot z = Az$, so it equals $e^{At}\big(x_0 - x_p(0)\big)$; apply $C$ and add $Du$. For the last claim, fix $\eps &gt; 0$. The matrix $A - (\alpha(A) + \eps)I$ is Hurwitz, so its exponential is bounded by <a href="ch07_autonomous_systems.html#thm-ct-stability">the eigenvalue test of chapter 7</a>, and since $e^{At} = e^{(\alpha(A) + \eps)t}e^{(A - (\alpha(A) + \eps)I)t}$ there is a constant $M_\eps$ with $\norm{e^{At}} \le M_\eps e^{(\alpha(A) + \eps)t}$ in the spectral norm $\norm{\cdot}$. With $\eps &lt; \Re s - \alpha(A)$, the free response divided by $\abs{e^{st}} = e^{t\Re s}$ tends to zero.</p></div>
+
+<div class="blk pattern"><p>This is the continuous-time form of <a href="ch05_hilbert_spaces.html#thm-circulant">chapter 5's theorem</a> that Fourier modes are eigenvectors of every circulant matrix. Time invariance means commuting with shifts, and $e^{st}$ is an eigenfunction of every shift ($e^{s(t - t_1)} = e^{-st_1}e^{st}$). The eigenvalue $G(s)$ is the <dfn>transfer function</dfn>. For convolution on the whole real line, with an impulse response $h$ that vanishes for negative times, the statement holds with no transient: $\int_{-\infty}^{\infty} h(t - \tau)\,e^{s\tau}\,\dd\tau = \big(\int_0^\infty h(\sigma)e^{-s\sigma}\,\dd\sigma\big)\,e^{st}$ whenever the integral converges absolutely (<a href="ch05_hilbert_spaces.html#prop-lti">the proposition on convolutions</a> in chapter 5).</p></div>
+
+<p>The integral in brackets is a Laplace transform.</p>
+
+<div class="blk def" id="def-laplace" data-name="Laplace transform">
+<p>For $f: [0, \infty) \to \C^k$ with $\norm{f(t)} \le M e^{ct}$ for some constants $M$ and $c$, the <dfn>Laplace transform</dfn> is $\hat f(s) = \int_0^\infty f(t)\,e^{-st}\,\dd t$, defined for $\Re s &gt; c$.</p>
+</div>
+<p>Three facts are used throughout (Oppenheim and Willsky, ch. 9): $\widehat{\dot f}(s) = s\hat f(s) - f(0)$, by integration by parts; $\widehat{h * u} = \hat h\,\hat u$, the convolution theorem; and a continuous $f$ is determined by $\hat f$. The matrix version of $\int_0^\infty e^{-at}e^{-st}\,\dd t = 1/(s+a)$ is</p>
+<div class="eq">$$\int_0^\infty e^{At}e^{-st}\,\dd t = (sI - A)^{-1}\qquad \big(\Re s &gt; \alpha(A)\big),$$</div>
+<p>proved in <a href="ch07_autonomous_systems.html#prop-laplace">chapter 7</a>: $-(sI - A)^{-1}e^{-(sI - A)t}$ is an antiderivative of the integrand $e^{-(sI-A)t}$ and tends to zero as $t \to \infty$.</p>
+
+<div class="blk thm" id="thm-tf" data-name="Transfer function">
+<p>For $\Re s$ large enough, the Laplace transforms of input and output satisfy</p>
+<div class="eq">$$\hat y(s) = C(sI - A)^{-1}x_0 + G(s)\,\hat u(s),\qquad G(s) = C(sI - A)^{-1}B + D = \hat h(s) .$$</div>
+<p>Convolution in time becomes multiplication by $G(s)$.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> Transforming $\dot x = Ax + Bu$ gives $s\hat x - x_0 = A\hat x + B\hat u$, so $\hat x = (sI - A)^{-1}(x_0 + B\hat u)$, and $\hat y = C\hat x + D\hat u$. The identity $\hat h = G$ is the integral above multiplied by $C$ on the left and $B$ on the right, plus $\hat\delta = 1$.</p></div>
+
+<div class="blk prop" id="prop-rational" data-name="Structure of the transfer function">
+<p>Every entry of $G(s)$ is a rational function of $s$ that is proper (numerator degree at most denominator degree), and $G(s) \to D$ as $\abs s \to \infty$; it is strictly proper exactly when $D = 0$. For $\abs s &gt; \norm{A}$ (the spectral norm),</p>
+<div class="eq">$$G(s) = D + \sum_{k=1}^{\infty} CA^{k-1}B\,s^{-k},$$</div>
+<p>so the Markov parameters are the coefficients of $G$ at infinity.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> By Cramer's rule $(sI - A)^{-1} = \operatorname{adj}(sI - A)/\det(sI - A)$, where the adjugate has polynomial entries of degree at most $n - 1$ and $\det(sI - A)$ is monic of degree $n$. For $\norm{A/s} &lt; 1$ the <a href="ch05_hilbert_spaces.html#thm-neumann">Neumann series</a> of chapter 5 gives $(sI - A)^{-1} = s^{-1}(I - A/s)^{-1} = \sum_{k \ge 0}A^k s^{-k-1}$.</p></div>
+
+<p>In discrete time the sequence $u_k = z^ku_0$ with $z \in \C$ plays the role of $e^{st}$.</p>
+<div class="blk prop" id="prop-dt-tf" data-name="Discrete-time transfer function">
+<p>For the discrete-time system of <a class="xref" href="#prop-dt"></a>, let $z \in \C$ lie outside $\Lambda(A)$, let $u_0 \in \C^m$, and let $G(z) = C(zI - A)^{-1}B + D$. The input $u_k = z^ku_0$ from $x_0 = (zI - A)^{-1}Bu_0$ produces $y_k = G(z)z^ku_0$ for every $k \ge 0$. For $\abs z &gt; \norm{A}$, $G(z) = \sum_{k \ge 0}h_kz^{-k}$, the $z$-transform of the Markov parameters.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> Since $(zI - A)x_0 = Bu_0$, the sequence $x_k = z^kx_0$ satisfies $x_{k+1} = z^k(zx_0) = z^k(Ax_0 + Bu_0) = Ax_k + Bu_k$, and $y_k = z^k(Cx_0 + Du_0) = G(z)z^ku_0$. The series is the Neumann expansion $(zI - A)^{-1} = \sum_{k \ge 0}A^kz^{-k-1}$, as in the proof of <a class="xref" href="#prop-rational"></a>.</p></div>
+<p>Oppenheim and Willsky (ch. 10) develop the $z$-transform.</p>
+
+<div class="blk thm" id="thm-sim" data-name="Invariance under change of state coordinates">
+<p>Let $T \in \R^{n\times n}$ be invertible and $\tilde x = Tx$. The realization $(TAT^{-1},\ TB,\ CT^{-1},\ D)$ has the same impulse response, transfer function and Markov parameters as $(A, B, C, D)$. Similarity of realizations, $(A, B, C, D) \sim (TAT^{-1}, TB, CT^{-1}, D)$ for some invertible $T$, is an equivalence relation, and it also preserves the order $n$ and the spectrum $\Lambda(A)$.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> $(TAT^{-1})^k = TA^kT^{-1}$, so $CT^{-1}(TAT^{-1})^{k-1}TB = CA^{k-1}B$, $e^{TAT^{-1}t} = Te^{At}T^{-1}$ term by term, and $CT^{-1}e^{TAT^{-1}t}TB = Ce^{At}B$. Likewise $(sI - TAT^{-1})^{-1} = T(sI - A)^{-1}T^{-1}$. The relation is reflexive ($T = I$), symmetric ($T^{-1}$) and transitive ($T_2T_1$); the order is the size of $A$, and similar matrices have the same characteristic polynomial (<a href="ch03_eigenvalues.html#prop-similar">chapter 3</a>).</p></div>
+
+<div class="blk pattern"><p>Equivalence and invariants. Similarity is an equivalence relation, and the impulse response, the transfer function and the Markov parameters are invariants of it (<a class="xref" href="#thm-sim"></a>). Are these input–output invariants complete, so that equal transfer functions force similar realizations?</p></div>
+
+<div class="blk cex" id="cex-dims"><p>No. The scalar realization $(A, B, C, D) = (-1,\ 1,\ 1,\ 0)$ and</p>
+<div class="eq">$$A = \begin{bmatrix}-1 & 0\\ 0 & 2\end{bmatrix},\qquad B = \begin{bmatrix}1\\ 0\end{bmatrix},\qquad C = \begin{bmatrix}1 & 1\end{bmatrix},\qquad D = 0$$</div>
+<p>both have $G(s) = 1/(s+1)$ and $h(t) = e^{-t}$, but they cannot be similar, since their orders differ. The second has an eigenvalue $2$ that appears nowhere in $G$, and yet from $x_0 = (0, 1)^\T$ (the superscript $\T$ denotes transpose) its output is $e^{2t}$. The transfer function describes the zero-state input–output map and nothing else; <a href="ch09_controllability.html#thm-minimal">chapter 9</a> shows that it is a complete invariant on minimal realizations.</p></div>
+</section>
+
+<section class="sec" id="s-pz">
+<h2>Poles, zeros and the geometry of the gain</h2>
+
+<div class="blk setting"><p>Single-input single-output systems. Write $G(s) = n(s)/d(s)$ with polynomials $n$ and $d$ that have no common root, $d$ monic. Since $A, B, C, D$ are real, $n$ and $d$ have real coefficients (Cramer's rule, as in the proof of <a class="xref" href="#prop-rational"></a>).</p></div>
+
+<div class="blk def" id="def-pz" data-name="Poles, zeros, relative degree">
+<p>The <dfn>poles</dfn> of $G$ are the roots $p_1, \dots, p_r$ of $d$ and the <dfn>zeros</dfn> are the roots $z_1, \dots, z_q$ of $n$, counted with multiplicity; $r - q \ge 0$ is the <dfn>relative degree</dfn>. Then</p>
+<div class="eq">$$G(s) = k\,\frac{\prod_{j=1}^{q}(s - z_j)}{\prod_{i=1}^{r}(s - p_i)}$$</div>
+<p>with a real constant $k \neq 0$, and poles and zeros are real or come in complex conjugate pairs.</p>
+</div>
+
+<div class="blk prop" id="prop-poles-eig" data-name="Poles are eigenvalues">
+<p>Every pole of $G$ is an eigenvalue of $A$: the polynomial $d$ divides $\det(sI - A)$. The inclusion can be strict.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> $G = \tilde n/\det(sI - A)$ with the polynomial $\tilde n = C\operatorname{adj}(sI - A)B + D\det(sI - A)$. Removing the common roots of $\tilde n$ and $\det(sI - A)$ produces $n/d$, so $d$ divides $\det(sI - A)$. In <a class="xref" href="#cex-dims"></a>, $\Lambda(A) = \{-1, 2\}$ while $G$ has the single pole $-1$.</p></div>
+<p>For MIMO systems, poles and zeros are defined through the Smith–McMillan form of the transfer matrix, in <a class="xref" href="#s-mimo"></a>.</p>
+
+<div class="blk rem"><p>Zeros block exponentials. If $z$ is a zero and $z \notin \Lambda(A)$, <a class="xref" href="#thm-exp"></a> with $s = z$ gives an input $e^{zt}$ and an initial state $x_0 = (zI - A)^{-1}B$ for which $y(t) = G(z)e^{zt} = 0$ at all times. A real zero $z &gt; 0$ absorbs a growing exponential input without a trace in the output. <a class="xref" href="#prop-blocking"></a> treats the general case, including $z \in \Lambda(A)$ and several inputs and outputs.</p></div>
+
+<p>On the imaginary axis the factored form becomes geometry. With $\omega \in \R$ and $i$ the imaginary unit, each factor $i\omega - p_i$ is the vector from the pole $p_i$ to the test point $i\omega$, so</p>
+<div class="eq">$$\abs{G(i\omega)} = \abs{k}\,\frac{\prod_j \abs{i\omega - z_j}}{\prod_i \abs{i\omega - p_i}},\qquad \arg G(i\omega) \equiv \arg k + \sum_j \arg(i\omega - z_j) - \sum_i \arg(i\omega - p_i) \pmod{2\pi} .$$</div>
+<p>The gain is a product of distances to zeros over a product of distances to poles; the phase is a sum of angles.</p>
+<div class="blk rem"><p>As a rule of thumb, a pole $\sigma + i\omega_0$ with small $\abs\sigma$ makes $\abs{i\omega - p}$ small near $\omega = \omega_0$, so the gain peaks there (resonance), and a zero near the axis makes a dip. A zero at $i\omega_0$ on the axis gives $G(i\omega_0) = 0$ exactly (a notch).</p></div>
+
+<div class="blk probe"><p>Mirror a zero. For real $c &gt; 0$, $\abs{i\omega - c} = \abs{i\omega + c}$ at every $\omega$: moving a zero from $-c$ to $c$ changes the gain nowhere. The phase changes completely. As $\omega$ runs from $0$ to $\infty$, $\arg(i\omega + c) = \arctan(\omega/c)$ rises from $0^\circ$ to $90^\circ$, while $\arg(i\omega - c) = 180^\circ - \arctan(\omega/c)$ falls from $180^\circ$ to $90^\circ$: $90^\circ$ of phase lead becomes $90^\circ$ of lag. Equivalently, the ratio $(c - s)/(c + s)$ is <dfn>all-pass</dfn>, with modulus $1$ on the imaginary axis and phase $-2\arctan(\omega/c)$.</p></div>
+
+<div class="blk def" id="def-mp" data-name="Minimum phase">
+<p>A real rational $G$ with all poles in the open left half-plane $\{\Re s &lt; 0\}$ is <dfn>minimum phase</dfn> if it has no zeros in the open right half-plane (RHP) $\{\Re s &gt; 0\}$, and <dfn>non-minimum phase</dfn> otherwise. Conventions differ on the boundary: some texts, notably in signal processing, also exclude zeros on the imaginary axis. The results below that use the term assume no zeros on the axis, where the two conventions agree.</p>
+</div>
+
+<div class="blk prop" id="prop-allpass" data-name="All-pass factorization">
+<p>Let $G$ be real rational with all poles in the open left half-plane and no zeros on the imaginary axis, and let $z_1, \dots, z_\ell$, $\ell \ge 1$, be its zeros in the open RHP, listed with multiplicity. Then $G = G_{\rm mp}\,G_{\rm ap}$ with</p>
+<div class="eq">$$G_{\rm ap}(s) = \prod_{j=1}^{\ell}\frac{z_j - s}{\bar z_j + s},$$</div>
+<p>where $\bar z$ is the complex conjugate and $G_{\rm mp}$ is minimum phase, with the poles of $G$ and with each $z_j$ replaced by its mirror image $-\bar z_j$. On the imaginary axis $\abs{G_{\rm ap}(i\omega)} = 1$, and $\arg G_{\rm ap}(i\omega)$ decreases strictly from $0$ at $\omega = 0$. Hence $\abs{G(i\omega)} = \abs{G_{\rm mp}(i\omega)}$ and $\arg G(i\omega) &lt; \arg G_{\rm mp}(i\omega)$ for $\omega &gt; 0$ (phases continued from $\omega = 0$): among stable systems with the same gain, the minimum-phase one has the least phase lag.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> For $z = a + ib$ with $a &gt; 0$: $\abs{z - i\omega}^2 = a^2 + (b - \omega)^2 = \abs{\bar z + i\omega}^2$, and $\arg\frac{z - i\omega}{\bar z + i\omega} = -2\arctan\frac{\omega - b}{a}$, whose derivative in $\omega$ is $-2a/\big(a^2 + (\omega - b)^2\big) &lt; 0$. At $\omega = 0$ a real zero contributes phase $0$, and a conjugate pair contributes $-2\arctan(-b/a) - 2\arctan(b/a) = 0$. The quotient $G/G_{\rm ap}$ trades the zeros $z_j$ for zeros at $-\bar z_j$, adds no poles in the closed RHP, and is real because conjugate zeros enter in pairs.</p></div>
+
+<div class="blk lem" id="lem-step" data-name="Step response of a stable system">
+<p>Let $G$ be the transfer function of a SISO realization $(A, B, C, D)$, with all poles of $G$ in the open left half-plane, and let $h_0(t) = Ce^{At}B$ be the impulse response without its impulsive part. Then $\abs{h_0(t)} \le Ke^{-\beta t}$ for some constants $K, \beta &gt; 0$, $\int_0^\infty h_0(t)e^{-st}\,\dd t = G(s) - D$ for $\Re s &gt; -\beta$, and the unit step response from rest, $y(t) = D + \int_0^t h_0(\tau)\,\dd\tau$, is continuous for $t &gt; 0$ and tends to $G(0)$.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> Partial fractions write $G - D$ as a finite sum of terms $c\,(s - p)^{-l}$ over the poles $p$, and $(s - p)^{-l}$ is the Laplace transform of $t^{l-1}e^{pt}/(l-1)!$ for $\Re s &gt; \Re p$. By <a class="xref" href="#thm-tf"></a>, $h_0$ and the corresponding sum of these functions have the same Laplace transform for large $\Re s$; both are continuous, so they are equal. This gives the bound for any $\beta$ below $\min_p(-\Re p)$, and the transform formula. The step response is $D + \int_0^t h_0$ by <a class="xref" href="#def-impulse"></a>, and $\int_0^t h_0 \to \int_0^\infty h_0 = G(0) - D$.</p></div>
+
+<div class="blk thm" id="thm-undershoot" data-name="A right-half-plane zero forces undershoot">
+<p>Let $G$ be real rational and proper with all poles in the open left half-plane and $G(0) &gt; 0$, and suppose $G(z) = 0$ for a real $z &gt; 0$. Then the unit step response from rest, $y(t)$, satisfies</p>
+<div class="eq">$$\int_0^\infty y(t)\,e^{-zt}\,\dd t = 0,$$</div>
+<p>so $y$ is negative on some interval although $y(t) \to G(0) &gt; 0$: the response moves the wrong way before it settles.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> By <a class="xref" href="#lem-step"></a>, $y$ is continuous and bounded for $t &gt; 0$ and tends to $G(0) &gt; 0$. The function $y - D$ vanishes at $0$ and has derivative $h_0$, so the derivative rule stated after <a class="xref" href="#def-laplace"></a> and the transform formula of the lemma give $s\big(\hat y(s) - D/s\big) = G(s) - D$, that is, $\hat y(s) = G(s)/s$ for $\Re s &gt; 0$; in particular $\hat y(z) = 0$. Since $y$ is positive for large $t$, were it nonnegative everywhere, the integral against the positive weight $e^{-zt}$ would be positive.</p></div>
+
+<div class="blk ex" id="ex-undershoot" data-name="Same gain, opposite first move">
+<p>$G(s) = \dfrac{2(1 - s)}{(s+1)(s+2)} = \dfrac{2}{s+2}\cdot\dfrac{1 - s}{1 + s}$ has the gain of $2/(s+2)$ at every frequency. Partial fractions give the step responses $1 - 4e^{-t} + 3e^{-2t}$, which dips to $-1/3$ at $t = \ln(3/2)$, and $1 - e^{-2t}$, which rises monotonically. The RHP zero at $1$ is invisible in the gain curve and decisive in the time domain.</p>
+</div>
+
+<figure class="viz" id="viz-pz">
+  <figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">Pole–zero playground</span><span class="viz-sub">Drag poles (×, blue) and zeros (○, orange) in the $s$-plane; conjugate partners follow. Thin lines join each pole and zero to the test point $i\omega$; their lengths and angles give $\abs{G(i\omega)}$ and $\arg G(i\omega)$. Hover over a Bode plot to move $i\omega$.</span></figcaption>
+  <div class="viz-plots main-side">
+    <div class="plot" id="pz-s"><div class="plot-cap">Complex $s$-plane; the open RHP is shaded</div></div>
+    <div class="lt-stack">
+      <div class="plot" id="pz-mag"><div class="plot-cap">Gain $\abs{G(i\omega)}$ (log–log)</div></div>
+      <div class="plot" id="pz-ph"><div class="plot-cap">Phase $\arg G(i\omega)$</div></div>
+    </div>
+  </div>
+  <div class="viz-plots cols-2">
+    <div class="plot" id="pz-imp"><div class="plot-cap">Impulse response $h(t)$</div></div>
+    <div class="plot" id="pz-step"><div class="plot-cap">Unit step response from rest</div></div>
+  </div>
+  <div class="viz-controls" id="pz-controls"></div>
+  <div class="viz-notes">
+    <div><h5>Try this</h5><ol>
+      <li>With <i>Lightly damped pair</i>, drag the pole toward the imaginary axis. Near $\omega = \Im p$ the pole line becomes short, the Bode peak grows, and the impulse response rings longer.</li>
+      <li>Compare <i>Zero at −0.5</i> with <i>Zero at +0.5</i>: identical gain curves, phases that differ by up to $180^\circ$, and a step response that overshoots to about $4/3$ in one case and undershoots to about $-0.8$ in the other.</li>
+      <li>In <i>Notch</i>, set $\omega$ to the height of the zero pair: the zero line nearly vanishes and so does the gain.</li>
+      <li>Drag a pole into the right half-plane: the impulse response grows. $G(i\omega)$ can still be evaluated, but the hypothesis of <a class="xref" href="#thm-sss"></a> fails and the response to a sinusoid grows too.</li>
+    </ol></div>
+    <div><h5>What to notice</h5><p>Every gain in the readout is a product of the line lengths in the $s$-plane: poles raise the gain when $i\omega$ passes close to them and zeros lower it. Mirroring a zero across the imaginary axis keeps every length and changes the angles, which is <a class="xref" href="#prop-allpass"></a>; the time domain registers the difference through <a class="xref" href="#thm-undershoot"></a>.</p></div>
+  </div>
+</figure>
+</section>
+
+<section class="sec" id="s-freq">
+<h2>Frequency response and Bode plots</h2>
+
+<div class="blk prob"><p>A stable system is driven by $\sin(\omega t)$. What does the output look like after the transient, and how does it depend on $\omega$?</p></div>
+
+<div class="blk thm" id="thm-sss" data-name="Sinusoidal steady state">
+<p>Let $(A, B, C, D)$ be real and SISO with $A$ Hurwitz (all eigenvalues in the open left half-plane), and let $u(t) = \sin(\omega t)$ with $\omega \in \R$. For every initial state,</p>
+<div class="eq">$$y(t) - \abs{G(i\omega)}\,\sin\!\big(\omega t + \arg G(i\omega)\big) \to 0 \qquad (t \to \infty),$$</div>
+<p>exponentially fast.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> $A$ Hurwitz implies $i\omega \notin \Lambda(A)$. Let $\xi$ be the complex solution with input $e^{i\omega t}$ and $\xi(0) = i\,x_0$. By <a class="xref" href="#lem-real-parts"></a>, $\Im\xi$ is the real solution with input $\Im e^{i\omega t} = \sin\omega t$ and initial state $x_0$, so $\Im\xi = x$ and $y = \Im\big(C\xi + De^{i\omega t}\big)$. By <a class="xref" href="#thm-exp"></a>, $C\xi + De^{i\omega t} = G(i\omega)e^{i\omega t} + Ce^{At}v$ for a fixed vector $v$, and $Ce^{At}v \to 0$ exponentially. Finally $\Im\big(G(i\omega)e^{i\omega t}\big) = \abs{G(i\omega)}\sin\big(\omega t + \arg G(i\omega)\big)$.</p></div>
+<div class="blk prop" id="prop-sss-rest" data-name="Steady state from rest">
+<p>If every pole of $G$ lies in the open left half-plane, the conclusion of <a class="xref" href="#thm-sss"></a> holds from $x_0 = 0$, even when $A$ is not Hurwitz.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> From rest, the output for the complex input $e^{i\omega t}$ is</p>
+<div class="eq">$$De^{i\omega t} + \int_0^t h_0(\tau)e^{i\omega(t - \tau)}\,\dd\tau = e^{i\omega t}\Big(G(i\omega) - \int_t^\infty h_0(\tau)e^{-i\omega\tau}\,\dd\tau\Big),$$</div>
+<p>by the transform formula of <a class="xref" href="#lem-step"></a> at $s = i\omega$, and the bound of the lemma makes the tail at most $Ke^{-\beta t}/\beta$. Take imaginary parts (<a class="xref" href="#lem-real-parts"></a>).</p></div>
+
+<div class="blk def" id="def-freq" data-name="Frequency response, Bode plot">
+<p>The <dfn>frequency response</dfn> is $\omega \mapsto G(i\omega)$, with <dfn>gain</dfn> $\abs{G(i\omega)}$ and <dfn>phase</dfn> $\arg G(i\omega)$. A <dfn>Bode plot</dfn> shows the gain on a logarithmic scale and the phase on a linear scale, both against $\log\omega$. Gains are often quoted in decibels (dB), $20\log_{10}\abs G$. Engineering texts write $j$ for the imaginary unit, as in $G(j\omega)$.</p>
+</div>
+<div class="blk prop" id="prop-conj" data-name="Conjugate symmetry">
+<p>If $G$ is real rational, then $G(\bar s) = \overline{G(s)}$ at every $s$ that is not a pole, the bar denoting complex conjugation. Hence $\abs{G(-i\omega)} = \abs{G(i\omega)}$ and $\arg G(-i\omega) \equiv -\arg G(i\omega) \pmod{2\pi}$.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> The numerator and the denominator have real coefficients, so their values at $\bar s$ are the conjugates of their values at $s$.</p></div>
+<p>So $\omega \ge 0$ suffices. The value $G(0)$ is the zero-frequency gain, the final value of the unit step response of a stable system (<a class="xref" href="#lem-step"></a>).</p>
+
+<div class="blk probe"><p>First order, $G(s) = 1/(1 + s\tau)$ with time constant $\tau &gt; 0$: $\abs{G(i\omega)} = (1 + \omega^2\tau^2)^{-1/2}$ and $\arg G(i\omega) = -\arctan(\omega\tau)$. Far below the corner frequency $1/\tau$ the gain is close to $1$; far above, it is close to $1/(\omega\tau)$, a line of slope $-1$ on log–log axes ($-20$ dB per decade). At the corner the gain is $1/\sqrt 2$ (about $-3$ dB) and the phase $-45^\circ$. Extremes: as $\tau \to 0$ everything passes; as $\tau \to \infty$ the system approaches the integrator $1/(s\tau)$, with gain $1/(\omega\tau)$ and constant phase $-90^\circ$.</p></div>
+
+<div class="blk prop" id="prop-resonance" data-name="Second-order resonance">
+<p>Let $G(s) = \omega_n^2/(s^2 + 2\zeta\omega_n s + \omega_n^2)$ with damping ratio $\zeta &gt; 0$ and natural frequency $\omega_n &gt; 0$; for $\zeta &lt; 1$ the poles are $-\zeta\omega_n \pm i\omega_n\sqrt{1 - \zeta^2}$. With the normalized frequency $\Omega = \omega/\omega_n$,</p>
+<div class="eq">$$\abs{G(i\omega)}^{-2} = (1 - \Omega^2)^2 + (2\zeta\Omega)^2 .$$</div>
+<p>If $\zeta &lt; 1/\sqrt 2$ the gain has a unique maximum</p>
+<div class="eq">$$M_r = \frac{1}{2\zeta\sqrt{1 - \zeta^2}}\qquad\text{at}\qquad \omega_r = \omega_n\sqrt{1 - 2\zeta^2};$$</div>
+<p>if $\zeta \ge 1/\sqrt 2$ the gain decreases monotonically from $G(0) = 1$. At $\omega = \omega_n$ the gain is $1/(2\zeta)$ and the phase $-90^\circ$, for every $\zeta$.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> Minimize $f(v) = (1 - v)^2 + 4\zeta^2 v$ over $v = \Omega^2 \ge 0$. Since $f'(v) = 2(v - 1 + 2\zeta^2)$, the minimizer is $v^* = 1 - 2\zeta^2$ when this is positive, with $f(v^*) = 4\zeta^4 + 4\zeta^2(1 - 2\zeta^2) = 4\zeta^2(1 - \zeta^2)$; otherwise $f$ increases on $v &gt; 0$. At $\omega = \omega_n$, $G(i\omega_n) = 1/(2i\zeta)$.</p></div>
+
+<div class="blk pattern"><p>Logarithms turn the product formula into a sum,</p>
+<div class="eq">$$\log\abs{G(i\omega)} = \log\abs k + \sum_j\log\abs{i\omega - z_j} - \sum_i\log\abs{i\omega - p_i},$$</div>
+<p>and each term is close to $\log\abs{z_j}$ for $\omega \ll \abs{z_j}$ and to $\log\omega$ for $\omega \gg \abs{z_j}$. So the gain curve follows a broken line whose slope rises by $1$ at each zero and falls by $1$ at each pole (in decades per decade), with an error that the next proposition bounds for real poles and zeros; complex pairs near the axis add the peaks and dips of the rule of thumb in <a class="xref" href="#s-pz"></a>. The phase is likewise the sum of the angles of the factors.</p></div>
+
+<div class="blk prop" id="prop-asymptotes" data-name="Bode asymptotes">
+<p>(1) For real $c \neq 0$ and $\omega \ge 0$, $\max(\omega, \abs c) \le \abs{i\omega - c} \le \sqrt2\,\max(\omega, \abs c)$, with equality on the right only at the corner $\omega = \abs c$: each real factor stays within a factor $\sqrt2$ (about $3$ dB) of its asymptotes. (2) For $G$ as in <a class="xref" href="#def-pz"></a>, with $q$ zeros and $r$ poles, $\omega^{r - q}\abs{G(i\omega)} \to \abs k$ as $\omega \to \infty$: the final slope is $q - r$, minus the relative degree.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> (1) $\abs{i\omega - c}^2 = \omega^2 + c^2$ lies between $\max(\omega, \abs c)^2$ and $2\max(\omega, \abs c)^2$, with equality on the right exactly when $\omega = \abs c$. (2) Each factor satisfies $\abs{i\omega - a}/\omega \to 1$.</p></div>
+<p>The building blocks:</p>
+<div class="tbl-wrap"><table class="tbl">
+  <thead><tr><th>Factor</th><th>Gain asymptotes (log–log)</th><th>Phase, low to high frequency</th></tr></thead>
+  <tbody>
+    <tr><td>constant $k &gt; 0$</td><td>flat at $k$</td><td>$0^\circ$</td></tr>
+    <tr><td>integrator $1/s$</td><td>slope $-1$ everywhere</td><td>$-90^\circ$</td></tr>
+    <tr><td>real pole $1/(1 + s/a)$, $a &gt; 0$</td><td>$1$, then slope $-1$ above $a$</td><td>$0^\circ \to -90^\circ$, $-45^\circ$ at $a$</td></tr>
+    <tr><td>left half-plane zero $1 + s/a$, $a &gt; 0$</td><td>$1$, then slope $+1$ above $a$</td><td>$0^\circ \to +90^\circ$</td></tr>
+    <tr><td>RHP zero $1 - s/a$, $a &gt; 0$</td><td>same as the left half-plane zero</td><td>$0^\circ \to -90^\circ$</td></tr>
+    <tr><td>pole pair $\dfrac{\omega_n^2}{s^2 + 2\zeta\omega_n s + \omega_n^2}$</td><td>$1$, then slope $-2$ above $\omega_n$; peak $M_r$ if $\zeta &lt; 1/\sqrt2$</td><td>$0^\circ \to -180^\circ$, steeper for small $\zeta$</td></tr>
+    <tr><td>delay $e^{-s\tau_d}$, $\tau_d &gt; 0$ (not rational)</td><td>$1$ at every frequency</td><td>$-\omega\tau_d$, unbounded lag</td></tr>
+  </tbody>
+</table></div>
+
+<div class="blk thm" id="thm-bode-phase" data-name="Bode's gain–phase relation">
+<p>Let $G$ be real rational and proper with all poles and zeros in the open left half-plane and $G(0) &gt; 0$. Then for every $\omega_0 &gt; 0$, writing $\nu = \ln(\omega/\omega_0)$ for the log-frequency relative to $\omega_0$,</p>
+<div class="eq">$$\arg G(i\omega_0) = \frac{1}{\pi}\int_{-\infty}^{\infty}\frac{\dd \ln\abs{G(i\omega_0e^{\nu})}}{\dd\nu}\;\ln\coth\frac{\abs\nu}{2}\;\dd\nu .$$</div>
+</div>
+<p class="src">Statement: Doyle, Francis and Tannenbaum, <i>Feedback Control Theory</i>, ch. 7, Section 7.2 (the phase formula). The classical proof applies Cauchy's theorem to $\ln G$, which is analytic on the closed right half-plane because $G$ has no poles or zeros there. Originally H. W. Bode, <i>Network Analysis and Feedback Amplifier Design</i> (1945).</p>
+<div class="blk cor" id="cor-bode-slope" data-name="The slope sets the phase">
+<p>Under the hypotheses of <a class="xref" href="#thm-bode-phase"></a>, the weight $w(\nu) = \ln\coth(\abs\nu/2)$ is positive and even, decreases in $\abs\nu$, and has $\int_{-\infty}^{\infty}w = \pi^2/2$. Write $\mu(\nu) = \dd\ln\abs{G(i\omega_0e^{\nu})}/\dd\nu$ for the log–log slope of the gain, and suppose that for a number $N$ and some $\nu_1 \ge 0$, $\abs{\mu(\nu) - N} \le \delta$ for $\abs\nu \le \nu_1$ and $\abs{\mu(\nu) - N} \le \Delta$ for $\abs\nu &gt; \nu_1$. Then</p>
+<div class="eq">$$\abs{\arg G(i\omega_0) - N\cdot 90^\circ} \le \delta\cdot 90^\circ + \Delta\cdot 90^\circ\cdot e^{-\nu_1} .$$</div>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> For $x &gt; 0$,</p>
+<div class="eq">$$\ln\coth\frac x2 = \ln\frac{1 + e^{-x}}{1 - e^{-x}} = 2\sum_{k\ \mathrm{odd}}\frac{e^{-kx}}{k},\qquad \int_{\nu_1}^\infty w = 2\sum_{k\ \mathrm{odd}}\frac{e^{-k\nu_1}}{k^2} \le 2e^{-\nu_1}\sum_{k\ \mathrm{odd}}\frac{1}{k^2} = \frac{\pi^2}{4}e^{-\nu_1},$$</div>
+<p>so $w$ is positive and decreasing on $(0, \infty)$, and equality at $\nu_1 = 0$ gives $\int_{-\infty}^{\infty}w = \pi^2/2$. By the theorem, $\arg G(i\omega_0) - N\pi/2 = \frac1\pi\int\big(\mu(\nu) - N\big)\,w(\nu)\,\dd\nu$. The part over $\abs\nu \le \nu_1$ is at most $\frac\delta\pi\cdot\frac{\pi^2}{2} = \delta\frac\pi2$ in modulus, and the part over $\abs\nu &gt; \nu_1$ at most $\frac\Delta\pi\cdot\frac{\pi^2}{2}e^{-\nu_1} = \Delta\frac\pi2e^{-\nu_1}$.</p></div>
+<p>For example, a slope within $\delta$ of $N$ over one decade on each side of $\omega_0$ ($\nu_1 = \ln 10$) fixes the phase to within $\delta\cdot 90^\circ + \Delta\cdot 9^\circ$. For minimum-phase systems the gain curve thus determines the phase. RHP zeros and delays violate the hypothesis and add lag that the gain curve does not show (<a class="xref" href="#prop-allpass"></a> and the last row of the table above), which is why they limit feedback (chapter 12).</p>
+
+<figure class="viz" id="viz-sine">
+  <figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">Sinusoid in, sinusoid out</span><span class="viz-sub">The second-order system $\omega_n^2/(s^2 + 2\zeta\omega_n s + \omega_n^2)$ starts from rest and is driven by $\sin(\omega t)$. Its output is the sum of a steady sinusoid and a decaying transient, computed exactly from the proof of the steady-state theorem. The markers on the Bode plots sit at the input frequency.</span></figcaption>
+  <div class="viz-plots main-side">
+    <div class="plot" id="sine-t"><div class="plot-cap">Input (yellow), output (violet), its steady part (dashed) and transient (red)</div></div>
+    <div class="lt-stack">
+      <div class="plot" id="sine-mag"><div class="plot-cap">Gain, with asymptotes (dashed) and resonance peak (red ring)</div></div>
+      <div class="plot" id="sine-ph"><div class="plot-cap">Phase</div></div>
+    </div>
+  </div>
+  <div class="viz-controls" id="sine-controls"></div>
+  <div class="viz-notes">
+    <div><h5>Try this</h5><ol>
+      <li>Keep $\zeta = 0.2$ and press <i>Drive at the resonance peak</i>: the steady amplitude settles at $M_r$, about $2.55$; the readout shows the formula and the value measured from the waveform.</li>
+      <li>Push $\omega$ well above $\omega_n$: the output shrinks like $(\omega_n/\omega)^2$ and lags by almost $180^\circ$, nearly in antiphase with the input.</li>
+      <li>Raise $\zeta$ above $1/\sqrt 2 \approx 0.71$: the peak disappears and the gain decreases monotonically.</li>
+      <li>Lower $\zeta$ to 0.05: the transient lingers, and the measured amplitude matches $\abs{G(i\omega)}$ only once it has died out.</li>
+    </ol></div>
+    <div><h5>What to notice</h5><p>The waveform is exactly the decomposition in the proof of <a class="xref" href="#thm-sss"></a>: a sinusoid at the input frequency plus a free response of the system. The steady part is the eigenvalue $G(i\omega)$ read in polar form, amplitude ratio $\abs{G(i\omega)}$ and phase shift $\arg G(i\omega)$, which is the marked point on the Bode plot. The peak follows <a class="xref" href="#prop-resonance"></a>.</p></div>
+  </div>
+</figure>
+</section>
+
+<section class="sec" id="s-bibo">
+<h2>BIBO stability versus internal stability</h2>
+
+<div class="blk prob"><p>Chapter 7 called a system stable when its free state decays. Seen from outside, the natural demand is different: bounded inputs should produce bounded outputs. Are the two the same?</p></div>
+
+<div class="blk def" id="def-bibo" data-name="Bounded-input bounded-output stability">
+<p>The system is <dfn>bounded-input bounded-output (BIBO) stable</dfn> if there is $\gamma &lt; \infty$ such that every bounded input produces, from $x_0 = 0$, an output with $\sup_{t \ge 0}\norm{y(t)} \le \gamma\,\sup_{t \ge 0}\norm{u(t)}$. It is <dfn>internally stable</dfn> if $A$ is Hurwitz, so that $e^{At}x_0 \to 0$ for every $x_0$.</p>
+</div>
+
+<div class="blk thm" id="thm-bibo" data-name="BIBO stability">
+<p>For a SISO system, let $h_0(t) = Ce^{At}B$ for $t \ge 0$. The following are equivalent:</p>
+<ol>
+<li>the system is BIBO stable;</li>
+<li>$\int_0^\infty \abs{h_0(t)}\,\dd t &lt; \infty$;</li>
+<li>every pole of $G$ has negative real part.</li>
+</ol>
+<p>The smallest admissible $\gamma$ is then $\abs D + \int_0^\infty\abs{h_0(t)}\,\dd t$. Internal stability implies BIBO stability. A MIMO system is BIBO stable exactly when every entry of $G$ is.</p>
+</div>
+<details class="proof"><summary>Proof</summary>
+<p>(2 $\Rightarrow$ 1) For every $t \ge 0$,</p>
+<div class="eq">$$\abs{y(t)} \le \int_0^t\abs{h_0(t-\tau)}\,\abs{u(\tau)}\,\dd\tau + \abs D\,\abs{u(t)} \le \Big(\int_0^\infty\abs{h_0} + \abs D\Big)\sup_{\tau \ge 0}\abs{u(\tau)} .$$</div>
+<p>(1 $\Rightarrow$ 2, and the value of $\gamma$) For $t_1 &gt; 0$ take $u(\tau) = \operatorname{sgn} h_0(t_1 - \tau)$ on $[0, t_1)$ and $u(t_1) = \operatorname{sgn} D$, with $\operatorname{sgn}$ the sign function. Then $\sup\abs u \le 1$ and $y(t_1) = \int_0^{t_1}\abs{h_0} + \abs D \le \gamma$; let $t_1 \to \infty$.</p>
+<p>(2 $\Rightarrow$ 3) The Laplace integral of $h_0$ converges absolutely on $\Re s \ge 0$ and is bounded there by $\int_0^\infty \abs{h_0}$. It agrees with the rational function $G - D$ for $\Re s &gt; \alpha(A)$, hence, by the identity theorem for analytic functions, on the open RHP away from the poles of $G$. A pole with $\Re p \ge 0$ would make $\abs{G - D}$ unbounded at points with $\Re s &gt; 0$ approaching $p$.</p>
+<p>(3 $\Rightarrow$ 2) Partial fractions write $G - D$ as a sum of terms $c\,(s - p)^{-l}$ over the poles, and $(s - p)^{-l}$ is the transform of $t^{l-1}e^{pt}/(l-1)!$, which is integrable when $\Re p &lt; 0$. Internal stability implies (3) by <a class="xref" href="#prop-poles-eig"></a>.</p>
+<p>(MIMO) Output $i$ is the sum over $j$ of the outputs of the SISO systems from input $j$ to output $i$, whose transfer functions are the entries $g_{ij}$. If every entry is BIBO stable, each output component is bounded by a constant times $\sup_t\norm{u(t)}$; conversely, inputs that use channel $j$ alone show that each $g_{ij}$ must be BIBO stable. All norms on $\R^m$ and on $\R^p$ are equivalent (<a href="ch02_least_squares.html#thm-equiv">chapter 2</a>), so the choice of norms does not matter.</p>
+</details>
+
+<div class="blk probe"><p>Marginal stability is not BIBO stability. The integrator $1/s$ is Lyapunov stable, since its free response is constant, yet it turns the unit step into the ramp $t$. The undamped oscillator $1/(s^2 + 1)$ is Lyapunov stable too, and the bounded input $\sin t$, at the frequency of its poles $\pm i$, produces $\tfrac12(\sin t - t\cos t)$. In both cases a pole on the imaginary axis makes $\int\abs{h_0} = \infty$.</p></div>
+
+<div class="blk cex" id="cex-hidden"><p>BIBO stability does not imply internal stability. Connect the unstable system $P(s) = 1/(s - 1)$ in series with $F(s) = (s - 1)/(s + 1)$, with state $\eta$ for $P$ and $\xi$ for $F$. In either order the transfer function is $PF = 1/(s + 1)$, BIBO stable, while the realization has the eigenvalue $1$.</p>
+<ul>
+<li><i>$F$ then $P$</i>: $\dot\xi = -\xi + u$, $\dot\eta = \eta - 2\xi + u$, $y = \eta$. From rest the unit step gives $y = \eta = 1 - e^{-t}$, but an initial $\eta(0) = \eps$ adds $\eps e^t$ to the output. The input cannot excite the unstable mode; the output sees it.</li>
+<li><i>$P$ then $F$</i>: $\dot\eta = \eta + u$, $\dot\xi = -\xi + \eta$, $y = \eta - 2\xi$. From rest the unit step gives $y = 1 - e^{-t}$, while $\eta = e^t - 1$ and $\xi = \tfrac12\big(e^{t/2} - e^{-t/2}\big)^2$ grow without bound. The input excites the unstable mode; the output cannot see it.</li>
+</ul>
+<p>In hardware the growing state saturates an actuator or breaks something, and an exact cancellation is never exact. These are the two failure modes, uncontrollability and unobservability, that chapter 9 characterizes.</p></div>
+
+<figure class="wide" id="fig-cascade" aria-label="Two series connections of an unstable plant and a filter whose zero cancels the unstable pole"><div class="svg-scroll">
+<svg viewBox="0 0 760 286" role="img" aria-label="Top: input u enters the filter F then the unstable plant P. Bottom: input u enters P then F. Both have transfer function 1 over s plus 1." style="width:100%;height:auto;max-width:860px;display:block;margin:6px 0 4px">
+  <defs><marker id="cas-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--ink-2)"/></marker></defs>
+  <text x="380" y="18" text-anchor="middle" font-family="var(--font-ui)" font-size="12" letter-spacing="1.2" fill="var(--muted)">F THEN P</text>
+  <text x="44" y="67" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="17" fill="var(--ink)">u</text>
+  <path d="M56 62 H116" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#cas-arrow)"/>
+  <rect x="120" y="30" width="210" height="64" rx="4" fill="var(--tint-def)" stroke="var(--c1)" stroke-width="1.5"/>
+  <text x="225" y="58" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="16" fill="var(--ink)">F(s) = (s − 1)/(s + 1)</text>
+  <text x="225" y="80" text-anchor="middle" font-family="var(--font-ui)" font-size="12" fill="var(--muted)">stable filter, state ξ</text>
+  <path d="M330 62 H396" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#cas-arrow)"/>
+  <rect x="400" y="30" width="210" height="64" rx="4" fill="none" stroke="var(--c8)" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="505" y="58" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="16" fill="var(--ink)">P(s) = 1/(s − 1)</text>
+  <text x="505" y="80" text-anchor="middle" font-family="var(--font-ui)" font-size="12" fill="var(--muted)">unstable plant, state η</text>
+  <path d="M610 62 H676" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#cas-arrow)"/>
+  <text x="694" y="67" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="17" fill="var(--ink)">y</text>
+  <text x="380" y="118" text-anchor="middle" font-family="var(--font-ui)" font-size="12.5" fill="var(--ink-2)">The zero of F keeps the input away from the unstable mode (uncontrollable); η(0) ≠ 0 grows in y.</text>
+  <text x="380" y="152" text-anchor="middle" font-family="var(--font-ui)" font-size="12" letter-spacing="1.2" fill="var(--muted)">P THEN F</text>
+  <text x="44" y="201" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="17" fill="var(--ink)">u</text>
+  <path d="M56 196 H116" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#cas-arrow)"/>
+  <rect x="120" y="164" width="210" height="64" rx="4" fill="none" stroke="var(--c8)" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="225" y="192" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="16" fill="var(--ink)">P(s) = 1/(s − 1)</text>
+  <text x="225" y="214" text-anchor="middle" font-family="var(--font-ui)" font-size="12" fill="var(--muted)">unstable plant, state η</text>
+  <path d="M330 196 H396" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#cas-arrow)"/>
+  <rect x="400" y="164" width="210" height="64" rx="4" fill="var(--tint-def)" stroke="var(--c1)" stroke-width="1.5"/>
+  <text x="505" y="192" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="16" fill="var(--ink)">F(s) = (s − 1)/(s + 1)</text>
+  <text x="505" y="214" text-anchor="middle" font-family="var(--font-ui)" font-size="12" fill="var(--muted)">stable filter, state ξ</text>
+  <path d="M610 196 H676" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#cas-arrow)"/>
+  <text x="694" y="201" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="17" fill="var(--ink)">y</text>
+  <text x="380" y="252" text-anchor="middle" font-family="var(--font-ui)" font-size="12.5" fill="var(--ink-2)">The input drives the unstable mode, and the zero of F removes it from y (unobservable); η grows unseen.</text>
+  <text x="380" y="278" text-anchor="middle" font-family="var(--font-ui)" font-size="12" fill="var(--muted)">Both cascades have G(s) = 1/(s + 1); both realizations have the eigenvalue 1.</text>
+</svg>
+</div></figure>
+
+<figure class="viz" id="viz-hidden">
+  <figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">A hidden unstable mode</span><span class="viz-sub">The two cascades above, driven by a unit step and simulated exactly. The slider $\delta$ moves the zero of $F$ to $1 + \delta$ (an imperfect cancellation), and $\eps$ is a small initial value of the plant state $\eta$.</span></figcaption>
+  <div class="viz-plots cols-2">
+    <div class="plot" id="hid-y"><div class="plot-cap">Output $y(t)$ and the step response $1 - e^{-t}$ of $1/(s+1)$ (dashed)</div></div>
+    <div class="plot" id="hid-x"><div class="plot-cap">Internal states $\abs{\eta(t)}$ (red) and $\abs{\xi(t)}$ (orange), log scale</div></div>
+  </div>
+  <div class="viz-controls" id="hid-controls"></div>
+  <div class="viz-notes">
+    <div><h5>Try this</h5><ol>
+      <li>Order <i>P then F</i> with $\delta = \eps = 0$: the output follows $1 - e^{-t}$ exactly, while $\eta$ grows like $e^t$, a straight line on the log plot.</li>
+      <li>Order <i>F then P</i> with $\delta = \eps = 0$: everything stays bounded. Now set $\eps = 0.01$: the tiny initial plant state reappears in the output as $0.01\,e^t$, which leaves the plot within a few time units.</li>
+      <li>Set $\delta = 0.02$ in either order: the cancellation is imperfect, $G$ acquires the pole $1$ with residue $-\delta/2$, and the output diverges too.</li>
+    </ol></div>
+    <div><h5>What to notice</h5><p>With exact cancellation, $G = 1/(s+1)$ is BIBO stable by <a class="xref" href="#thm-bibo"></a>, yet the realization has the eigenvalue $1$ in both orders. In <i>F then P</i> the input cannot excite the unstable mode; in <i>P then F</i> it excites it but the output cannot show it. Any $\delta \neq 0$ leaves the pole $1$ in $G$, so the realization of order $2$ is minimal (<a class="xref" href="#prop-min-order"></a>), hence controllable and observable (<a href="ch09_controllability.html#thm-minimal">chapter 9</a>): the mode is both excitable and visible, and the output diverges as well.</p></div>
+  </div>
+</figure>
+
+<div class="blk pattern"><p>Internal stability is a property of $A$; BIBO stability is a property of $G$, that is, of the poles that survive cancellation. Internal stability always implies BIBO stability (<a class="xref" href="#thm-bibo"></a>). The converse holds when no eigenvalue in the closed RHP is hidden from the input or from the output: for stabilizable and detectable SISO realizations, BIBO stability is equivalent to internal stability (<a href="ch09_controllability.html#cor-bibo-internal">chapter 9</a>).</p></div>
+<div class="tbl-wrap"><table class="tbl">
+  <thead><tr><th>Notion</th><th>Property of</th><th>Test</th><th>Sees modes hidden from $u$ or $y$</th></tr></thead>
+  <tbody>
+    <tr><td>Lyapunov (marginal) stability</td><td>$A$</td><td>eigenvalues in $\{\Re\lambda \le 0\}$, those on the imaginary axis with Jordan blocks of size 1 (<a href="ch07_autonomous_systems.html#thm-ct-stability">chapter 7</a>)</td><td>yes</td></tr>
+    <tr><td>internal (asymptotic) stability</td><td>$A$</td><td>$\alpha(A) &lt; 0$ (<a href="ch07_autonomous_systems.html#thm-ct-stability">chapter 7</a>)</td><td>yes</td></tr>
+    <tr><td>BIBO stability</td><td>$G$, equivalently $h$</td><td>poles of $G$ in the open left half-plane; $\int\abs{h_0} &lt; \infty$ (<a class="xref" href="#thm-bibo"></a>)</td><td>no (<a class="xref" href="#cex-hidden"></a>)</td></tr>
+    <tr><td>relations</td><td></td><td>internal $\Rightarrow$ BIBO (<a class="xref" href="#thm-bibo"></a>) and Lyapunov (<a href="ch07_autonomous_systems.html#thm-ct-stability">chapter 7</a>); BIBO $\Leftrightarrow$ internal for minimal SISO realizations (<a href="ch09_controllability.html#cor-bibo-internal">chapter 9</a>)</td><td></td></tr>
+  </tbody>
+</table></div>
+</section>
+
+<section class="sec" id="s-real">
+<h2>Realization: from transfer function to state space</h2>
+
+<div class="blk prob"><p>Given a proper rational transfer function, construct a state-space system $(A, B, C, D)$ that realizes it, and determine how far the answer is unique.</p></div>
+
+<div class="blk thm" id="thm-ccf" data-name="Controllable canonical form">
+<p>Let $G(s) = d_0 + \dfrac{b_1 s^{n-1} + b_2 s^{n-2} + \dots + b_n}{s^n + a_1 s^{n-1} + \dots + a_n}$ with real coefficients, where $d_0 = \lim_{s \to \infty}G(s)$ comes from polynomial division. Then $G(s) = C(sI - A)^{-1}B + D$ for</p>
+<div class="eq">$$A = \begin{bmatrix}-a_1 & -a_2 & \cdots & -a_{n-1} & -a_n\\ 1 & 0 & \cdots & 0 & 0\\ 0 & 1 & \cdots & 0 & 0\\ \vdots & & \ddots & & \vdots\\ 0 & 0 & \cdots & 1 & 0\end{bmatrix},\quad B = \begin{bmatrix}1\\ 0\\ \vdots\\ 0\end{bmatrix},\quad C = \begin{bmatrix}b_1 & b_2 & \cdots & b_n\end{bmatrix},\quad D = d_0 ,$$</div>
+<p>and the characteristic polynomial of this companion matrix is $\det(sI - A) = a(s) = s^n + a_1 s^{n-1} + \dots + a_n$.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> Let $v(s) = (s^{n-1}, s^{n-2}, \dots, 1)^\T/a(s)$. Row $l \ge 2$ of $(sI - A)v$ is $-v_{l-1} + sv_l = 0$, and row 1 is $(s + a_1)v_1 + a_2v_2 + \dots + a_nv_n = a(s)/a(s) = 1$. So $(sI - A)v = B$, hence $(sI - A)^{-1}B = v$ and $Cv = (b_1 s^{n-1} + \dots + b_n)/a(s)$. Finally, $v_1 = s^{n-1}/a(s)$ is the $(1, 1)$ entry of $(sI - A)^{-1}$, which by Cramer's rule is $\det N(s)/\det(sI - A)$, where $N(s)$, obtained from $sI - A$ by deleting its first row and column, is lower triangular with diagonal entries $s$; so $\det(sI - A) = a(s)$.</p></div>
+<p>The pole–zero playground builds its state-space model this way.</p>
+
+<div class="blk prop" id="prop-transpose" data-name="Transposed realization">
+<p>If $(A, B, C, D)$ is a SISO realization of $G$, so is $(A^\T, C^\T, B^\T, D)$.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> A scalar equals its transpose, and $(sI - A^\T)^{-1} = \big((sI - A)^{-1}\big)^\T$, so $B^\T(sI - A^\T)^{-1}C^\T + D$ is the transpose of the scalar $C(sI - A)^{-1}B + D = G(s)$.</p></div>
+
+<div class="blk probe"><p>Non-uniqueness, three ways. (i) Every similarity transform of a realization is another realization (<a class="xref" href="#thm-sim"></a>). (ii) The transpose is a realization too (<a class="xref" href="#prop-transpose"></a>); it turns the controllable canonical form into the observable canonical form. (iii) Realizations can have different orders: $G(s) = \frac{s + 1}{s^2 + 3s + 2} = \frac{1}{s+2}$ has the order-2 controllable canonical form with $A = \begin{bmatrix}-3 & -2\\ 1 & 0\end{bmatrix}$, $C = \begin{bmatrix}1 & 1\end{bmatrix}$, and the order-1 realization $(-2, 1, 1, 0)$. In the first, the eigenvalue $-1$ has the eigenvector $v = (1, -1)^\T$ with $Cv = 0$: it is invisible in the output.</p></div>
+
+<div class="blk pattern"><p>The input–output invariants $h$, $G$, $G(i\omega)$ and the Markov parameters carry the same information (<a class="xref" href="#prop-io-equiv"></a>), and none of them fixes the realization (<a class="xref" href="#thm-sim"></a>, <a class="xref" href="#cex-dims"></a>). What they do fix is a smallest order (<a class="xref" href="#prop-min-order"></a>).</p></div>
+
+<div class="blk prop" id="prop-io-equiv" data-name="Four equivalent descriptions">
+<p>For a realization $(A, B, C, D)$, each of the impulse response $h$, the transfer function $G$, the frequency response $\omega \mapsto G(i\omega)$ (at the $\omega \in \R$ where $i\omega$ is not a pole), and the sequence of Markov parameters $D, CB, CAB, \dots$ determines the other three.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> $G = \hat h$ by <a class="xref" href="#thm-tf"></a>, and $G$ determines $h$: $D = \lim_{s\to\infty}G(s)$, and the continuous function $Ce^{At}B$ is determined by its Laplace transform $G - D$. The Markov parameters are the coefficients of $G$ at infinity (<a class="xref" href="#prop-rational"></a>), and they determine $G$ on $\abs s &gt; \norm{A}$, hence everywhere, since two rational functions that agree at infinitely many points are equal. For the same reason the values $G(i\omega)$ determine $G$.</p></div>
+
+<div class="blk prop" id="prop-min-order" data-name="Minimal order, SISO case">
+<p>Let $G = d_0 + b/a$, where $d_0$ is a constant and $b/a$ is strictly proper and in reduced form, with $a$ monic of degree $n$. Then $G$ has a realization of order $n$, and none of smaller order.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> The controllable canonical form of <a class="xref" href="#thm-ccf"></a> has order $n$. In any realization, $a$, the denominator of $G$ in reduced form, divides $\det(sI - A)$ by <a class="xref" href="#prop-poles-eig"></a>, so the order is at least $n$.</p></div>
+
+<div class="blk prop" id="prop-ccf-obs" data-name="When the canonical form is observable">
+<p>The controllable canonical form of <a class="xref" href="#thm-ccf"></a> is controllable, and it is observable if and only if $b(s) = b_1s^{n-1} + \dots + b_n$ and $a(s)$ have no common root.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> Since $Ae_l = -a_le_1 + e_{l+1}$ for $l &lt; n$, the vector $A^kB$ has a $1$ in position $k + 1$ and zeros below it, so the controllability matrix $[B, AB, \dots, A^{n-1}B]$ is upper triangular with ones on its diagonal, and the pair is controllable by <a href="ch09_controllability.html#thm-kalman">Kalman's rank test</a> (chapter 9). If $b$ and $a$ have no common root, the realization has the minimal order $n$ (<a class="xref" href="#prop-min-order"></a>), so it is observable by <a href="ch09_controllability.html#thm-minimal">the theorem on minimal realizations</a> (chapter 9). If they share a root, $b/a$ reduces to a fraction with a denominator of degree below $n$, so the realization is not minimal (<a class="xref" href="#prop-min-order"></a>); being controllable, it cannot be observable, by the same theorem.</p></div>
+<p>Chapter 9 shows that minimal realizations are exactly the controllable and observable ones, that they are all similar to each other, and that the minimal order is the rank of a Hankel matrix of Markov parameters (<a href="ch09_controllability.html#thm-minimal">the theorem on minimal realizations</a>).</p>
+<div class="tbl-wrap"><table class="tbl">
+  <thead><tr><th>Description</th><th>Object</th><th>Fixed by the input–output map?</th><th>Under $\tilde x = Tx$</th><th>Blind to</th></tr></thead>
+  <tbody>
+    <tr><td>state space</td><td>$(A, B, C, D)$</td><td>no: one realization among many</td><td>becomes $(TAT^{-1}, TB, CT^{-1}, D)$</td><td>nothing; it is the internal model</td></tr>
+    <tr><td>impulse response</td><td>$h(t) = Ce^{At}B\,\mathbb 1(t) + D\delta(t)$</td><td>yes</td><td>invariant (<a class="xref" href="#thm-sim"></a>)</td><td>modes not excited by $u$ or not seen in $y$ (<a href="ch09_controllability.html#thm-kalman-dec">chapter 9</a>)</td></tr>
+    <tr><td>transfer function</td><td>$G(s) = C(sI - A)^{-1}B + D$</td><td>yes; rational and proper (<a class="xref" href="#prop-rational"></a>)</td><td>invariant</td><td>the same modes</td></tr>
+    <tr><td>frequency response</td><td>$G(i\omega)$, $\omega \ge 0$</td><td>yes; it determines the rational $G$ (<a class="xref" href="#prop-io-equiv"></a>, <a class="xref" href="#prop-conj"></a>)</td><td>invariant</td><td>the same; a steady state only if stable (<a class="xref" href="#thm-sss"></a>)</td></tr>
+    <tr><td>Markov parameters</td><td>$D,\ CB,\ CAB,\ CA^2B, \dots$</td><td>yes</td><td>invariant</td><td>the same modes</td></tr>
+  </tbody>
+</table></div>
+</section>
+
+<section class="sec" id="s-mimo">
+<h2>Multivariable systems: poles, zeros and directions</h2>
+
+<div class="blk prob"><p>A system with $m$ inputs and $p$ outputs has a $p\times m$ matrix of transfer functions. Which SISO notions survive, and in what form: poles and their multiplicities, zeros and the wrong-way response they force, gain and phase? The first guess, applying each notion entry by entry, fails in both directions.</p></div>
+
+<div class="blk def" id="def-tfm" data-name="Transfer matrix, normal rank">
+<p>A <dfn>transfer matrix</dfn> is a $p\times m$ matrix $G$ whose entries $g_{ij}$ are real rational functions of $s$, written $G \in \R(s)^{p\times m}$, where $\R(s)$ is the field of real rational functions; by <a class="xref" href="#thm-tf"></a> and <a class="xref" href="#prop-rational"></a>, a realization $(A, B, C, D)$ has the proper transfer matrix $C(sI - A)^{-1}B + D$. A <dfn>minor</dfn> of order $k$ is the determinant of a $k\times k$ submatrix. The <dfn>normal rank</dfn> $\operatorname{normrank} G$ is the largest $k$ for which some minor of order $k$ is not identically zero.</p>
+</div>
+
+<div class="blk conj"><p>The poles and zeros of $G$, with their multiplicities, are those of its entries; or, when $G$ is square, those of the rational function $\det G$.</p></div>
+
+<div class="blk probe"><p>Multiplicity. Every nonzero entry of $G_a = \frac{1}{s+1}I$ (with $I$ the $2\times 2$ identity) and of $G_b = \frac{1}{s+1}\begin{bmatrix}1 & 1\\ 1 & 1\end{bmatrix}$ is $1/(s+1)$, with the single pole $-1$. Yet $G_b$ has a realization with one state, $A = -1$, $B = \begin{bmatrix}1 & 1\end{bmatrix}$, $C = \begin{bmatrix}1 & 1\end{bmatrix}^\T$, $D = 0$, while every realization of $G_a$ needs two: by <a class="xref" href="#prop-rational"></a> its first Markov parameter is $CB = \lim_{s\to\infty}sG_a(s) = I$, and $\rank(CB) \le n$ when $B \in \R^{n\times 2}$ ($\rank$ denotes the rank). The pole $-1$ counts twice in $G_a$ and once in $G_b$, and no entry can tell.</p></div>
+
+<div class="blk probe"><p>A zero that no entry has. Let</p>
+<div class="eq">$$G_z(s) = \begin{bmatrix}\dfrac{1}{s+1} & \dfrac{2}{s+3}\\[6pt] \dfrac{1}{s+1} & \dfrac{1}{s+1}\end{bmatrix},\qquad \det G_z(s) = \frac{1 - s}{(s+1)^2(s+3)} .$$</div>
+<p>Every entry is a stable first-order lag that vanishes nowhere. But $G_z(1) = \frac12\begin{bmatrix}1 & 1\\ 1 & 1\end{bmatrix}$ is singular, with $G_z(1)(1, -1)^\T = 0$ and $(1, -1)\,G_z(1) = 0$. By <a class="xref" href="#thm-exp"></a>, in any realization with $1 \notin \Lambda(A)$ the input $e^{t}(1, -1)^\T$ from $x_0 = (I - A)^{-1}B(1, -1)^\T$ produces the output $G_z(1)\,e^{t}(1, -1)^\T = 0$: the plant blocks a growing exponential along the input direction $(1, -1)$, as a SISO zero at $s = 1$ in the RHP would.</p></div>
+
+<div class="blk cex" id="cex-entry-zeros"><p>Zeros of the entries need not be zeros of $G$. In</p>
+<div class="eq">$$G_c(s) = \frac{1}{s+1}\begin{bmatrix}s - 1 & s\\ 1 & 1\end{bmatrix},\qquad \det G_c(s) = -\frac{1}{(s+1)^2},$$</div>
+<p>the entry $g_{11}$ has a zero at $1$ in the RHP and $g_{12}$ a zero at $0$, but $\det G_c$ never vanishes, so $G_c(s_0)$ is invertible at every $s_0 \neq -1$. By <a class="xref" href="#thm-exp"></a>, for $s_0 \notin \Lambda(A)$ and $u_0 \neq 0$ the input $e^{s_0t}u_0$ from $x_0 = (s_0I - A)^{-1}Bu_0$ gives the output $G_c(s_0)e^{s_0t}u_0 \neq 0$: no input direction is blocked. <a class="xref" href="#ex-smm"></a> confirms that $G_c$ has no zeros at all.</p></div>
+
+<div class="blk cex" id="cex-det-hides"><p>The determinant can hide zeros. For</p>
+<div class="eq">$$G_d(s) = \begin{bmatrix}\dfrac{s+2}{s+1} & 0\\[6pt] 0 & \dfrac{s+1}{s+2}\end{bmatrix},\qquad \det G_d(s) = 1,$$</div>
+<p>the determinant has neither poles nor zeros, yet each channel blocks an exponential. With the realization $A = \diag(-1, -2)$ (the diagonal matrix with these entries), $B = I$, $C = \diag(1, -1)$, $D = I$, the input $e^{-2t}(1, 0)^\T$ from $x_0 = (-1, 0)^\T$ gives $x(t) = (-e^{-2t}, 0)^\T$ and $y = (x_1 + u_1,\ -x_2 + u_2) = 0$; likewise $e^{-t}(0, 1)^\T$ from $x_0 = (0, 1)^\T$ gives $x(t) = (0, e^{-t})^\T$ and $y = 0$. Each zero sits at a pole of the other channel, and the two cancel in $\det G_d$.</p></div>
+
+<div class="blk thm" id="thm-smm" data-name="Smith–McMillan form">
+<p>Let $G \in \R(s)^{p\times m}$ have normal rank $r$. There are square polynomial matrices $L(s)$ and $R(s)$, of sizes $p$ and $m$, whose determinants are nonzero constants (<dfn>unimodular</dfn> matrices, so that $L^{-1}$ and $R^{-1}$ are polynomial too), such that</p>
+<div class="eq">$$L(s)\,G(s)\,R(s) = \begin{bmatrix}M(s) & 0\\ 0 & 0\end{bmatrix},\qquad M(s) = \diag\Big(\frac{\varepsilon_1(s)}{\psi_1(s)},\ \dots,\ \frac{\varepsilon_r(s)}{\psi_r(s)}\Big),$$</div>
+<p>where the $\varepsilon_i$ and $\psi_i$ are monic polynomials, $\varepsilon_i$ and $\psi_i$ have no common root, $\varepsilon_i$ divides $\varepsilon_{i+1}$, and $\psi_{i+1}$ divides $\psi_i$. The matrix $M$, the <dfn>Smith–McMillan form</dfn> of $G$, is determined by $G$.</p>
+</div>
+<p class="src">Idea: write $G = N/d$ with $d$ the monic least common denominator of the entries and $N$ a polynomial matrix. Row and column operations over the polynomials (Euclid's algorithm applied to the entries) bring $N$ to its Smith form $\diag(e_1, \dots, e_r)$ with $e_i$ dividing $e_{i+1}$, and $e_i/d$ in lowest terms is $\varepsilon_i/\psi_i$. Uniqueness: $e_1\cdots e_k$ is the monic greatest common divisor of the minors of order $k$ of $N$, which unimodular factors do not change. Kailath, <i>Linear Systems</i>, ch. 6; Zhou, Doyle and Glover, ch. 3.</p>
+
+<div class="blk def" id="def-mimo-pz" data-name="Poles, zeros, McMillan degree">
+<p>In the notation of <a class="xref" href="#thm-smm"></a>, the <dfn>pole polynomial</dfn> of $G$ is $\psi_G = \psi_1\psi_2\cdots\psi_r$ and the <dfn>zero polynomial</dfn> is $\varepsilon_G = \varepsilon_1\varepsilon_2\cdots\varepsilon_r$. The <dfn>poles</dfn> of $G$ are the roots of $\psi_G$ and its <dfn>transmission zeros</dfn> (zeros, for short) are the roots of $\varepsilon_G$, counted with multiplicity. The <dfn>McMillan degree</dfn> of $G$ is $\deg\psi_G$, the degree of the pole polynomial. For a SISO $G = n/d$ in reduced form, $L$ and $R$ are nonzero constants, $\psi_G = d$, and $\varepsilon_G$ is $n$ divided by its leading coefficient, so these are the poles and zeros of <a class="xref" href="#def-pz"></a>.</p>
+</div>
+
+<div class="blk thm" id="thm-minors" data-name="Poles and zeros from minors">
+<p>Let $G \in \R(s)^{p\times m}$ have normal rank $r$, and write each minor of $G$ in lowest terms.</p>
+<ol>
+<li>$\psi_G$ is the monic least common multiple of the denominators of all nonzero minors of all orders.</li>
+<li>When every minor of order $r$ is written with the denominator $\psi_G$, $\varepsilon_G$ is the monic greatest common divisor of their numerators.</li>
+<li>As a set, the poles of $G$ are the poles of its entries.</li>
+</ol>
+</div>
+<details class="proof"><summary>Proof sketch</summary>
+<p>By the Cauchy–Binet formula, each minor of order $k$ of $LGR$ is a sum of products of minors of order $k$ of $L$, $G$ and $R$, hence a combination of minors of order $k$ of $G$ with polynomial coefficients; the converse holds because $L^{-1}$ and $R^{-1}$ are polynomial. So, for each $k$, the least common multiple of the denominators of the minors of order $k$ is the same for $G$ and for its Smith–McMillan form, and so is the greatest common divisor in (2). For the form itself: if $a$ is a root of $\psi_G$ and $j$ is the largest index with $\psi_j(a) = 0$, then $\varepsilon_1, \dots, \varepsilon_j$ divide $\varepsilon_j$, which has no root in common with $\psi_j$, so the leading minor $\prod_{i \le j}\varepsilon_i/\psi_i$ has a pole at $a$ of the full multiplicity that $a$ has in $\psi_G$, and no minor has more. The only nonzero minor of order $r$ is $\varepsilon_G/\psi_G$. For (3), the entries of the form are the $\varepsilon_i/\psi_i$, whose least common denominator is $\psi_1$, and every root of $\psi_G$ is a root of $\psi_1$ because each $\psi_i$ divides $\psi_1$.</p>
+</details>
+<p class="src">MacFarlane and Karcanias (1976); Skogestad and Postlethwaite, ch. 4.</p>
+
+<div class="blk ex" id="ex-smm" data-name="The probes in Smith–McMillan form">
+<p>Apply <a class="xref" href="#thm-minors"></a> to the matrices above.</p>
+<ul>
+<li>$G_a$: the minors are $1/(s+1)$, $0$ and $\det G_a = 1/(s+1)^2$, so $\psi_{G_a} = (s+1)^2$, the McMillan degree is $2$, and $\varepsilon_{G_a} = 1$. For $G_b$ the minor of order $2$ vanishes identically, $r = 1$, and $\psi_{G_b} = s + 1$: McMillan degree $1$.</li>
+<li>$G_z$: the entries have denominators $s + 1$ and $s + 3$, and $\det G_z = (1 - s)/\big((s+1)^2(s+3)\big)$. So $\psi_{G_z} = (s+1)^2(s+3)$, the McMillan degree is $3$, and $\varepsilon_{G_z} = s - 1$: one zero, at $1$. The Smith–McMillan form is $\diag\big(1/((s+1)(s+3)),\ (s - 1)/(s+1)\big)$.</li>
+<li>$G_c$: $\psi_{G_c} = (s+1)^2$, and the numerator of $\det G_c$ over $\psi_{G_c}$ is $-1$, so $\varepsilon_{G_c} = 1$: no zeros.</li>
+<li>$G_d$: $\psi_{G_d} = (s+1)(s+2)$, and $\det G_d = (s+1)(s+2)/\psi_{G_d}$, so $\varepsilon_{G_d} = (s+1)(s+2)$: zeros at $-1$ and $-2$, exactly at the poles. The form $\diag\big(1/((s+1)(s+2)),\ (s+1)(s+2)\big)$ is not proper, although $G_d$ is.</li>
+</ul>
+</div>
+
+<div class="blk prop" id="prop-rank-drop" data-name="Zeros as rank drops">
+<p>Let $G \in \R(s)^{p\times m}$ have normal rank $r$, and let $s_0 \in \C$ not be a pole of $G$. Then $\rank G(s_0) \le r$, with equality if and only if $s_0$ is not a zero of $G$. In particular, $\rank G(s_0) = r$ at all but finitely many points.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> By part 3 of <a class="xref" href="#thm-minors"></a>, no entry of $G$ has a pole at $s_0$, so $G(s_0)$ is defined, and $\psi_i(s_0) \neq 0$ for every $i$. Evaluating <a class="xref" href="#thm-smm"></a> at $s_0$ gives $L(s_0)G(s_0)R(s_0) = \diag\big(M(s_0), 0\big)$ with $L(s_0)$ and $R(s_0)$ invertible, so $\rank G(s_0)$ is the number of indices $i \le r$ with $\varepsilon_i(s_0) \neq 0$. This number is $r$ exactly when $\varepsilon_G(s_0) \neq 0$, and $\varepsilon_G$ has finitely many roots.</p></div>
+<p>The hypothesis matters: the zeros of $G_d$ are poles, $G_d(-1)$ and $G_d(-2)$ are not defined, and $G_d(s_0)$ is invertible wherever it is defined.</p>
+
+<div class="blk def" id="def-zero-dir" data-name="Zero directions">
+<p>Let $G$ be square with $\det G \not\equiv 0$ (not identically zero), and let $z$ be a zero of $G$ that is not a pole. Nonzero vectors $u_z \in \C^m$ and $y_z \in \C^p$ with $G(z)\,u_z = 0$ and $y_z^*\,G(z) = 0$, where the star denotes the conjugate transpose, are <dfn>input</dfn> and <dfn>output zero directions</dfn>; they exist by <a class="xref" href="#prop-rank-drop"></a>. For $G_z$ at $z = 1$ both are multiples of $(1, -1)^\T$.</p>
+</div>
+
+<p>A realization gives a second, internal description of zeros.</p>
+
+<div class="blk def" id="def-rosenbrock" data-name="System matrix, invariant zeros">
+<p>The <dfn>system matrix</dfn> of $(A, B, C, D)$, introduced by Rosenbrock, is the polynomial matrix</p>
+<div class="eq">$$P(s) = \begin{bmatrix}sI - A & -B\\ C & D\end{bmatrix} \in \R[s]^{(n+p)\times(n+m)},$$</div>
+<p>where $\R[s]$ denotes the real polynomials. A number $z \in \C$ is an <dfn>invariant zero</dfn> of the realization if $\rank P(z) &lt; \operatorname{normrank} P$. When $m = p$ and $\det P \not\equiv 0$, its multiplicity is its multiplicity as a root of $\det P$.</p>
+</div>
+
+<div class="blk prop" id="prop-blocking" data-name="Zero blocking">
+<p>Let $z \in \C$, and let $x_0 \in \C^n$ and $u_0 \in \C^m$, not both zero, satisfy $P(z)\begin{bmatrix}x_0\\ u_0\end{bmatrix} = 0$. Then the input $u(t) = e^{zt}u_0$ from $x(0) = x_0$ produces $x(t) = e^{zt}x_0$ and $y(t) = 0$ for all $t \ge 0$. If $z \notin \Lambda(A)$, such a pair exists if and only if $G(z)u_0 = 0$ for some $u_0 \neq 0$, and then $x_0 = (zI - A)^{-1}Bu_0$.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> The two block rows say $Ax_0 + Bu_0 = zx_0$ and $Cx_0 + Du_0 = 0$. Hence $x(t) = e^{zt}x_0$ satisfies $\dot x = zx = Ax + Bu$ with $x(0) = x_0$, so it is the solution by <a class="xref" href="#thm-voc"></a>, and $y = e^{zt}(Cx_0 + Du_0) = 0$. If $z \notin \Lambda(A)$, the first row gives $x_0 = (zI - A)^{-1}Bu_0$ and the second then reads $G(z)u_0 = 0$, while $u_0 = 0$ would force $x_0 = 0$; conversely, any $u_0$ with $G(z)u_0 = 0$ and this $x_0$ satisfy both rows.</p></div>
+<p>With $u_0 = 0$ the pair is an eigenvector $x_0$ of $A$ with $Cx_0 = 0$: a mode that the output cannot see, which <a href="ch09_controllability.html#def-obs">chapter 9</a> calls unobservable.</p>
+
+<div class="blk prop" id="prop-square-zeros" data-name="Zeros of square systems">
+<p>Let $m = p$.</p>
+<ol>
+<li>$\det P(s) = \det(sI - A)\,\det G(s)$ as rational functions of $s$; in particular the right side is a polynomial. If $\det G \not\equiv 0$, the invariant zeros are the roots of $\det P$.</li>
+<li>If $D$ is invertible, $\det P(s) = \det D\,\det\big(sI - (A - BD^{-1}C)\big)$, so the invariant zeros are the eigenvalues of $A - BD^{-1}C$, with their algebraic multiplicities.</li>
+<li>If $D$ is invertible, $(A - BD^{-1}C,\ BD^{-1},\ -D^{-1}C,\ D^{-1})$ is a realization of $G^{-1}$: the invariant zeros of $(A, B, C, D)$ are the eigenvalues of a realization of the inverse system.</li>
+</ol>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> For $s \notin \Lambda(A)$, and for invertible $D$, block elimination gives respectively</p>
+<div class="eq">$$P(s) = \begin{bmatrix}I & 0\\ C(sI - A)^{-1} & I\end{bmatrix}\begin{bmatrix}sI - A & -B\\ 0 & G(s)\end{bmatrix},\qquad P(s) = \begin{bmatrix}I & -BD^{-1}\\ 0 & I\end{bmatrix}\begin{bmatrix}sI - A + BD^{-1}C & 0\\ C & D\end{bmatrix} .$$</div>
+<p>Taking determinants in the first proves (1) off the finite set $\Lambda(A)$, hence as rational functions; if $\det G \not\equiv 0$ then $\det P \not\equiv 0$, so $\operatorname{normrank} P = n + m$ and the invariant zeros are the roots of $\det P$. The second proves (2). For (3), solve $y = Cx + Du$ for $u = D^{-1}(y - Cx)$: every solution of the original equations satisfies $\dot x = (A - BD^{-1}C)x + BD^{-1}y$ and $u = -D^{-1}Cx + D^{-1}y$. From rest this system therefore returns $u$ when driven by $y = Gu$, so its transfer matrix $H$ satisfies $H(s)G(s)\hat u(s) = \hat u(s)$ for every input, and $H = G^{-1}$.</p></div>
+
+<div class="blk thm" id="thm-inv-trans" data-name="Minimal realizations: poles and zeros">
+<p>Let $(A, B, C, D)$ be a minimal realization of $G$, one of least order (<a href="ch09_controllability.html#thm-minimal">chapter 9</a> shows that these are the controllable and observable ones).</p>
+<ol>
+<li>$\det(sI - A) = \psi_G(s)$: the eigenvalues of $A$, with their algebraic multiplicities, are the poles of $G$, and the minimal order is the McMillan degree.</li>
+<li>The invariant zeros of $(A, B, C, D)$ are the transmission zeros of $G$. If $G$ is square with $\det G \not\equiv 0$, then $\det P(s) = c\,\varepsilon_G(s)$ for a constant $c \neq 0$, so the multiplicities agree as well.</li>
+</ol>
+</div>
+<details class="proof"><summary>Proof sketch</summary>
+<p>Part 2 for square $G$ with $\det G \not\equiv 0$ follows from part 1: by <a class="xref" href="#thm-smm"></a>, $\det G = \varepsilon_G/(\psi_G\det L\det R)$ with $\det L\det R$ a nonzero constant, so part 1 of <a class="xref" href="#prop-square-zeros"></a> gives $\det P = \det(sI - A)\det G = \varepsilon_G/(\det L\det R)$. Part 1, and part 2 in the other cases, rest on factorizations of $G$ as quotients of coprime polynomial matrices; see the sources.</p>
+</details>
+<p class="src">Kailath, ch. 6 (McMillan degree and minimal realizations); Zhou, Doyle and Glover, ch. 3; Skogestad and Postlethwaite, ch. 4; MacFarlane and Karcanias (1976).</p>
+
+<div class="blk cex" id="cex-invariant"><p>Without minimality, hidden modes are invariant zeros. The realization of $1/(s+1)$ in <a class="xref" href="#cex-dims"></a>, $A = \diag(-1, 2)$, $B = (1, 0)^\T$, $C = (1, 1)$, $D = 0$, has</p>
+<div class="eq">$$\det P(s) = \det\begin{bmatrix}s + 1 & 0 & -1\\ 0 & s - 2 & 0\\ 1 & 1 & 0\end{bmatrix} = s - 2,$$</div>
+<p>an invariant zero at $2$, although $1/(s+1)$ has no zeros: it is the eigenvalue that the input cannot reach. The matrix $P(2)$ annihilates $(x_0, u_0) = \big((1, -1)^\T, 3\big)$, and by <a class="xref" href="#prop-blocking"></a> the input $3e^{2t}$ from $x_0 = (1, -1)^\T$ gives $x(t) = e^{2t}(1, -1)^\T$ and $y = x_1 + x_2 = 0$: the input builds up $x_1 = e^{2t}$ exactly as fast as the free unstable mode $x_2 = -e^{2t}$ grows, and the two cancel in the output.</p></div>
+
+<div class="blk thm" id="thm-mimo-undershoot" data-name="Right-half-plane zeros force sign changes">
+<p>Let $G$ be the transfer matrix of $(A, B, C, D)$, with all poles of $G$ in the open left half-plane. Let $z &gt; 0$ be real, and let $y_z \in \R^p$ be nonzero with $y_z^\T G(z) = 0$. For every bounded piecewise continuous input $u$, the output from rest satisfies</p>
+<div class="eq">$$\int_0^\infty e^{-zt}\,y_z^\T y(t)\,\dd t = 0 .$$</div>
+<p>Hence $y_z^\T y$ is positive on a set of positive length and negative on another, unless it vanishes almost everywhere. For a step $u = u_0\mathbb 1$ with $y_z^\T G(0)u_0 \neq 0$, the function $y_z^\T y(t)$ takes, on some interval, the sign opposite to that of its final value $y_z^\T G(0)u_0$.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> By part 3 of <a class="xref" href="#thm-minors"></a>, every entry of $G$ has its poles in the open left half-plane, so the system is BIBO stable by <a class="xref" href="#thm-bibo"></a> (or by <a class="xref" href="#lem-step"></a> applied to each entry) and $y$ is bounded. Then $\hat y$ and $\hat u$ exist on $\Re s &gt; 0$, and $\hat y = G\hat u$ there: both sides are analytic on the open RHP and agree for large $\Re s$ by <a class="xref" href="#thm-tf"></a>, so they agree on the whole open RHP by the identity theorem for analytic functions. At $s = z$, $y_z^\T\hat y(z) = y_z^\T G(z)\hat u(z) = 0$, which is the integral. If $y_z^\T y \ge 0$ almost everywhere, its integral against the positive weight $e^{-zt}$ vanishes only if $y_z^\T y = 0$ almost everywhere, and likewise for $y_z^\T y \le 0$. For the step, <a class="xref" href="#lem-step"></a> applied to each entry shows that $y$ is continuous for $t &gt; 0$ and tends to $G(0)u_0$, so $y_z^\T y$ has the sign of $y_z^\T G(0)u_0$ for large $t$. By the first part it has the opposite sign on a set of positive length, which is open and therefore contains an interval.</p></div>
+<p>For $p = m = 1$, $y_z = 1$ and a unit step with $G(0) &gt; 0$, this is <a class="xref" href="#thm-undershoot"></a>. For square $G$ with $\det G \not\equiv 0$, a vector $y_z$ as in the theorem exists exactly when $z$ is a transmission zero (<a class="xref" href="#prop-rank-drop"></a>), and it is then an output zero direction.</p>
+
+<div class="blk ex" id="ex-mimo-undershoot" data-name="Wrong way in an output combination">
+<p>A realization of $G_z$ is</p>
+<div class="eq">$$A = \begin{bmatrix}-1 & 0 & 0\\ 0 & -1 & 0\\ 0 & 0 & -3\end{bmatrix},\qquad B = \begin{bmatrix}1 & 0\\ 0 & 1\\ 0 & 1\end{bmatrix},\qquad C = \begin{bmatrix}1 & 0 & 2\\ 1 & 1 & 0\end{bmatrix},\qquad D = 0:$$</div>
+<p>since $A$ is diagonal, $C(sI - A)^{-1}B = \sum_k c_kb_k^\T/(s - a_{kk})$ over the columns $c_k$ of $C$ and the rows $b_k^\T$ of $B$, which is $G_z$. Its order is the McMillan degree $3$ (<a class="xref" href="#ex-smm"></a>), so it is minimal by <a class="xref" href="#thm-inv-trans"></a>, and indeed $\det P(s) = 1 - s$. Apply the step $u = (0, 1)^\T\mathbb 1(t)$ from rest. Each output rises monotonically,</p>
+<div class="eq">$$y_1(t) = \tfrac23\big(1 - e^{-3t}\big),\qquad y_2(t) = 1 - e^{-t},$$</div>
+<p>but along the output zero direction $y_z = (1, -1)^\T$,</p>
+<div class="eq">$$y_z^\T y(t) = \tfrac23\big(1 - e^{-3t}\big) - \big(1 - e^{-t}\big)$$</div>
+<p>starts with slope $1$, peaks at about $0.138$ at $t = \tfrac12\ln 2$, changes sign near $t = 1.005$ and settles at $-\tfrac13$. The integral of <a class="xref" href="#thm-mimo-undershoot"></a> is $\tfrac23\big(1 - \tfrac14\big) - \big(1 - \tfrac12\big) = 0$.</p>
+</div>
+
+<div class="blk prob"><p>At a frequency $\omega$ the SISO gain $\abs{G(i\omega)}$ is one number. For a MIMO system the size of the output also depends on the direction of the input vector. Which directions are amplified most and least, and can the entries tell?</p></div>
+
+<div class="blk probe"><p>Rotate a decoupled matrix. Let $H = \diag(2, 1)$ and let $Q_\theta$ be the rotation of the plane by the angle $\theta$. At $\theta = 45^\circ$,</p>
+<div class="eq">$$Q_\theta HQ_\theta^\T = \begin{bmatrix}1.5 & 0.5\\ 0.5 & 1.5\end{bmatrix}:$$</div>
+<p>every entry has changed and the off-diagonal entries suggest coupling, but the new matrix stretches $(1, 1)^\T/\sqrt2$ by $2$ and $(1, -1)^\T/\sqrt2$ by $1$, and it maps the unit circle onto the image ellipse of $H$ turned by $45^\circ$. The entries depend on the coordinates; the stretch factors do not.</p></div>
+
+<div class="blk def" id="def-principal" data-name="Principal gains and directions">
+<p>Let $G(i\omega) = U\Sigma V^*$ be a singular value decomposition (SVD; <a href="ch04_svd.html#thm-svd">chapter 4</a>, in its complex form), with $U \in \C^{p\times p}$ and $V \in \C^{m\times m}$ unitary ($U^*U = I$, $V^*V = I$) and $\Sigma$ the $p\times m$ matrix carrying the singular values $\sigma_1(G(i\omega)) \ge \dots \ge \sigma_k(G(i\omega)) \ge 0$, $k = \min(m, p)$, on its diagonal. These are the <dfn>principal gains</dfn> at $\omega$, with $\sigma_{\max} = \sigma_1$ and $\sigma_{\min} = \sigma_k$. The columns $v_i$ of $V$ are the <dfn>input directions</dfn> and the columns $u_i$ of $U$ the <dfn>output directions</dfn>: $G(i\omega)v_i = \sigma_iu_i$. For square $G(i\omega)$ with $\sigma_{\min} &gt; 0$, the <dfn>condition number</dfn> is $\kappa(G(i\omega)) = \sigma_{\max}/\sigma_{\min}$. The <dfn>singular value plot</dfn> shows the principal gains against $\omega$ on log–log axes. For SISO systems the single principal gain is $\abs{G(i\omega)}$.</p>
+</div>
+
+<div class="blk prop" id="prop-gain-bounds" data-name="Gain bounds and invariance">
+<p>Let $H \in \C^{p\times m}$ have singular values $\sigma_1 \ge \dots \ge \sigma_k$, $k = \min(m, p)$, with right singular vectors $v_1, \dots, v_k$, and let $\norm{\cdot}$ be the Euclidean norm.</p>
+<ol>
+<li>$\norm{Hx} \le \sigma_1\norm{x}$ for every $x \in \C^m$, with equality at $x = v_1$. If $p \ge m$, also $\norm{Hx} \ge \sigma_m\norm{x}$, with equality at $x = v_m$.</li>
+<li>Every entry satisfies $\abs{h_{ij}} \le \sigma_1$.</li>
+<li>For unitary $Q_1 \in \C^{p\times p}$ and $Q_2 \in \C^{m\times m}$, the matrix $Q_1HQ_2$ has the same singular values as $H$.</li>
+<li>If $p = m = 2$, then $\sigma_{1,2}^2 = \tfrac12\Big(\norm{H}_F^2 \pm \sqrt{\norm{H}_F^4 - 4\abs{\det H}^2}\Big)$, where $\norm{H}_F^2 = \sum_{i,j}\abs{h_{ij}}^2$ is the squared Frobenius norm.</li>
+</ol>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> (1) Write $H = U\Sigma V^*$ and $c = V^*x$, so $\norm{c} = \norm{x}$ and $\norm{Hx}^2 = \norm{\Sigma c}^2 = \sum_{i \le k}\sigma_i^2\abs{c_i}^2$, which is at most $\sigma_1^2\norm{c}^2$, and at least $\sigma_m^2\norm{c}^2$ when $k = m$; the equality cases are $c = e_1$ and $c = e_m$. (2) $\abs{h_{ij}} = \abs{e_i^*He_j} \le \norm{He_j} \le \sigma_1$, by the Cauchy–Schwarz inequality and (1). (3) $(Q_1HQ_2)^*(Q_1HQ_2) = Q_2^*H^*HQ_2$ is similar to $H^*H$, whose eigenvalues are the $\sigma_i^2$ together with $m - k$ zeros. (4) $\sigma_1^2 + \sigma_2^2 = \tr(H^*H) = \norm{H}_F^2$, with $\tr$ the trace, and $\sigma_1^2\sigma_2^2 = \det(H^*H) = \abs{\det H}^2$, so $\sigma_1^2$ and $\sigma_2^2$ are the roots of $\lambda^2 - \norm{H}_F^2\lambda + \abs{\det H}^2$.</p></div>
+
+<div class="blk prop" id="prop-mimo-sss" data-name="Multivariable sinusoidal steady state">
+<p>Let $A$ be Hurwitz, $\omega \in \R$, $u_0 \in \C^m$ with components $u_{0j}$, and $u(t) = \Re\big(e^{i\omega t}u_0\big)$, so that input $j$ is $\abs{u_{0j}}\cos(\omega t + \arg u_{0j})$. For every initial state,</p>
+<div class="eq">$$y(t) - \Re\big(e^{i\omega t}\,G(i\omega)u_0\big) \to 0 \qquad (t \to \infty),$$</div>
+<p>exponentially fast. In steady state, output $k$ is a sinusoid with amplitude $\abs{w_k}$ and phase $\arg w_k$, where $w = G(i\omega)u_0$. The vectors of output and input amplitudes have Euclidean norms $\norm{w}$ and $\norm{u_0}$, so their ratio is at most $\sigma_{\max}(G(i\omega))$, and at least $\sigma_{\min}(G(i\omega))$ when $p \ge m$.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> As for <a class="xref" href="#thm-sss"></a>: let $\xi$ be the complex solution with input $e^{i\omega t}u_0$ and $\xi(0) = x_0$. By <a class="xref" href="#lem-real-parts"></a>, $\Re\xi$ is the real solution with input $u$ and initial state $x_0$, and $y = \Re\big(C\xi + De^{i\omega t}u_0\big)$. By <a class="xref" href="#thm-exp"></a>, $C\xi + De^{i\omega t}u_0 = e^{i\omega t}G(i\omega)u_0 + Ce^{At}v$ for a fixed vector $v$, and $Ce^{At}v \to 0$ exponentially. The amplitude statement is part 1 of <a class="xref" href="#prop-gain-bounds"></a> with $H = G(i\omega)$.</p></div>
+
+<div class="blk ex" id="ex-distillation" data-name="An ill-conditioned distillation column">
+<p>Skogestad and Postlethwaite (ch. 3) study the high-purity distillation column of Skogestad, Morari and Doyle (1988),</p>
+<div class="eq">$$G(s) = \frac{1}{75s + 1}\begin{bmatrix}87.8 & -86.4\\ 108.2 & -109.6\end{bmatrix},$$</div>
+<p>with time in minutes; the inputs are the reflux and boilup flows, the outputs the compositions of the top and bottom products (the 1988 paper lists the same matrix divided by $100$). At $\omega = 0$ the SVD of $G(0)$ gives</p>
+<div class="eq">$$\sigma_{\max} \approx 197.2,\quad v_1 \approx \begin{bmatrix}0.707\\ -0.708\end{bmatrix},\quad u_1 \approx \begin{bmatrix}0.625\\ 0.781\end{bmatrix};\qquad \sigma_{\min} \approx 1.39,\quad v_2 \approx \begin{bmatrix}0.708\\ 0.707\end{bmatrix},\quad u_2 \approx \begin{bmatrix}0.781\\ -0.625\end{bmatrix},$$</div>
+<p>so $\kappa(G(0)) \approx 141.7$: moving the two inputs in opposite directions changes the outputs about $140$ times more than moving them together. The entries, all between $86$ and $110$ in magnitude, respect the bound $\abs{g_{ij}} \le \sigma_{\max}$ of <a class="xref" href="#prop-gain-bounds"></a> but give no hint of the weak direction, and each input alone has a gain of about $139.5$. Since $G(i\omega) = G(0)/(1 + 75i\omega)$, the principal gains at every $\omega$ are those at $\omega = 0$ divided by $\abs{1 + 75i\omega}$, the input directions do not depend on $\omega$, and $\kappa(G(i\omega)) \approx 141.7$ at every frequency.</p>
+</div>
+
+<div class="blk rem"><p>Interpretation. For a SISO system, gain and phase are the modulus and argument of one complex number. For a MIMO system each output has its own amplitude and phase (<a class="xref" href="#prop-mimo-sss"></a>), both depending on the input vector $u_0$, and a vector has a length but no single phase. The singular value plot is therefore the multivariable counterpart of the Bode magnitude plot, and it has no single companion phase plot. For stable $G$, the peak of $\sigma_{\max}$ over $\omega$ is the $\mathcal H_\infty$ norm of <a href="ch12_robustness.html#def-hinf">chapter 12</a>.</p></div>
+
+<figure class="viz" id="viz-mimo">
+  <figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">Principal gains and directions of a $2\times 2$ plant</span><span class="viz-sub">Left: at $\omega = 0$, input vectors $u_0$ on the unit circle and their images under the real matrix $G(0)$, divided by $\sigma_{\max}$ so that the image ellipse fits inside the circle; drag $u_0$. Right: the principal gains against the entry magnitudes over frequency, and the step response from rest to the input $u_0\mathbb 1(t)$. The slider $\theta$ rotates input and output coordinates together, $G \mapsto Q_\theta GQ_\theta^\T$.</span></figcaption>
+  <div class="viz-plots main-side">
+    <div class="plot" id="mimo-plane"><div class="plot-cap">Inputs on the unit circle and their images $G(0)u_0/\sigma_{\max}$ (green ellipse); input directions dashed, output directions as arrows</div></div>
+    <div class="lt-stack">
+      <div class="plot" id="mimo-sv"><div class="plot-cap">Principal gains (solid) and entry magnitudes (dashed), log–log; hover or tap to mark a frequency</div></div>
+      <div class="plot" id="mimo-step"><div class="plot-cap">Step response from rest; final values $G(0)u_0$ dashed</div></div>
+    </div>
+  </div>
+  <div class="viz-controls" id="mimo-controls"></div>
+  <div class="viz-notes">
+    <div><h5>Try this</h5><ol>
+      <li>With the distillation column, press <i>Input along v₂</i>: the gain falls to $\sigma_{\min} \approx 1.39$ and the step responses settle near $\pm 1$ (the axis rescales); <i>Input along v₁</i> gives $197.2$, with final values near $123$ and $154$. At low frequency the dashed entry curves all sit near $100$, far above $\sigma_{\min}$.</li>
+      <li>Choose the decoupled plant: the marked frequency $\omega \approx 1.77$ is where $\abs{g_{11}} = \abs{g_{22}}$, and the readout shows $\kappa \approx 1$ there. Below it $\sigma_{\max}$ follows $\abs{g_{11}}$, above it $\abs{g_{22}}$.</li>
+      <li>Choose the rotated decoupled plant and move $\theta$: the entries of $G(0)$ in the readout and the dashed curves change, while $\sigma_{\max}$, $\sigma_{\min}$, the solid curves and the shape of the ellipse stay fixed.</li>
+      <li>Choose the plant with a zero at $s = 1$: $y_1$ and $y_2$ rise monotonically, while $y_z^\T y$ (red, with $y_z$ a unit vector) rises, changes sign near $t = 1$ and settles at $-1/(3\sqrt2) \approx -0.236$. Drag $u_0$ anywhere: the integral in the readout stays at $0$, and at $u_0 = (1, 0)^\T$ the red curve vanishes identically.</li>
+    </ol></div>
+    <div><h5>What to notice</h5><p>The gain $\norm{G(0)u_0}$ always lies between $\sigma_{\min}$ and $\sigma_{\max}$, with the ends reached along $v_2$ and $v_1$, and no entry exceeds $\sigma_{\max}$: parts 1 and 2 of <a class="xref" href="#prop-gain-bounds"></a>. The scaled ellipse touches the unit circle at $u_1$, the image of $v_1$. Rotating the coordinates changes every entry but no principal gain (part 3), and the distillation column (<a class="xref" href="#ex-distillation"></a>) shows entries of similar size hiding a direction of gain $1.39$. For the plant with a right-half-plane zero, $y_z^\T y$ changes sign for every input direction but one, along which it vanishes, while its weighted integral stays at zero, as <a class="xref" href="#thm-mimo-undershoot"></a> requires.</p></div>
+  </div>
+</figure>
+
+<div class="blk pattern"><p>Each SISO notion has an analogue tied to directions; the table below collects them. The invariants are the Smith–McMillan form, unchanged by unimodular factors (<a class="xref" href="#thm-smm"></a>), and the principal gains, unchanged by unitary changes of input and output coordinates (<a class="xref" href="#prop-gain-bounds"></a>); both are unchanged by state coordinate changes (<a class="xref" href="#thm-sim"></a>), which leave $G$ itself fixed.</p></div>
+<div class="tbl-wrap"><table class="tbl">
+  <thead><tr><th>SISO notion</th><th>MIMO analogue</th><th>What the entries miss</th></tr></thead>
+  <tbody>
+    <tr><td>transfer function $G = n/d$ (<a class="xref" href="#def-pz"></a>)</td><td>transfer matrix $G \in \R(s)^{p\times m}$ with normal rank $r$ (<a class="xref" href="#def-tfm"></a>)</td><td></td></tr>
+    <tr><td>poles: roots of $d$</td><td>roots of $\psi_G$ (<a class="xref" href="#def-mimo-pz"></a>); as a set, the poles of the entries (<a class="xref" href="#thm-minors"></a>)</td><td>multiplicities: $G_a$ and $G_b$ (<a class="xref" href="#ex-smm"></a>)</td></tr>
+    <tr><td>minimal order $\deg d$</td><td>McMillan degree $\deg\psi_G$; $\det(sI - A) = \psi_G$ for minimal realizations (<a class="xref" href="#thm-inv-trans"></a>)</td><td>the same multiplicities</td></tr>
+    <tr><td>zeros: roots of $n$</td><td>transmission zeros: roots of $\varepsilon_G$; away from poles, the points where $\rank G(z) &lt; r$ (<a class="xref" href="#prop-rank-drop"></a>)</td><td>zeros of entries are not zeros of $G$ (<a class="xref" href="#cex-entry-zeros"></a>); $\det G$ hides zeros at poles (<a class="xref" href="#cex-det-hides"></a>)</td></tr>
+    <tr><td>a zero blocks $e^{zt}$ from a suitable state (<a class="xref" href="#thm-exp"></a>)</td><td>$e^{zt}u_z$ is blocked (<a class="xref" href="#prop-blocking"></a>); input and output zero directions $u_z$, $y_z$ (<a class="xref" href="#def-zero-dir"></a>)</td><td>$G_z$ has a zero at $1$ that no entry has (<a class="xref" href="#ex-smm"></a>)</td></tr>
+    <tr><td>zeros of a realization</td><td>invariant zeros, where $P(s)$ drops rank: the transmission zeros if the realization is minimal (<a class="xref" href="#thm-inv-trans"></a>); $\Lambda(A - BD^{-1}C)$ if $D$ is invertible (<a class="xref" href="#prop-square-zeros"></a>)</td><td>hidden modes are invariant zeros too (<a class="xref" href="#cex-invariant"></a>)</td></tr>
+    <tr><td>an RHP zero forces undershoot of the step response (<a class="xref" href="#thm-undershoot"></a>)</td><td>$y_z^\T y$ changes sign for every bounded input, unless it vanishes (<a class="xref" href="#thm-mimo-undershoot"></a>)</td><td>each output alone can rise monotonically (<a class="xref" href="#ex-mimo-undershoot"></a>)</td></tr>
+    <tr><td>gain $\abs{G(i\omega)}$</td><td>principal gains; $\norm{G(i\omega)u_0}/\norm{u_0}$ is at most $\sigma_{\max}$ and, if $p \ge m$, at least $\sigma_{\min}$, both attained (<a class="xref" href="#prop-gain-bounds"></a>, <a class="xref" href="#prop-mimo-sss"></a>)</td><td>$\abs{g_{ij}} \le \sigma_{\max}$, but large entries can coexist with a small $\sigma_{\min}$ (<a class="xref" href="#ex-distillation"></a>)</td></tr>
+    <tr><td>phase $\arg G(i\omega)$</td><td>one phase per output, depending on $u_0$ (<a class="xref" href="#prop-mimo-sss"></a>)</td><td>no single phase</td></tr>
+    <tr><td>Bode magnitude plot</td><td>singular value plot; condition number $\kappa$ (<a class="xref" href="#def-principal"></a>)</td><td>entries change under rotations of coordinates, principal gains do not (<a class="xref" href="#prop-gain-bounds"></a>)</td></tr>
+    <tr><td>BIBO stability: poles in the open left half-plane (<a class="xref" href="#thm-bibo"></a>)</td><td>the same condition on the poles of $G$, equivalently on every entry (<a class="xref" href="#thm-bibo"></a>, <a class="xref" href="#thm-minors"></a>)</td><td></td></tr>
+  </tbody>
+</table></div>
+</section>
+
+<section class="selfcheck" id="s-selfcheck">
+<h2>Self-check</h2>
+<ol>
+<li><p>For $A = \begin{bmatrix}0 & 1\\ -2 & -3\end{bmatrix}$, $B = (0, 1)^\T$, $C = (1, 0)$, $D = 0$, find $G(s)$, $h(t)$ and the steady-state response to $u = \sin t$.</p>
+<details><summary>Answer</summary><p>$\det(sI - A) = s^2 + 3s + 2$ and $C(sI - A)^{-1}B = 1/\big((s+1)(s+2)\big)$, so $h(t) = e^{-t} - e^{-2t}$. At $s = i$: $G(i) = 1/(1 + 3i)$, gain $1/\sqrt{10} \approx 0.316$, phase $-\arctan 3 \approx -71.6^\circ$; the steady state is $0.316\,\sin(t - 1.249)$.</p></details></li>
+<li><p>Show that the integrator $G(s) = 1/s$ is not BIBO stable by exhibiting a bounded input with unbounded output. Is it internally stable?</p>
+<details><summary>Answer</summary><p>The unit step gives the ramp $y = t$. The realization $\dot x = u$ has $A = 0$, which is Lyapunov stable but not Hurwitz, so it is not internally (asymptotically) stable either; the pole at $0$ violates condition 3 of <a class="xref" href="#thm-bibo"></a>.</p></details></li>
+<li><p>$G(s) = (s - 2)/\big((s + 1)(s + 3)\big)$. What are its final step value and its initial slope, and why do their signs disagree?</p>
+<details><summary>Answer</summary><p>Final value $G(0) = -2/3$ (<a class="xref" href="#lem-step"></a>). Here $D = 0$, so the step response is $\int_0^t h_0$ and its initial slope is $h_0(0) = CB = \lim_{s\to\infty} sG(s) = 1 &gt; 0$ (<a class="xref" href="#prop-rational"></a>). The RHP zero at $2$ forces the response to move first in the direction opposite to its final value: apply <a class="xref" href="#thm-undershoot"></a> to $-G$.</p></details></li>
+<li><p>A second-order system has $\zeta = 0.1$ and $\omega_n = 10$ rad/s. Where is the resonance peak, how high is it, and what is the gain at $\omega_n$?</p>
+<details><summary>Answer</summary><p>$\omega_r = 10\sqrt{0.98} \approx 9.90$ rad/s and $M_r = 1/(0.2\sqrt{0.99}) \approx 5.03$; at $\omega_n$ the gain is $1/(2\zeta) = 5$ and the phase $-90^\circ$.</p></details></li>
+<li><p>Give realizations of $1/(s + 2)$ of orders 1 and 2. Can they be similar? Which transfer-function property survives in both?</p>
+<details><summary>Answer</summary><p>$(-2, 1, 1, 0)$, and the controllable canonical form of $(s+1)/(s^2 + 3s + 2)$ from the realization section. They cannot be similar, since similarity preserves the order (<a class="xref" href="#thm-sim"></a>). Both have the same impulse response $e^{-2t}$, transfer function and Markov parameters $(-2)^{k-1}$; the order-2 one has an extra eigenvalue $-1$ that is invisible in the output.</p></details></li>
+<li><p>Let $G(s) = \begin{bmatrix}1/(s+1) & 1/(s+2)\\ 2/(s+1) & 1/(s+1)\end{bmatrix}$. Find its poles with multiplicity, its McMillan degree and its transmission zeros. Every entry has a nonzero steady-state gain; find a constant input direction whose step response returns to zero.</p>
+<details><summary>Answer</summary><p>The entries have denominators $s + 1$ and $s + 2$, and $\det G = -s/\big((s+1)^2(s+2)\big)$. By <a class="xref" href="#thm-minors"></a>, $\psi_G = (s+1)^2(s+2)$: poles $-1$ (twice) and $-2$, McMillan degree $3$. Over $\psi_G$ the numerator of $\det G$ is $-s$, so $\varepsilon_G = s$: one zero, at the origin. By <a class="xref" href="#prop-rank-drop"></a>, $G(0) = \begin{bmatrix}1 & 1/2\\ 2 & 1\end{bmatrix}$ is singular, and $G(0)(1, -2)^\T = 0$. The step along $u_0 = (1, -2)^\T$ has the final value $G(0)u_0 = 0$; explicitly $y_1 = e^{-2t} - e^{-t}$ and $y_2 \equiv 0$.</p></details></li>
+</ol>
+</section>
+
+<section class="refs" id="s-refs">
+<h2>Sources and further reading</h2>
+<ul>
+<li>A. V. Oppenheim and A. S. Willsky, with S. H. Nawab, <i>Signals and Systems</i>, 2nd ed. (Prentice Hall, 1997): ch. 2 (LTI systems and convolution), ch. 3 (exponentials as eigenfunctions, Fourier series), ch. 6 (Bode plots, first- and second-order systems), ch. 9 (Laplace transform) and ch. 10 ($z$-transform).</li>
+<li>K. J. Åström and R. M. Murray, <i>Feedback Systems</i>, 2nd ed. (Princeton, 2021): ch. 6 (linear systems, convolution, input–output response), ch. 9 (transfer functions, poles, zeros, Bode plots) and ch. 10 (frequency domain analysis). <a href="https://www.cds.caltech.edu/~murray/amwiki/Second_Edition.html">book site</a><span class="free">Free</span></li>
+<li>C.-T. Chen, <i>Linear System Theory and Design</i>, 4th ed. (Oxford, 2013): ch. 2 (descriptions of systems), ch. 4 (state-space solutions and realizations) and ch. 5 (stability, including BIBO stability).</li>
+<li>J. P. Hespanha, <i>Linear Systems Theory</i>, 2nd ed. (Princeton, 2018): the lectures on impulse responses and transfer functions, on realizations, and on input–output stability.</li>
+<li>J. C. Doyle, B. A. Francis and A. R. Tannenbaum, <i>Feedback Control Theory</i> (Macmillan, 1992): ch. 2 (norms for signals and systems) and ch. 7 (loopshaping and Bode's phase formula). <a href="https://www.control.utoronto.ca/people/profs/francis/dft.pdf">PDF</a><span class="free">Free</span></li>
+<li>H. W. Bode, <i>Network Analysis and Feedback Amplifier Design</i> (Van Nostrand, 1945): the origin of the gain–phase relation.</li>
+<li>K. Zhou, J. C. Doyle and K. Glover, <i>Robust and Optimal Control</i> (Prentice Hall, 1996): ch. 3 (realizations, hidden modes, multivariable poles and zeros, the Smith–McMillan form).</li>
+<li>S. Skogestad and I. Postlethwaite, <i>Multivariable Feedback Control: Analysis and Design</i>, 2nd ed. (Wiley, 2005): ch. 3 (multivariable frequency response, directions, the SVD, condition number, multivariable RHP zeros, the distillation example) and ch. 4 (poles, zeros and zero directions from realizations and from transfer matrices). Chapters 1–3 are a free sample on the <a href="https://skoge.folk.ntnu.no/book/">book site</a><span class="free">Free</span></li>
+<li>T. Kailath, <i>Linear Systems</i> (Prentice Hall, 1980): ch. 6 (matrix-fraction descriptions of multivariable systems, the Smith–McMillan form, McMillan degree and minimal realizations).</li>
+<li>H. H. Rosenbrock, <i>State-Space and Multivariable Theory</i> (Wiley, 1970): the system matrix.</li>
+<li>A. G. J. MacFarlane and N. Karcanias, "Poles and zeros of linear multivariable systems: a survey of the algebraic, geometric and complex-variable theory", <i>Int. J. Control</i> 24(1) (1976) 33–74, <a href="https://doi.org/10.1080/00207177608932805">doi:10.1080/00207177608932805</a>.</li>
+<li>S. Skogestad, M. Morari and J. C. Doyle, "Robust control of ill-conditioned plants: high-purity distillation", <i>IEEE Trans. Autom. Control</i> 33(12) (1988) 1092–1105: the distillation model. <a href="https://authors.library.caltech.edu/9598/">CaltechAUTHORS</a><span class="free">Free</span></li>
+</ul>
+</section>
+
+</div>
+</main>
+</div>
+<script>LT.page.init();</script>
+<script>
+(function () {
+  'use strict';
+  const { Plot, ui, mat: M, sys: S, fmt, fmtSig } = LT;
+  const DEG = 180 / Math.PI;
+  const lift = p => { p.el.insertBefore(p.canvas, p.el.firstChild); };
+  const range = arr => { let lo = Infinity, hi = -Infinity; arr.forEach(v => { if (Number.isFinite(v)) { if (v < lo) lo = v; if (v > hi) hi = v; } }); return [lo, hi]; };
+  const padded = (lo, hi, f) => { const d = (hi - lo) || 1; return [lo - f * d, hi + f * d]; };
+
+  /* ---------------- Visual 8.1: convolution as a sum of impulse responses ---------------- */
+  (function () {
+    const Tend = 12, dt = 0.01, N = Math.round(Tend / dt);
+    const SYS = {
+      lag: { A: [[-1]], B: [[1]], C: [[1]] },
+      osc: { A: [[0, 1], [-4, -0.8]], B: [[0], [4]], C: [[1, 0]] },
+      zero: { A: [[-2, -1], [1, 0]], B: [[1], [0]], C: [[-1, 1]] }
+    };
+    const INP = {
+      bump: t => (t > 0 && t < 4 ? Math.pow(Math.sin(Math.PI * t / 4), 2) : 0),
+      pulse: t => (t >= 1 && t < 3 ? 1 : 0),
+      burst: t => (t > 0 && t < 2 * Math.PI ? Math.sin(2 * t) : 0)
+    };
+    const st = { sys: 'osc', inp: 'bump', D: 0.5, t0: 5, show: true };
+    const ts = Array.from({ length: N + 1 }, (_, i) => i * dt);
+    let hF = [], uF = [], yF = [], yD = [], taus = [], areas = [], hPos = 1, hNeg = 0;
+    const hAt = t => { if (t < 0) return 0; const x = t / dt, i = Math.floor(x); if (i >= N) return hF[N]; const f = x - i; return hF[i] * (1 - f) + hF[i + 1] * f; };
+    const at = (arr, t) => { const x = Math.min(N, Math.max(0, t / dt)), i = Math.min(N - 1, Math.floor(x)), f = x - i; return arr[i] * (1 - f) + arr[i + 1] * f; };
+    const pin = new Plot('#conv-in', { xlim: [0, Tend], ylim: [-1.3, 1.5], frame: true, aspect: 0.3, minH: 175, maxH: 250, xlabel: 'τ', label: 'Input u, its impulse approximation, and the flipped kernel' });
+    const pout = new Plot('#conv-out', { xlim: [0, Tend], ylim: [-1, 1.5], frame: true, aspect: 0.34, minH: 195, maxH: 290, xlabel: 't', label: 'Scaled shifted impulse responses, their sum and the exact output' });
+    lift(pin); lift(pout);
+    const panel = ui.panel('#conv-controls');
+    panel.select({ id: 'conv-sys', label: 'System', value: st.sys, options: [['lag', 'First order, h(t) = exp(−t)'], ['osc', 'Second order, ζ = 0.2, ωₙ = 2'], ['zero', 'Zero at s = 1, h(t) = (2t − 1) exp(−t)']], onChange: v => { st.sys = v; compute(); } });
+    panel.select({ id: 'conv-inp', label: 'Input', value: st.inp, options: [['bump', 'Smooth bump'], ['pulse', 'Square pulse'], ['burst', 'Sine burst']], onChange: v => { st.inp = v; compute(); } });
+    panel.slider({ id: 'conv-delta', label: 'Pulse width $\\Delta$', min: -1, max: Math.log10(2), step: 0.005, value: st.D, log: true, fmt: v => fmt(v, 2), onInput: LT.throttle(v => { st.D = v; compute(); }) });
+    panel.slider({ id: 'conv-t0', label: 'Read-out time $t_0$', min: 0, max: Tend, step: 0.05, value: st.t0, onInput: v => { st.t0 = v; refresh(); } });
+    panel.toggle({ id: 'conv-show', label: 'Show the individual responses', value: st.show, onChange: v => { st.show = v; pout.redraw(); } });
+    const out = panel.readout({});
+    const legend = ui.legend([{ color: 'c4', label: 'input u and its impulses' }, { color: 'c1', label: 'flipped kernel h(t₀ − τ)', kind: 'dash' }, { color: 'c1', label: 'shifted copies of h' }, { color: 'c3', label: 'overlap u(τ) h(t₀ − τ)', kind: 'area' }, { color: 'c7', label: 'sum of responses' }, { color: 'ink', label: 'exact y = h ∗ u', kind: 'dash' }]);
+
+    function compute() {
+      const P = SYS[st.sys], E = M.expm(M.scale(P.A, dt));
+      let x = M.col(P.B, 0); hF = [];
+      for (let i = 0; i <= N; i++) { hF.push(M.dot(P.C[0], x)); x = M.mv(E, x); }
+      [hNeg, hPos] = range(hF); hNeg = Math.min(hNeg, 0); hPos = Math.max(hPos, 0);
+      const u = INP[st.inp]; uF = ts.map(u);
+      yF = new Array(N + 1).fill(0);
+      for (let i = 1; i <= N; i++) { let s = 0.5 * (hF[i] * uF[0] + hF[0] * uF[i]); for (let j = 1; j < i; j++) s += hF[i - j] * uF[j]; yF[i] = s * dt; }
+      taus = []; areas = [];
+      for (let k = 0; (k + 0.5) * st.D <= Tend; k++) { const tk = (k + 0.5) * st.D, a = u(tk) * st.D; if (a !== 0) { taus.push(tk); areas.push(a); } }
+      yD = ts.map(t => { let s = 0; for (let k = 0; k < taus.length; k++) if (t >= taus[k]) s += areas[k] * hAt(t - taus[k]); return s; });
+      let [lo, hi] = range(yF.concat(yD));
+      if (st.show) areas.forEach(a => { lo = Math.min(lo, a * hPos, a * hNeg); hi = Math.max(hi, a * hPos, a * hNeg); });
+      lo = Math.min(lo, 0); hi = Math.max(hi, 0.2);
+      pout.setLimits(null, padded(lo, hi, 0.1));
+      refresh();
+    }
+    function refresh() {
+      const yex = at(yF, st.t0); let ysum = 0;
+      for (let k = 0; k < taus.length; k++) if (st.t0 >= taus[k]) ysum += areas[k] * hAt(st.t0 - taus[k]);
+      let err = 0; for (let i = 0; i <= N; i++) err = Math.max(err, Math.abs(yF[i] - yD[i]));
+      out.set(`<span>impulses <span class="num">${taus.length}</span></span>` +
+        `<span>exact <i>y</i>(<i>t</i>₀), the overlap integral <span class="num">${fmt(yex, 4)}</span></span>` +
+        `<span>sum of impulse responses at <i>t</i>₀ <span class="num">${fmt(ysum, 4)}</span></span>` +
+        `<span>largest error on [0, 12] <span class="num">${fmtSig(err, 2)}</span></span>` + legend);
+      pin.redraw(); pout.redraw();
+    }
+    pin.draw = g => {
+      const t0 = st.t0, sc = 1 / (Math.max(hPos, -hNeg) || 1), top = [], bot = [], fk = [];
+      for (let i = 0; i <= N && ts[i] <= t0 + 1e-9; i++) { const tau = ts[i], hv = hAt(t0 - tau) * sc; top.push([tau, uF[i] * hv]); bot.push([tau, 0]); fk.push([tau, hv]); }
+      if (top.length > 1) g.band(top, bot, { fill: 'c3', fillAlpha: 0.3 });
+      g.path(fk, { color: 'c1', width: 1.5, dash: [5, 4] });
+      g.vline(t0, { color: 'muted', width: 1, dash: [3, 3] });
+      g.path(ts.map((t, i) => [t, uF[i]]), { color: 'c4', width: 2 });
+      taus.forEach((tk, k) => { const v = areas[k] / st.D; g.line(tk, 0, tk, v, { color: 'c4', width: 1.25, alpha: 0.8 }); g.dot([tk, v], { color: 'c4', r: 2.6, ring: false }); });
+      g.text([t0, 1.32], 't₀', { size: 13, dx: 7 });
+    };
+    pout.draw = g => {
+      if (st.show) taus.forEach((tk, k) => { const pts = []; for (let i = Math.ceil(tk / dt - 1e-9); i <= N; i += 2) pts.push([ts[i], areas[k] * hAt(ts[i] - tk)]); g.path(pts, { color: 'c1', width: 1, alpha: 0.42 }); });
+      g.path(ts.map((t, i) => [t, yD[i]]), { color: 'c7', width: 2.4 });
+      g.path(ts.map((t, i) => [t, yF[i]]), { color: 'ink', width: 1.5, dash: [6, 5] });
+      g.vline(st.t0, { color: 'muted', width: 1, dash: [3, 3] });
+      g.dot([st.t0, at(yF, st.t0)], { color: 'ink', r: 4 });
+    };
+    compute();
+  })();
+
+  /* ---------------- Visual 8.2: pole-zero playground ---------------- */
+  (function () {
+    const PRE = {
+      pair: { p: [['pair', -0.3, 1.8]], z: [] },
+      third: { p: [['pair', -0.4, 1.5], ['real', -2.5, 0]], z: [] },
+      notch: { p: [['pair', -0.5, 1.0], ['real', -3, 0]], z: [['pair', -0.05, 2.2]] },
+      lhp: { p: [['real', -1, 0], ['real', -2, 0]], z: [['real', -0.5, 0]] },
+      rhp: { p: [['real', -1, 0], ['real', -2, 0]], z: [['real', 0.5, 0]] },
+      unst: { p: [['pair', 0.15, 1.5]], z: [] }
+    };
+    const st = { g0: 1, w: 1.2, poles: [], zeros: [] };
+    const W0 = 0.05, W1 = 20, ws = S.logspace(Math.log10(W0), Math.log10(W1), 320);
+    let R = null;
+    const ps = new Plot('#pz-s', { xlim: [-4.2, 1.8], ylim: [-3.2, 3.2], equal: true, maxH: 470, clip: true, label: 'Complex s-plane with poles, zeros and the test point i omega' });
+    const pm = new Plot('#pz-mag', { xlim: [W0, W1], ylim: [0.01, 10], logx: true, logy: true, frame: true, aspect: 0.56, minH: 170, maxH: 235, ylabel: '|G(iω)|', label: 'Bode gain plot' });
+    const pp = new Plot('#pz-ph', { xlim: [W0, W1], ylim: [-2, 0], logx: true, frame: true, aspect: 0.56, minH: 170, maxH: 235, xlabel: 'ω', ylabel: 'phase', yfmt: v => fmt(90 * v, 0) + '°', label: 'Bode phase plot' });
+    const pimp = new Plot('#pz-imp', { xlim: [0, 10], ylim: [-1, 1], frame: true, aspect: 0.5, minH: 170, maxH: 260, xlabel: 't', label: 'Impulse response' });
+    const pstp = new Plot('#pz-step', { xlim: [0, 10], ylim: [-1, 1], frame: true, aspect: 0.5, minH: 170, maxH: 260, xlabel: 't', label: 'Step response' });
+    [ps, pm, pp, pimp, pstp].forEach(lift);
+    const panel = ui.panel('#pz-controls');
+    const sel = panel.select({ id: 'pz-preset', label: 'Preset', value: 'pair', options: [['pair', 'Lightly damped pair'], ['third', 'Pair and a real pole'], ['notch', 'Notch: zero pair near the axis'], ['lhp', 'Zero at −0.5'], ['rhp', 'Zero at +0.5'], ['unst', 'Unstable pair'], ['custom', 'Custom (dragged)']], onChange: v => { if (PRE[v]) load(v); } });
+    panel.slider({ id: 'pz-g0', label: 'Zero-frequency gain $G(0)$', min: Math.log10(0.2), max: Math.log10(5), step: 0.005, value: st.g0, log: true, onInput: v => { st.g0 = v; recompute(); } });
+    const wsl = panel.slider({ id: 'pz-w', label: 'Test frequency $\\omega$', min: Math.log10(W0), max: Math.log10(W1), step: 0.002, value: st.w, log: true, onInput: v => { st.w = v; refresh(); } });
+    const out = panel.readout({});
+
+    const expand = us => { const r = []; us.forEach(u => { if (u.t === 'pair') r.push({ re: u.re, im: u.im }, { re: u.re, im: -u.im }); else r.push({ re: u.re, im: 0 }); }); return r; };
+    /* argument of (i w - r), continuous in w >= 0 (branch chosen by the side of the imaginary axis) */
+    const argF = (w, r) => { const re = -r.re, im = w - r.im; return re >= 0 ? Math.atan2(im, re) : Math.PI + Math.atan2(-im, -re); };
+    function load(key) {
+      const P = PRE[key];
+      st.poles = P.p.map(a => ({ t: a[0], re: a[1], im: a[2] }));
+      st.zeros = P.z.map(a => ({ t: a[0], re: a[1], im: a[2] }));
+      ps.handles.length = 0;
+      st.poles.forEach(u => ps.addHandle({ get: () => [u.re, u.im], set: (x, y) => move(u, x, y), color: 'c1', r: 4.5, snap: 0.05 }));
+      st.zeros.forEach(u => ps.addHandle({ get: () => [u.re, u.im], set: (x, y) => move(u, x, y), color: 'c2', r: 4.5, snap: 0.05 }));
+      recompute();
+    }
+    function move(u, x, y) {
+      let re = Math.abs(x) < 0.02 ? (x < 0 ? -0.02 : 0.02) : x;
+      if (u.t === 'real') { if (Math.abs(re) < 0.05) re = re < 0 ? -0.05 : 0.05; u.re = re; u.im = 0; }
+      else { u.re = re; u.im = Math.max(0.06, y); }
+      sel.set('custom'); recompute();
+    }
+    function recompute() {
+      const P = expand(st.poles), Z = expand(st.zeros);
+      const negProd = rs => rs.reduce((a, r) => LT.cx.mul(a, { re: -r.re, im: -r.im }), { re: 1, im: 0 }).re;
+      const k = st.g0 * negProd(P) / negProd(Z);
+      const den = S.poly(P), num = S.poly(Z).map(c => c * k), ss = S.tf2ss(num, den);
+      const magF = w => Math.abs(k) * Z.reduce((s, z) => s * Math.hypot(z.re, w - z.im), 1) / P.reduce((s, p) => s * Math.hypot(p.re, w - p.im), 1);
+      const raw = w => (k < 0 ? Math.PI : 0) + Z.reduce((s, z) => s + argF(w, z), 0) - P.reduce((s, p) => s + argF(w, p), 0);
+      const off = 2 * Math.PI * Math.round(raw(ws[0]) / (2 * Math.PI)), phF = w => raw(w) - off;
+      const mag = ws.map(magF), ph = ws.map(phF);
+      const unstable = P.some(p => p.re >= 0), slow = Math.min(...P.map(p => Math.abs(p.re)));
+      const T = unstable ? 10 : Math.min(30, Math.max(6, 5 / slow)), n = 400, h = T / n, d = S.c2d(ss.A, ss.B, h);
+      let xi = M.col(ss.B, 0), xs = new Array(ss.A.length).fill(0);
+      const imp = [], stp = [], bd = M.col(d.Bd, 0);
+      for (let i = 0; i <= n; i++) { imp.push([i * h, M.dot(ss.C[0], xi)]); stp.push([i * h, M.dot(ss.C[0], xs) + ss.D]); xi = M.mv(d.Ad, xi); xs = M.vadd(M.mv(d.Ad, xs), bd); }
+      R = { P, Z, k, ss, mag, ph, magF, phF, imp, stp, unstable, rhpZero: Z.some(z => z.re > 0) };
+      const [ml, mh] = range(mag), e0 = Math.max(-4, Math.floor(Math.log10(ml))), e1 = Math.max(e0 + 2, Math.ceil(Math.log10(mh)));
+      pm.setLimits(null, [Math.pow(10, e0), Math.pow(10, e1)]);
+      const [pl, ph2] = range(ph.map(v => v / (Math.PI / 2))); let a0 = Math.floor(pl + 1e-9), a1 = Math.ceil(ph2 - 1e-9); if (a1 - a0 < 2) a0 = a1 - 2;
+      pp.setLimits(null, [a0, a1]);
+      const ri = range(imp.map(q => q[1])), rs = range(stp.map(q => q[1]));
+      pimp.setLimits([0, T], padded(Math.min(ri[0], 0), Math.max(ri[1], 0), 0.12));
+      pstp.setLimits([0, T], padded(Math.min(rs[0], 0), Math.max(rs[1], 0), 0.12));
+      refresh();
+    }
+    function refresh() {
+      const { P, Z, k, ss } = R, w = st.w;
+      const dz = Z.map(z => Math.hypot(z.re, w - z.im)), dp = P.map(p => Math.hypot(p.re, w - p.im)), prod = a => a.reduce((x, y) => x * y, 1);
+      const magP = Math.abs(k) * prod(dz) / prod(dp), gd = S.freq(ss.A, ss.B, ss.C, ss.D, w);
+      const magD = Math.hypot(gd.re, gd.im), phD = Math.atan2(gd.im, gd.re) * DEG;
+      const tags = (R.unstable ? '<span class="tag bad">pole in the RHP: unstable</span>' : '<span class="tag good">stable</span>') +
+        (Z.length ? (R.rhpZero ? '<span class="tag bad">RHP zero: non-minimum phase</span>' : '<span class="tag good">minimum phase</span>') : '');
+      out.set(`<span><i>k</i> <span class="num">${fmt(k, 3)}</span></span>` +
+        `<span>at <i>ω</i> = <span class="num">${fmt(w, 3)}</span>: |<i>k</i>| · ∏ zero lengths / ∏ pole lengths = <span class="num">${fmt(Math.abs(k), 3)}</span> · <span class="num">${fmtSig(prod(dz), 4)}</span> / <span class="num">${fmtSig(prod(dp), 4)}</span> = <span class="num">${fmtSig(magP, 4)}</span></span>` +
+        `<span>direct |<i>C</i>(<i>iωI</i> − <i>A</i>)⁻¹<i>B</i>| <span class="num">${fmtSig(magD, 4)}</span></span>` +
+        `<span>phase: Σ zero angles − Σ pole angles <span class="num">${fmt(R.phF(w) * DEG, 1)}°</span> (direct, modulo 360°: <span class="num">${fmt(phD, 1)}°</span>)</span>` + tags);
+      ps.redraw(); pm.redraw(); pp.redraw(); pimp.redraw(); pstp.redraw();
+    }
+    ps.draw = g => {
+      const xl = g.xlim, yl = g.ylim, w = st.w;
+      g.poly([[0, yl[0]], [xl[1], yl[0]], [xl[1], yl[1]], [0, yl[1]]], { fill: 'c8', fillAlpha: 0.06, stroke: false });
+      R.P.forEach(p => g.line(p.re, p.im, 0, w, { color: 'c1', width: 1.25, alpha: 0.6 }));
+      R.Z.forEach(z => g.line(z.re, z.im, 0, w, { color: 'c2', width: 1.25, alpha: 0.7 }));
+      R.P.forEach(p => g.marker([p.re, p.im], { shape: 'x', size: 8, width: 2.5, color: 'c1' }));
+      R.Z.forEach(z => g.marker([z.re, z.im], { shape: 'o', size: 8.5, width: 2.25, color: 'c2' }));
+      if (w <= yl[1]) { g.dot([0, w], { color: 'c7', r: 5 }); g.text([0, w], 'iω', { size: 14, dx: 9, dy: -11 }); }
+      else g.text([0, yl[1]], 'iω is above the view', { font: 'ui', italic: false, size: 12, color: 'ink-2', dx: 8, dy: 12 });
+    };
+    pm.draw = g => {
+      g.path(ws.map((w, i) => [w, R.mag[i]]), { color: 'c1', width: 2 });
+      g.vline(st.w, { color: 'c7', width: 1, dash: [4, 3] });
+      g.dot([st.w, R.magF(st.w)], { color: 'c7', r: 4.5 });
+    };
+    pp.draw = g => {
+      g.path(ws.map((w, i) => [w, R.ph[i] / (Math.PI / 2)]), { color: 'c1', width: 2 });
+      g.vline(st.w, { color: 'c7', width: 1, dash: [4, 3] });
+      g.dot([st.w, R.phF(st.w) / (Math.PI / 2)], { color: 'c7', r: 4.5 });
+    };
+    pimp.draw = g => { g.path(R.imp, { color: 'c1', width: 2 }); };
+    pstp.draw = g => { g.hline(st.g0, { color: 'muted', width: 1, dash: [4, 4] }); g.path(R.stp, { color: 'c7', width: 2 }); };
+    const hover = x => { if (!(x > 0)) return; st.w = Math.min(W1, Math.max(W0, x)); wsl.set(st.w); refresh(); };
+    pm.onHover = hover; pp.onHover = hover;
+    load('pair');
+  })();
+
+  /* ---------------- Visual 8.3: sinusoid in, sinusoid out ---------------- */
+  (function () {
+    const st = { z: 0.2, wn: 1.5, w: 1.2 };
+    const pt = new Plot('#sine-t', { xlim: [0, 30], ylim: [-3, 3], frame: true, aspect: 0.66, minH: 230, maxH: 430, xlabel: 't', label: 'Input sinusoid, output, steady-state part and transient' });
+    const pm = new Plot('#sine-mag', { xlim: [0.1, 10], ylim: [0.01, 10], logx: true, logy: true, frame: true, aspect: 0.58, minH: 165, maxH: 230, ylabel: '|G(iω)|', label: 'Bode gain of the second-order system' });
+    const pp = new Plot('#sine-ph', { xlim: [0.1, 10], ylim: [-2, 0], logx: true, frame: true, aspect: 0.52, minH: 160, maxH: 215, xlabel: 'ω', ylabel: 'phase', yfmt: v => fmt(90 * v, 0) + '°', label: 'Bode phase of the second-order system' });
+    [pt, pm, pp].forEach(lift);
+    const panel = ui.panel('#sine-controls');
+    const zs = panel.slider({ id: 'sine-z', label: 'Damping $\\zeta$', min: 0.05, max: 1.2, step: 0.01, value: st.z, onInput: v => { st.z = v; compute(); } });
+    const ns = panel.slider({ id: 'sine-wn', label: 'Natural frequency $\\omega_n$', min: 0.5, max: 3, step: 0.01, value: st.wn, onInput: v => { st.wn = v; compute(); } });
+    const wsl = panel.slider({ id: 'sine-w', label: 'Input frequency $\\omega$', min: -1, max: 1, step: 0.002, value: st.w, log: true, onInput: v => { st.w = v; compute(); } });
+    panel.buttons([{ label: 'Drive at the resonance peak', kind: 'primary', onClick: () => { st.w = st.z < Math.SQRT1_2 ? st.wn * Math.sqrt(1 - 2 * st.z * st.z) : st.wn; st.w = Math.min(10, Math.max(0.1, st.w)); wsl.set(st.w); compute(); } }]);
+    const out = panel.readout({});
+    void zs; void ns;
+    const Gc = w => { const re = st.wn * st.wn - w * w, im = 2 * st.z * st.wn * w, d = re * re + im * im; return { re: st.wn * st.wn * re / d, im: -st.wn * st.wn * im / d }; };
+    const gain = w => { const r = w / st.wn; return 1 / Math.sqrt((1 - r * r) * (1 - r * r) + 4 * st.z * st.z * r * r); };
+    const phase = w => { const r = w / st.wn; return -Math.atan2(2 * st.z * r, 1 - r * r); };
+    let R = null;
+    function compute() {
+      const { z, wn, w } = st, Pd = 2 * Math.PI / w;
+      const sig = z < 1 ? z * wn : wn * (z - Math.sqrt(z * z - 1));
+      const Tend = Math.min(80, Math.max(5 * Pd, 10 / sig)), N = Math.min(8000, Math.max(900, Math.ceil(Tend / Pd * 70))), h = Tend / N;
+      const E = M.expm(M.scale([[0, 1], [-wn * wn, -2 * z * wn]], h));
+      const g = Gc(w), v1 = g, v2 = { re: -w * g.im, im: w * g.re };
+      let zt = [-v1.im, -v2.im];
+      const ys = [], yss = [], ytr = [], us = [];
+      for (let i = 0; i <= N; i++) {
+        const t = i * h, c = Math.cos(w * t), s = Math.sin(w * t), xp = v1.re * s + v1.im * c;
+        ys.push([t, xp + zt[0]]); yss.push([t, xp]); ytr.push([t, zt[0]]); us.push([t, s]);
+        zt = M.mv(E, zt);
+      }
+      const L = Math.min(2 * Pd, Tend / 2); let s11 = 0, s12 = 0, s22 = 0, r1 = 0, r2 = 0;
+      ys.forEach(([t, y]) => { if (t < Tend - L) return; const s = Math.sin(w * t), c = Math.cos(w * t); s11 += s * s; s12 += s * c; s22 += c * c; r1 += y * s; r2 += y * c; });
+      const det = s11 * s22 - s12 * s12, a = (r1 * s22 - r2 * s12) / det, b = (s11 * r2 - s12 * r1) / det;
+      const amp = Math.hypot(g.re, g.im), phi = Math.atan2(g.im, g.re);
+      R = { ys, yss, ytr, us, Tend, Pd, amp, phi, mAmp: Math.hypot(a, b), mPhi: Math.atan2(b, a) };
+      const ymax = Math.max(1, ...ys.map(q => Math.abs(q[1])));
+      pt.setLimits([0, Tend], [-1.18 * ymax, 1.3 * ymax]);
+      const mx = Math.max(10, 3 * (z < Math.SQRT1_2 ? 1 / (2 * z * Math.sqrt(1 - z * z)) : 1));
+      pm.setLimits(null, [1e-3, Math.pow(10, Math.ceil(Math.log10(mx)))]);
+      const res = z < Math.SQRT1_2 ? `<span>resonance: <i>ω</i><sub>r</sub> = <i>ω</i><sub>n</sub>√(1 − 2<i>ζ</i>²) = <span class="num">${fmt(wn * Math.sqrt(1 - 2 * z * z), 3)}</span>, <i>M</i><sub>r</sub> = 1/(2<i>ζ</i>√(1 − <i>ζ</i>²)) = <span class="num">${fmt(1 / (2 * z * Math.sqrt(1 - z * z)), 3)}</span></span>` : '<span class="tag">ζ ≥ 1/√2: no resonance peak</span>';
+      out.set(`<span>|<i>G</i>(<i>iω</i>)| <span class="num">${fmt(amp, 3)}</span> · measured amplitude ratio <span class="num">${fmt(R.mAmp, 3)}</span></span>` +
+        `<span>arg <i>G</i>(<i>iω</i>) <span class="num">${fmt(phi * DEG, 1)}°</span> · measured phase <span class="num">${fmt(R.mPhi * DEG, 1)}°</span></span>` + res +
+        ui.legend([{ color: 'c4', label: 'input sin ωt' }, { color: 'c7', label: 'output y' }, { color: 'ink', label: 'steady part |G| sin(ωt + arg G)', kind: 'dash' }, { color: 'c8', label: 'transient' }]));
+      pt.redraw(); pm.redraw(); pp.redraw();
+    }
+    pt.draw = g => {
+      const { Tend, Pd, phi, amp } = R, w = st.w;
+      g.path(R.us, { color: 'c4', width: 1.5 });
+      g.path(R.ytr, { color: 'c8', width: 1.25, alpha: 0.85 });
+      g.path(R.ys, { color: 'c7', width: 2.2 });
+      g.path(R.yss, { color: 'ink', width: 1.25, dash: [6, 5] });
+      const m = Math.floor((w * (Tend - Pd / 2) - Math.PI / 2) / (2 * Math.PI));
+      const tin = (Math.PI / 2 + 2 * Math.PI * m) / w, tout = tin - phi / w;
+      if (tin > 0 && tout <= Tend && tout - tin > 0.004 * Tend) {
+        const yA = 1.14 * Math.max(1, amp);
+        g.vline(tin, { color: 'c4', width: 1, dash: [3, 3] }); g.vline(tout, { color: 'c7', width: 1, dash: [3, 3] });
+        g.arrow([tin, yA], [tout, yA], { color: 'ink-2', width: 1.3, head: 7 });
+        g.text([(tin + tout) / 2, yA], 'lag', { font: 'ui', italic: false, size: 12, color: 'ink-2', align: 'center', dy: -11 });
+      }
+    };
+    pm.draw = g => {
+      g.fn(w => (w < st.wn ? 1 : (st.wn / w) * (st.wn / w)), { color: 'muted', width: 1.1, dash: [5, 4] });
+      g.fn(gain, { color: 'c1', width: 2 }, { n: 500 });
+      if (st.z < Math.SQRT1_2) { const wr = st.wn * Math.sqrt(1 - 2 * st.z * st.z); g.dot([wr, gain(wr)], { color: 'c8', r: 5.5, hollow: true }); }
+      g.vline(st.w, { color: 'c7', width: 1, dash: [4, 3] });
+      g.dot([st.w, gain(st.w)], { color: 'c7', r: 4.5 });
+    };
+    pp.draw = g => {
+      g.fn(w => phase(w) / (Math.PI / 2), { color: 'c1', width: 2 });
+      g.vline(st.w, { color: 'c7', width: 1, dash: [4, 3] });
+      g.dot([st.w, phase(st.w) / (Math.PI / 2)], { color: 'c7', r: 4.5 });
+    };
+    compute();
+  })();
+
+  /* ---------------- Visual 8.4: a hidden unstable mode ---------------- */
+  (function () {
+    const st = { order: 'pf', delta: 0, eps: 0 };
+    const Tend = 12, h = 0.02, N = Math.round(Tend / h);
+    const py = new Plot('#hid-y', { xlim: [0, Tend], ylim: [-1.5, 3], frame: true, aspect: 0.62, minH: 210, maxH: 320, xlabel: 't', ylabel: 'y', label: 'Output of the cascade' });
+    const px = new Plot('#hid-x', { xlim: [0, Tend], ylim: [1e-3, 1e6], logy: true, frame: true, aspect: 0.62, minH: 210, maxH: 320, xlabel: 't', label: 'Magnitudes of the internal states' });
+    lift(py); lift(px);
+    const panel = ui.panel('#hid-controls');
+    panel.select({ id: 'hid-order', label: 'Order', value: st.order, options: [['pf', 'P then F'], ['fp', 'F then P']], onChange: v => { st.order = v; compute(); } });
+    panel.slider({ id: 'hid-delta', label: 'Zero mismatch $\\delta$', min: -0.1, max: 0.1, step: 0.005, value: st.delta, digits: 3, onInput: v => { st.delta = v; compute(); } });
+    panel.slider({ id: 'hid-eps', label: 'Initial plant state $\\eps$', min: 0, max: 0.05, step: 0.001, value: st.eps, digits: 3, onInput: v => { st.eps = v; compute(); } });
+    const out = panel.readout({});
+    let Y = [], XI = [], ETA = [];
+    function realization() {
+      const z = 1 + st.delta;
+      /* state (xi, eta): xi for the filter F(s) = (s - z)/(s + 1), eta for the plant P(s) = 1/(s - 1) */
+      if (st.order === 'fp') return { A: [[-1, 0], [-(1 + z), 1]], B: [[1], [1]], C: [0, 1] };
+      return { A: [[-1, 1], [0, 1]], B: [[0], [1]], C: [-(1 + z), 1] };
+    }
+    function compute() {
+      const { A, B, C } = realization(), d = S.c2d(A, B, h), bd = M.col(d.Bd, 0);
+      let x = [0, st.eps]; Y = []; XI = []; ETA = [];
+      for (let i = 0; i <= N; i++) { const t = i * h; Y.push([t, M.dot(C, x)]); XI.push([t, Math.abs(x[0])]); ETA.push([t, Math.abs(x[1])]); x = M.vadd(M.mv(d.Ad, x), bd); }
+      const exact = Math.abs(st.delta) < 1e-9;
+      const hidden = st.order === 'fp' ? '<span class="tag bad">unstable mode uncontrollable</span><span>the input cannot excite it</span>' : '<span class="tag bad">unstable mode unobservable</span><span>the output cannot show it</span>';
+      const G = exact ? 'G(s) = (s − 1)/((s + 1)(s − 1)) = 1/(s + 1)' : `G(s) = (s − ${fmt(1 + st.delta, 3)})/((s + 1)(s − 1)), pole at 1 with residue ${fmt(-st.delta / 2, 4)}`;
+      out.set(`${ui.mat(A, 2, { name: 'A' })}${ui.mat(B, 0, { name: 'B' })}${ui.mat([C], 2, { name: 'C' })}` +
+        `<span>eigenvalues of <i>A</i>: <span class="num">−1, 1</span></span><span>${G}</span>` +
+        (exact ? `<span class="tag good">BIBO stable</span>${hidden}` : '<span class="tag bad">not BIBO stable: no exact cancellation</span>') +
+        `<span class="tag bad">internally unstable</span>` +
+        `<span><i>y</i>(12) <span class="num">${fmtSig(Y[N][1], 3)}</span>, |<i>η</i>(12)| <span class="num">${fmtSig(ETA[N][1], 3)}</span></span>`);
+      py.redraw(); px.redraw();
+    }
+    py.draw = g => { g.path(Y, { color: 'c7', width: 2.4 }); g.fn(t => 1 - Math.exp(-t), { color: 'ink', width: 1.4, dash: [6, 5] }); };
+    px.draw = g => { g.path(ETA, { color: 'c8', width: 2.2 }); g.path(XI, { color: 'c2', width: 2, dash: [7, 4] }); };
+    compute();
+  })();
+
+  /* ---------------- Visual 8.5: principal gains and directions of a 2 x 2 plant ---------------- */
+  (function () {
+    const cx = LT.cx, deg = Math.PI / 180;
+    /* Entries g(s) = c / (s + a), stored as [c, a] (c = 0 is a zero entry); T is the step-response horizon, z a real RHP zero. */
+    const PLANTS = {
+      dist: { E: [[[87.8 / 75, 1 / 75], [-86.4 / 75, 1 / 75]], [[108.2 / 75, 1 / 75], [-109.6 / 75, 1 / 75]]], T: 375, z: 0 },
+      dec: { E: [[[2, 1], [0, 1]], [[0, 1], [10, 10]]], T: 6, z: 0 },
+      rhp: { E: [[[1, 1], [2, 3]], [[1, 1], [1, 1]]], T: 6, z: 1 }
+    };
+    /* preset: [plant, rotation angle (degrees), input angle (degrees), marked frequency] */
+    const PRE = { dist: ['dist', 0, 0, 0.01], dec: ['dec', 0, 30, 1.768], rot: ['dec', 40, 30, 1.768], rhp: ['rhp', 0, 90, 1] };
+    const st = { plant: 'dist', th: 0, phi: 0, w: 0.01 };
+    const W0 = 1e-3, W1 = 1e2, ws = S.logspace(-3, 2, 300);
+    let R = null, Y = null;
+    const pl = new Plot('#mimo-plane', { xlim: [-1.32, 1.32], ylim: [-1.32, 1.32], equal: true, clip: true, ticks: false, maxH: 440, label: 'Unit circle of input vectors, their images under G(0) divided by the largest principal gain, and the singular directions' });
+    const pv = new Plot('#mimo-sv', { xlim: [W0, W1], ylim: [1e-3, 1e3], logx: true, logy: true, frame: true, aspect: 0.62, minH: 185, maxH: 250, xlabel: 'ω', ylabel: 'gain', label: 'Principal gains and entry magnitudes against frequency' });
+    const ps = new Plot('#mimo-step', { xlim: [0, 6], ylim: [-1, 1], frame: true, aspect: 0.62, minH: 185, maxH: 250, xlabel: 't', label: 'Step responses of the two outputs and of the combination along the output zero direction' });
+    [pl, pv, ps].forEach(lift);
+    const panel = ui.panel('#mimo-controls');
+    panel.select({ id: 'mimo-preset', label: 'Plant', value: 'dist', options: [['dist', 'Distillation column (ill-conditioned)'], ['dec', 'Decoupled, diag(2/(s+1), 1/(0.1s+1))'], ['rot', 'Decoupled, rotated coordinates'], ['rhp', 'RHP zero at s = 1 (no entry has it)']], onChange: v => load(v) });
+    const thS = panel.slider({ id: 'mimo-th', label: 'Rotate coordinates $\\theta$', min: -90, max: 90, step: 1, value: st.th, fmt: v => fmt(v, 0) + '°', onInput: v => { st.th = v; recompute(); } });
+    panel.buttons([{ label: 'Input along v₁', onClick: () => aim(R.v1) }, { label: 'Input along v₂', onClick: () => aim(R.v2) }]);
+    const out = panel.readout({});
+    const legend = ui.legend([{ color: 'muted', label: 'unit circle of inputs', kind: 'dash' }, { color: 'c3', label: 'image ellipse, scaled by 1/σ<sub>max</sub>', kind: 'area' }, { color: 'c1', label: '<i>v</i><sub>1</sub>, <i>u</i><sub>1</sub>, σ<sub>max</sub>' }, { color: 'c2', label: '<i>v</i><sub>2</sub>, <i>u</i><sub>2</sub>, σ<sub>min</sub>' }, { color: 'c7', label: 'input <i>u</i><sub>0</sub> and its image' }, { color: 'muted', label: 'entries |<i>g</i><sub>ij</sub>(<i>iω</i>)|', kind: 'dash' }, { color: 'c5', label: '<i>y</i><sub>1</sub>' }, { color: 'c6', label: '<i>y</i><sub>2</sub>' }, { color: 'c8', label: '<i>y</i><sub>z</sub><sup>T</sup><i>y</i>' }]);
+
+    const rot = th => { const c = Math.cos(th * deg), s = Math.sin(th * deg); return [[c, -s], [s, c]]; };
+    /* the plant in rotated coordinates, Q G(s) Q^T, at a complex s; entries are {re, im} */
+    const Gat = s => {
+      const E = PLANTS[st.plant].E, Q = rot(st.th);
+      const G = E.map(row => row.map(([c, a]) => (c === 0 ? cx.of(0, 0) : cx.div(cx.of(c, 0), cx.of(s.re + a, s.im)))));
+      return [0, 1].map(i => [0, 1].map(j => { let re = 0, im = 0; for (let k = 0; k < 2; k++) for (let l = 0; l < 2; l++) { const q = Q[i][k] * Q[j][l]; re += q * G[k][l].re; im += q * G[k][l].im; } return { re, im }; }));
+    };
+    /* principal gains of a complex 2 x 2 matrix: sigma^2 = (|G|_F^2 +- sqrt(|G|_F^4 - 4 |det G|^2)) / 2; the smaller root is used in its rationalized form 2|det G|^2 / (|G|_F^2 + sqrt(...)) */
+    const sv2 = G => {
+      const F2 = G.flat().reduce((t, q) => t + q.re * q.re + q.im * q.im, 0);
+      const d = cx.abs(cx.sub(cx.mul(G[0][0], G[1][1]), cx.mul(G[0][1], G[1][0])));
+      const disc = Math.sqrt(Math.max(0, F2 * F2 - 4 * d * d));
+      return F2 > 0 ? [Math.sqrt((F2 + disc) / 2), Math.sqrt(2 * d * d / (F2 + disc))] : [0, 0];
+    };
+    /* step response to u0 1(t) from rest, entry by entry (c / a)(1 - e^{-at}), in rotated coordinates */
+    const stepAt = (t, u0) => {
+      const E = PLANTS[st.plant].E, Q = rot(st.th), ub = M.mv(M.T(Q), u0);
+      const yb = E.map(row => row.reduce((acc, [c, a], j) => acc + (c === 0 ? 0 : (c / a) * (1 - Math.exp(-a * t)) * ub[j]), 0));
+      return M.mv(Q, yb);
+    };
+    const u0 = () => [Math.cos(st.phi * deg), Math.sin(st.phi * deg)];
+    const aim = v => { st.phi = Math.atan2(v[1], v[0]) / deg; step(); };
+
+    function load(key) { const P = PRE[key]; st.plant = P[0]; st.th = P[1]; st.phi = P[2]; st.w = P[3]; thS.set(st.th); recompute(); }
+    function recompute() {
+      const G0 = Gat(cx.of(0, 0)).map(r => r.map(q => q.re));
+      const { U, S: sg, V } = M.svd(G0);
+      /* sign convention: the first nonzero component of each input direction is positive */
+      const fix = k => { let v = M.col(V, k), u = M.col(U, k); const lead = Math.abs(v[0]) > 1e-9 ? v[0] : v[1]; if (lead < 0) { v = M.vscale(v, -1); u = M.vscale(u, -1); } return [v, u]; };
+      const [v1, u1] = fix(0), [v2, u2] = fix(1), z = PLANTS[st.plant].z;
+      let yz = null;
+      if (z > 0) {   /* left null vector of the rank-one real matrix G(z): orthogonal to its larger column */
+        const Mz = Gat(cx.of(z, 0)).map(r => r.map(q => q.re)), c0 = M.col(Mz, 0), c1 = M.col(Mz, 1), c = M.vnorm(c0) >= M.vnorm(c1) ? c0 : c1, nc = M.vnorm(c);
+        yz = [-c[1] / nc, c[0] / nc]; if (yz[0] < -1e-12 || (Math.abs(yz[0]) <= 1e-12 && yz[1] < 0)) yz = M.vscale(yz, -1);
+      }
+      const sv = [], ent = [[[], []], [[], []]];
+      ws.forEach(w => { const G = Gat(cx.of(0, w)), g = sv2(G); sv.push([w, g[0], g[1]]); for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) ent[i][j].push([w, cx.abs(G[i][j])]); });
+      const live = ent.map(r => r.map(c => c.some(q => q[1] > 1e-12)));
+      let lo = Infinity, hi = 0;
+      sv.forEach(q => { lo = Math.min(lo, q[2]); hi = Math.max(hi, q[1]); });
+      ent.forEach((r, i) => r.forEach((c, j) => { if (live[i][j]) c.forEach(q => { lo = Math.min(lo, q[1]); hi = Math.max(hi, q[1]); }); }));
+      const e1 = Math.ceil(Math.log10(hi) - 1e-9); let e0 = Math.floor(Math.log10(lo) + 1e-9); if (e1 - e0 > 7) e0 = e1 - 7; if (e1 - e0 < 2) e0 = e1 - 2;
+      pv.setLimits(null, [Math.pow(10, e0), Math.pow(10, e1)]);
+      R = { G0, sg, v1, u1, v2, u2, z, yz, sv, ent, live };
+      step();
+    }
+    function step() {
+      const T = PLANTS[st.plant].T, n = 300, u = u0(), Ys = [];
+      for (let k = 0; k <= n; k++) { const t = T * k / n; Ys.push([t, stepAt(t, u)]); }
+      const fin = M.mv(R.G0, u);
+      let F = null, I = 0, fmin = 0, fmax = 0;
+      if (R.yz) {
+        F = Ys.map(([t, y]) => [t, M.dot(R.yz, y)]);
+        fmin = Math.min(...F.map(q => q[1])); fmax = Math.max(...F.map(q => q[1]));
+        /* Simpson's rule for the integral of e^{-zt} y_z^T y(t) on [0, 40/z]; the tail is below e^{-40} */
+        const z = R.z, N = 4000, h = 40 / z / N;
+        for (let k = 0; k <= N; k++) I += Math.exp(-z * k * h) * M.dot(R.yz, stepAt(k * h, u)) * (k === 0 || k === N ? 1 : k % 2 ? 4 : 2);
+        I *= h / 3;
+      }
+      let lo = Math.min(0, fin[0], fin[1]), hi = Math.max(0, fin[0], fin[1]);
+      Ys.forEach(([, y]) => { lo = Math.min(lo, y[0], y[1]); hi = Math.max(hi, y[0], y[1]); });
+      if (F) { lo = Math.min(lo, fmin); hi = Math.max(hi, fmax); }
+      if (hi - lo < 1e-9) hi = lo + 1;
+      ps.setLimits([0, T], padded(lo, hi, 0.08));
+      Y = { Ys, fin, F, I, fmin, fmax };
+      refresh();
+    }
+    function refresh() {
+      const { G0, sg, v1, u1, v2, u2 } = R, u = u0(), gain = M.vnorm(M.mv(G0, u));
+      const big = Math.max(...G0.flat().map(Math.abs)), gw = sv2(Gat(cx.of(0, st.w)));
+      const vec = v => `(${fmt(v[0], 3)}, ${fmt(v[1], 3)})`, num = (x, s) => `<span class="num">${fmtSig(Number(x.toPrecision(s || 4)), s || 4)}</span>`;
+      const zpart = R.yz
+        ? `<span class="tag bad">RHP zero at <i>s</i> = ${fmt(R.z, 0)}</span><span>output zero direction <i>y</i><sub>z</sub> = ${vec(R.yz)}</span>` +
+          `<span>∫ e<sup>−<i>zt</i></sup> <i>y</i><sub>z</sub><sup>T</sup><i>y</i>(<i>t</i>) d<i>t</i> = <span class="num">${fmt(Y.I, 4)}</span> by quadrature</span>` +
+          `<span><i>y</i><sub>z</sub><sup>T</sup><i>y</i> runs between <span class="num">${fmt(Y.fmin, 3)}</span> and <span class="num">${fmt(Y.fmax, 3)}</span></span>`
+        : '<span class="tag good">no RHP zero</span>';
+      out.set(`${ui.mat(G0, big >= 10 ? 1 : 3, { name: 'G(0)' })}` +
+        `<span>σ<sub>min</sub> ${num(sg[1])} ≤ ‖<i>G</i>(0)<i>u</i><sub>0</sub>‖ ${num(gain)} ≤ σ<sub>max</sub> ${num(sg[0])}</span>` +
+        `<span>κ(<i>G</i>(0)) ${num(sg[0] / sg[1])}</span><span>largest |<i>g</i><sub>ij</sub>(0)| ${num(big)} ≤ σ<sub>max</sub></span>` +
+        `<span><i>v</i><sub>1</sub> = ${vec(v1)} ↦ <i>u</i><sub>1</sub> = ${vec(u1)}</span><span><i>v</i><sub>2</sub> = ${vec(v2)} ↦ <i>u</i><sub>2</sub> = ${vec(u2)}</span>` +
+        `<span>at <i>ω</i> = ${num(st.w, 3)}: σ<sub>max</sub> ${num(gw[0])}, σ<sub>min</sub> ${num(gw[1])}, κ ${num(gw[0] / gw[1])}</span>` + zpart + legend);
+      pl.redraw(); pv.redraw(); ps.redraw();
+    }
+    pl.draw = g => {
+      const { G0, sg, v1, u1, v2, u2 } = R, s1 = sg[0] || 1, u = u0(), Gu = M.vscale(M.mv(G0, u), 1 / s1), r2 = sg[1] / s1;
+      g.ellipse([0, 0], M.scale(G0, 1 / s1), { fill: 'c3', fillAlpha: 0.16, color: 'c3', width: 1.5 });
+      g.circle([0, 0], 1, { color: 'muted', width: 1.25, dash: [4, 4] });
+      g.line(-v1[0], -v1[1], v1[0], v1[1], { color: 'c1', width: 1.25, dash: [7, 5] });
+      g.line(-v2[0], -v2[1], v2[0], v2[1], { color: 'c2', width: 1.25, dash: [7, 5] });
+      g.arrow([0, 0], u1, { color: 'c1', width: 2.25 });
+      if (r2 > 0.03) g.arrow([0, 0], M.vscale(u2, r2), { color: 'c2', width: 2.25 });
+      g.arrow([0, 0], Gu, { color: 'c7', width: 2, dash: [5, 4] });
+      g.arrow([0, 0], u, { color: 'c7', width: 2.5 });
+      g.dot(Gu, { color: 'c7', r: 4.5 });
+      g.text(M.vscale(v1, -1.15), 'v₁', { size: 15, align: 'center' });
+      g.text(M.vscale(v2, -1.15), 'v₂', { size: 15, align: 'center' });
+      if (M.vnorm(M.vsub(Gu, u1)) > 0.1) g.text(M.vscale(u1, 1.14), 'u₁', { size: 15, align: 'center' });
+      /* label the image beside its arrow, on the side away from the input u0 */
+      const nG = M.vnorm(Gu);
+      if (nG > 0.12) { let nrm = [Gu[1] / nG, -Gu[0] / nG]; if (M.dot(nrm, u) > 0) nrm = M.vscale(nrm, -1); g.text(M.vadd(M.vscale(Gu, 0.6), M.vscale(nrm, 0.11)), 'G(0)u₀/σ₁', { size: 13, align: 'center' }); }
+    };
+    pl.addHandle({ get: u0, set: (x, y) => { if (Math.hypot(x, y) < 1e-9) return; st.phi = Math.atan2(y, x) / deg; step(); }, color: 'c7', r: 7, label: 'u₀' });
+    pv.draw = g => {
+      for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) if (R.live[i][j]) g.path(R.ent[i][j], { color: 'muted', width: 1.2, dash: [5, 4] });
+      g.path(R.sv.map(q => [q[0], q[1]]), { color: 'c1', width: 2.25 });
+      g.path(R.sv.map(q => [q[0], q[2]]), { color: 'c2', width: 2.25 });
+      const gw = sv2(Gat(cx.of(0, st.w)));
+      g.vline(st.w, { color: 'c7', width: 1, dash: [4, 3] });
+      g.dot([st.w, gw[0]], { color: 'c1', r: 4.5 }); g.dot([st.w, gw[1]], { color: 'c2', r: 4.5 });
+    };
+    ps.draw = g => {
+      const { Ys, fin, F } = Y;
+      g.hline(fin[0], { color: 'c5', width: 1.1, dash: [5, 4] }); g.hline(fin[1], { color: 'c6', width: 1.1, dash: [5, 4] });
+      g.path(Ys.map(([t, y]) => [t, y[0]]), { color: 'c5', width: 2.2 });
+      g.path(Ys.map(([t, y]) => [t, y[1]]), { color: 'c6', width: 2.2 });
+      if (F) g.path(F, { color: 'c8', width: 2.5 });
+    };
+    const mark = x => { if (!(x > 0)) return; st.w = Math.min(W1, Math.max(W0, x)); refresh(); };
+    pv.onHover = mark; pv.onClick = mark;
+    load('dist');
+  })();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1082 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>7 Flows, modes and stability · Linear Theory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap">
+<link rel="stylesheet" href="assets/lt.css">
+<script src="assets/toc.js"></script>
+<script src="assets/lt.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+</head>
+<body>
+<div class="topbar"><button class="btn" id="lt-menu" type="button" aria-controls="lt-side" aria-expanded="false">Contents</button><span class="topbar-title">7 · Autonomous linear systems: flows, modes and stability</span></div>
+<div class="shell">
+<nav class="side" id="lt-side" aria-label="Chapters"></nav>
+<main class="page" id="main" data-chapter="7">
+<div class="content">
+
+<header class="ch-head">
+  <div class="eyebrow">Part III · Linear dynamical systems · Chapter 7</div>
+  <h1 class="ch-title">Autonomous linear systems: flows, modes and stability</h1>
+  <p class="ch-lead">The system $\dot x = Ax$, in which a fixed matrix $A$ drives the state $x(t)$ and $\dot x$ is its time derivative, is the simplest dynamical system with structure: its solutions are built from exponentials of the eigenvalues along eigenvectors and generalized eigenvectors, so the eigenvalues and the Jordan structure decide what happens as time grows. This chapter constructs the matrix exponential, reads modes and phase portraits off the spectrum, and classifies planar flows up to linear changes of coordinates and hyperbolic flows up to continuous ones. It then certifies stability with quadratic Lyapunov functions, which keep working where eigenvalues stop being informative.</p>
+  <p class="ch-meta"><span><b>Prerequisites</b> chapters 3 and 4 (Jordan form, positive definite matrices); chapter 6 for transient growth</span><span><b>Leads to</b> chapters 8, 9, 11 and 13</span><span><b>Visuals</b> 4</span></p>
+  <ol class="core-q">
+    <li>What can $\dot x = Ax$ and $x_{k+1} = Ax_k$ do, and how are their solutions assembled from eigenvalues and eigenvectors?</li>
+    <li>Which features of a flow survive a change of coordinates, linear or merely continuous?</li>
+    <li>How is stability certified without solving the equation, and why do frozen eigenvalues fail for linear time-varying (LTV) systems?</li>
+  </ol>
+  <details class="notation">
+    <summary>Notation introduced in this chapter</summary>
+    <div class="tbl-wrap"><table class="tbl">
+      <thead><tr><th>Symbol</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td>$\dot x = \dd x/\dd t$</td><td>time derivative of the state $x(t) \in \R^n$</td></tr>
+        <tr><td>$x_k$</td><td>state of a discrete-time system at step $k = 0, 1, 2, \dots$</td></tr>
+        <tr><td>$e^{tA}$</td><td>matrix exponential $\sum_{k\ge0} t^kA^k/k!$</td></tr>
+        <tr><td>$v_i$, $w_i$, $\delta_{ij}$</td><td>right and left eigenvectors normalized by $w_i^*v_j = \delta_{ij}$ (Kronecker delta: 1 if $i = j$, else 0)</td></tr>
+        <tr><td>$P_i = v_iw_i^*$</td><td>projector onto the $i$-th mode along the others (a spectral projector when the eigenvalues are distinct)</td></tr>
+        <tr><td>$J_k(\lambda)$, $N$</td><td>Jordan block of size $k$; the nilpotent shift $J_k(0)$</td></tr>
+        <tr><td>$J_\R$</td><td>real Jordan form; for a complex pair $\sigma \pm i\omega$ the block $\begin{bmatrix}\sigma & \omega\\ -\omega & \sigma\end{bmatrix}$</td></tr>
+        <tr><td>$E^s$, $E^c$, $E^u$</td><td>stable, centre and unstable subspaces</td></tr>
+        <tr><td>$\tau = \tr A$, $\Delta = \det A$</td><td>trace and determinant of a $2\times 2$ matrix</td></tr>
+        <tr><td>$\alpha(A)$, $\rho(A)$</td><td>spectral abscissa $\max\Re\lambda$; spectral radius $\max\abs{\lambda}$</td></tr>
+        <tr><td>$\mathcal L\{f\}(s)$</td><td>Laplace transform $\int_0^\infty e^{-st}f(t)\,\dd t$, with complex variable $s$</td></tr>
+        <tr><td>$P \succ 0$, $P \succeq 0$</td><td>positive definite, positive semidefinite (symmetric) matrix</td></tr>
+        <tr><td>$V(x) = x^\T Px$</td><td>quadratic Lyapunov function; $Q \succ 0$ the decay weight in $A^\T P + PA = -Q$; the conditions $P \succ 0$, $A^\T P + PA \prec 0$ form a linear matrix inequality (LMI) in $P$</td></tr>
+        <tr><td>$\kappa(P)$</td><td>condition number $\lambda_{\max}(P)/\lambda_{\min}(P)$ of $P \succ 0$</td></tr>
+        <tr><td>$h$, $z = e^{sh}$</td><td>sampling period; the map from continuous-time to discrete-time eigenvalues</td></tr>
+        <tr><td>$\operatorname{Log}z$</td><td>principal logarithm $\ln\abs z + i\arg z$, with $\arg z \in (-\pi, \pi]$</td></tr>
+        <tr><td>$\Phi(t, t_0)$</td><td>state-transition matrix of a time-varying system; for a $T$-periodic system, $\Phi(T, 0)$ is the monodromy matrix and its eigenvalues are the Floquet multipliers</td></tr>
+      </tbody>
+    </table></div>
+  </details>
+</header>
+
+<section class="sec" id="s-setting">
+<h2>Linear flows and linear maps</h2>
+
+<div class="blk prob"><p>Given a real matrix $A \in \R^{n\times n}$ and an initial state $x_0 \in \R^n$, describe every solution of the linear differential equation and of the linear recursion below, and decide what the solutions do as time grows.</p></div>
+
+<div class="blk setting">
+<p>Two settings, continuous time (CT) and discrete time (DT):</p>
+<div class="eq">$$\text{CT:}\quad \dot x(t) = Ax(t),\ \ x(0) = x_0,\ \ t \in \R;\qquad\qquad \text{DT:}\quad x_{k+1} = Ax_k,\ \ k = 0, 1, 2, \dots$$</div>
+<p>Both are autonomous (no input) and linear time-invariant (LTI): $A$ does not depend on time. The DT solution is $x_k = A^kx_0$. Inputs enter in chapter 8; time-varying matrices in <a class="xref" href="#s-ltv"></a>.</p>
+</div>
+<dl class="where">
+  <dt>$x(t) \in \R^n$, $x_k \in \R^n$</dt><dd>the state at time $t$ or at step $k$</dd>
+  <dt>$\dot x(t)$</dt><dd>the time derivative $\dd x/\dd t$</dd>
+  <dt>$A$</dt><dd>a constant real $n\times n$ matrix; eigenvalues may be complex, so $\C^n$ is used where convenient</dd>
+</dl>
+
+<div class="blk prop" id="prop-superposition" data-name="Superposition">
+<p>If $x(t)$ and $y(t)$ solve $\dot x = Ax$, so does $ax(t) + by(t)$ for all scalars $a, b$: the solutions form a vector space, and the map $x_0 \mapsto x(t)$ is linear for each $t$. The same holds in DT.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Differentiation is linear: $\frac{\dd}{\dd t}(ax + by) = aAx + bAy = A(ax + by)$. Linearity of $x_0 \mapsto x(t)$ then follows from uniqueness (<a class="xref" href="#thm-exist"></a>): the solution from $ax_0 + by_0$ must be $ax(t) + by(t)$.</p>
+</div>
+
+<div class="blk probe">
+<p>The scalar case already separates CT from DT. $\dot x = ax$ has $x(t) = e^{at}x_0$, which decays ($a &lt; 0$), stays put ($a = 0$) or grows ($a &gt; 0$), and, for $x_0 \neq 0$, never changes sign or reaches 0 in finite time. $x_{k+1} = ax_k$ has $x_k = a^kx_0$, which can also alternate in sign ($a &lt; 0$) or die in one step ($a = 0$).</p>
+</div>
+
+<div class="blk cex" id="cex-not-sampled">
+<p>Not every DT system is a sampled CT system. The scalar recursion $x_{k+1} = -x_k$ is not $x(kh)$ for any real $\dot x = ax$ and step $h &gt; 0$, since $e^{ah} &gt; 0$. In the plane it is: $-I = e^{hA}$ for $A = \frac{\pi}{h}\begin{bmatrix}0 & -1\\ 1 & 0\end{bmatrix}$, a rotation through $\pi$ in time $h$. And $A = 0$ sends every state to 0 in one step, whereas every flow map $e^{tA}$ is invertible (<a class="xref" href="#thm-expm"></a>).</p>
+</div>
+</section>
+
+<section class="sec" id="s-expm">
+<h2>The matrix exponential</h2>
+
+<div class="blk def" id="def-expm" data-name="Matrix exponential">
+<p>For $A \in \C^{n\times n}$, $e^{A} = \sum_{k=0}^\infty \dfrac{A^k}{k!}$. The series converges for every $A$ (<a class="xref" href="#lem-expm-conv"></a>), so $t \mapsto e^{tA}$ is defined for all real $t$.</p>
+</div>
+
+<div class="blk lem" id="lem-expm-conv" data-name="Convergence of the exponential series">
+<p>Let $A \in \C^{n\times n}$, and let $\norm{A} = \max_{\norm{x} = 1}\norm{Ax}$ be the spectral norm, induced by the Euclidean norm $\norm{x}$. The series $\sum_{k\ge0}A^k/k!$ converges absolutely, with $\norm{e^{A}} \le e^{\norm{A}}$, and the series $\sum_{k\ge0}t^kA^k/k!$ converges uniformly for $t$ in every bounded interval.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> The spectral norm is submultiplicative with $\norm{I} = 1$, so $\norm{A^k}/k! \le \norm{A}^k/k!$ and $\sum_k\norm{A^k}/k! \le e^{\norm{A}}$. An absolutely convergent series in the finite-dimensional space $\C^{n\times n}$ converges, and its sum obeys the same bound. For $\abs t \le T$ the terms $t^kA^k/k!$ have norms at most $T^k\norm{A}^k/k!$, the terms of a convergent series of constants, so the convergence is uniform (Weierstrass M-test).</p>
+</div>
+
+<div class="blk thm" id="thm-expm" data-name="Properties of the exponential">
+<p>For $A, B \in \C^{n\times n}$ and $s, t \in \R$:</p>
+<ol>
+<li>$\dfrac{\dd}{\dd t}e^{tA} = Ae^{tA} = e^{tA}A$;</li>
+<li>$e^{(s+t)A} = e^{sA}e^{tA}$ and $e^{0A} = I$, so $e^{tA}$ is invertible with inverse $e^{-tA}$;</li>
+<li>if $AB = BA$, then $e^{A+B} = e^Ae^B$;</li>
+<li>$e^{S^{-1}AS} = S^{-1}e^{A}S$ for invertible $S$;</li>
+<li>$\det e^{A} = e^{\tr A}$, where $\tr A$ is the trace (the sum of the diagonal entries), and the eigenvalues of $e^{A}$ are $e^{\lambda}$ for the eigenvalues $\lambda$ of $A$, with multiplicity.</li>
+</ol>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (1) By <a class="xref" href="#lem-expm-conv"></a> the series converges uniformly for $t$ in bounded intervals, and so does the series of termwise derivatives, $\sum_{k\ge1}t^{k-1}A^k/(k-1)! = Ae^{tA}$; hence the series may be differentiated term by term, and $A$ commutes with every partial sum. (3) If $AB = BA$ the binomial theorem $(A + B)^m = \sum_k\binom{m}{k}A^kB^{m-k}$ holds, and the Cauchy product of the two absolutely convergent series is $e^Ae^B = \sum_m \frac{1}{m!}\sum_k\binom{m}{k}A^kB^{m-k} = e^{A+B}$. (2) is (3) for the commuting pair $sA$, $tA$. (4) $(S^{-1}AS)^k = S^{-1}A^kS$ term by term. (5) With a Schur form $A = UTU^*$ ($U$ unitary, $T$ upper triangular; <a href="ch03_eigenvalues.html#thm-schur">Schur's theorem</a>, chapter 3), $e^{A} = Ue^{T}U^*$ and $e^T$ is upper triangular with diagonal entries $e^{t_{ii}}$, where the $t_{ii} = \lambda_i$ are the eigenvalues of $A$; so the eigenvalues of $e^A$ are $e^{\lambda_i}$ and its determinant is $\prod_i e^{\lambda_i} = e^{\tr A}$.</p>
+</div>
+
+<div class="blk thm" id="thm-exist" data-name="Existence and uniqueness">
+<p>For every $x_0 \in \C^n$ the problem $\dot x = Ax$, $x(0) = x_0$ has exactly one differentiable solution on $\R$, namely $x(t) = e^{tA}x_0$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> By part 1 of <a class="xref" href="#thm-expm"></a>, $e^{tA}x_0$ is a solution. If $x(t)$ is any solution, then $\frac{\dd}{\dd t}\big(e^{-tA}x(t)\big) = -Ae^{-tA}x + e^{-tA}Ax = 0$, because $A$ commutes with $e^{-tA}$; hence $e^{-tA}x(t) = x_0$ for all $t$.</p>
+</div>
+
+<div class="blk cex" id="cex-commute">
+<p>Without commutation the product rule fails. For $A = \begin{bmatrix}0 & 1\\ 0 & 0\end{bmatrix}$ and $B = \begin{bmatrix}0 & 0\\ 1 & 0\end{bmatrix}$ the series stop after two terms, so $e^A = \begin{bmatrix}1 & 1\\ 0 & 1\end{bmatrix}$ and $e^B = \begin{bmatrix}1 & 0\\ 1 & 1\end{bmatrix}$. Then $e^Ae^B = \begin{bmatrix}2 & 1\\ 1 & 1\end{bmatrix}$ and $e^Be^A = \begin{bmatrix}1 & 1\\ 1 & 2\end{bmatrix}$, while $(A + B)^2 = I$ gives $e^{A+B} = \cosh(1)\,I + \sinh(1)(A + B)$, approximately $\begin{bmatrix}1.543 & 1.175\\ 1.175 & 1.543\end{bmatrix}$. All three are different, although their determinants agree: by part 5 of <a class="xref" href="#thm-expm"></a> and $\det(XY) = \det X\det Y$, each equals $e^{\tr A + \tr B} = 1$.</p>
+</div>
+
+<div class="blk pattern">
+<p>Liouville's formula gives the similarity invariant $\tr A$ a geometric meaning, as the exponential rate at which the flow changes volume (<a class="xref" href="#prop-liouville"></a>). Volume contraction ($\tr A &lt; 0$) does not imply stability: the saddle $\diag(1, -2)$ has trace $-1$, so it contracts volume, and its eigenvalue $1$ makes it unstable.</p>
+</div>
+
+<div class="blk prop" id="prop-liouville" data-name="Liouville's formula">
+<p>Let $A \in \R^{n\times n}$ and $t \in \R$. Then $\det e^{tA} = e^{t\tr A} &gt; 0$, so the flow map $e^{tA}$ preserves orientation and multiplies the $n$-dimensional volume of every region by $e^{t\tr A}$. Here $\tr A = \sum_i\partial(Ax)_i/\partial x_i$ is the divergence of the vector field $x \mapsto Ax$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Part 5 of <a class="xref" href="#thm-expm"></a> applied to $tA$ gives $\det e^{tA} = e^{\tr(tA)} = e^{t\tr A}$. A real matrix multiplies volumes by the absolute value of its determinant, and preserves orientation when the determinant is positive (<a href="ch01_linear_maps.html#thm-det">the determinant theorem</a>, chapter 1). Finally $\partial(Ax)_i/\partial x_i = a_{ii}$.</p>
+</div>
+
+<div class="blk prop" id="prop-jordan-exp" data-name="Exponential of a Jordan block">
+<p>Let $J_k(\lambda) = \lambda I + N$, where $N = J_k(0)$ has ones on the superdiagonal and $N^k = 0$. Then</p>
+<div class="eq">$$e^{tJ_k(\lambda)} = e^{\lambda t}\sum_{j=0}^{k-1}\frac{t^j}{j!}N^j = e^{\lambda t}\begin{bmatrix}1 & t & \frac{t^2}{2} & \cdots & \frac{t^{k-1}}{(k-1)!}\\ & 1 & t & \ddots & \vdots\\ & & \ddots & \ddots & \frac{t^2}{2}\\ & & & 1 & t\\ & & & & 1\end{bmatrix}.$$</div>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> $\lambda I$ commutes with $N$, so $e^{tJ_k(\lambda)} = e^{\lambda t}e^{tN}$ by <a class="xref" href="#thm-expm"></a>, and the series for $e^{tN}$ stops at $j = k - 1$; $N^j$ has ones on the $j$-th superdiagonal.</p>
+</div>
+
+<div class="blk prop" id="prop-laplace" data-name="Laplace transform of the exponential">
+<p>For complex $s$ with $\Re s &gt; \alpha(A)$, where $\alpha(A) = \max_i\Re\lambda_i$ is the spectral abscissa,</p>
+<div class="eq">$$\mathcal L\{e^{tA}\}(s) = \int_0^\infty e^{-st}e^{tA}\,\dd t = (sI - A)^{-1},\qquad\text{so}\qquad e^{tA} = \mathcal L^{-1}\big\{(sI - A)^{-1}\big\}\ \text{entrywise}.$$</div>
+<p>Here $\mathcal L^{-1}$ is the inverse Laplace transform.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Put $M = A - sI$, which is invertible with all eigenvalues in the open left half-plane; since $sI$ commutes with $A$, part 3 of <a class="xref" href="#thm-expm"></a> gives $e^{-st}e^{tA} = e^{tM}$. Then $\int_0^T e^{tM}\dd t = M^{-1}(e^{TM} - I)$ by part 1, and $e^{TM} \to 0$ as $T \to \infty$: in a Jordan basis its entries are $t^je^{\mu t}/j!$ with $\Re\mu &lt; 0$ (<a class="xref" href="#prop-jordan-exp"></a>). The limit is $-M^{-1} = (sI - A)^{-1}$. The inversion formula holds because a continuous function on $[0, \infty)$ is determined by its Laplace transform (Lerch's theorem).</p>
+</div>
+
+<div class="blk ex" id="ex-rotation" data-name="Two exponentials by hand">
+<p>For the oscillator $A = \begin{bmatrix}0 & 1\\ -1 & 0\end{bmatrix}$, $(sI - A)^{-1} = \frac{1}{s^2+1}\begin{bmatrix}s & 1\\ -1 & s\end{bmatrix}$, and inverting entrywise gives $e^{tA} = \begin{bmatrix}\cos t & \sin t\\ -\sin t & \cos t\end{bmatrix}$, a clockwise rotation. For $A = \begin{bmatrix}-1 & w\\ 0 & -2\end{bmatrix}$ (<a href="ch06_nonnormality.html#ex-transient">chapter 6</a>) use interpolation (<a class="xref" href="#prop-poly"></a>) instead: $e^{tA} = c_0(t)I + c_1(t)A$ with $c_0 - c_1 = e^{-t}$ and $c_0 - 2c_1 = e^{-2t}$ (evaluate at the eigenvalues), so $c_1 = e^{-t} - e^{-2t}$ and $e^{tA} = \begin{bmatrix}e^{-t} & w(e^{-t} - e^{-2t})\\ 0 & e^{-2t}\end{bmatrix}$.</p>
+</div>
+
+<div class="blk prop" id="prop-poly" data-name="The exponential is a polynomial in A">
+<p>For every $t$ there are scalars $c_0(t), \dots, c_{n-1}(t)$ with $e^{tA} = \sum_{k=0}^{n-1}c_k(t)A^k$. If the eigenvalues $\lambda_1, \dots, \lambda_n$ are distinct, the $c_k(t)$ solve the Vandermonde system $\sum_k c_k(t)\lambda_i^k = e^{\lambda_i t}$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> By <a href="ch03_eigenvalues.html#thm-ch">the Cayley–Hamilton theorem</a> and <a href="ch03_eigenvalues.html#cor-ch">its corollary on powers</a> (chapter 3), every power $A^k$ is a linear combination of $I, A, \dots, A^{n-1}$. The partial sums of the series therefore lie in the span of these $n$ matrices, a finite-dimensional and hence closed subspace, which then contains the limit. Applying both sides to an eigenvector $v_i$ gives $e^{\lambda_it}v_i = \sum_kc_k(t)\lambda_i^kv_i$.</p>
+</div>
+
+<div class="blk pattern">
+<p>Five routes to the same matrix; the right one depends on the purpose. The last column records numerical rules of thumb, not theorems; Moler and Van Loan (below) document them.</p>
+</div>
+<div class="tbl-wrap"><table class="tbl">
+  <thead><tr><th>Route</th><th>Formula</th><th>Needs</th><th>Good for</th><th>Caveat</th></tr></thead>
+  <tbody>
+    <tr><td>Diagonalization</td><td>$A = V\Lambda V^{-1}$, $\Lambda$ diagonal: $e^{tA} = Ve^{t\Lambda}V^{-1}$</td><td>an eigenbasis</td><td>modes, distinct eigenvalues</td><td>inaccurate when the condition number $\kappa(V) = \norm{V}\norm{V^{-1}}$ is large (chapter 6)</td></tr>
+    <tr><td>Jordan form</td><td>$Se^{tJ}S^{-1}$ with <a class="xref" href="#prop-jordan-exp"></a></td><td>a Jordan basis</td><td>structure, repeated eigenvalues</td><td>the Jordan form is not computable stably</td></tr>
+    <tr><td>Laplace transform</td><td>$\mathcal L^{-1}\{(sI - A)^{-1}\}$</td><td>partial fractions</td><td>small symbolic examples; transfer functions (chapter 8)</td><td>symbolic only</td></tr>
+    <tr><td>Interpolation</td><td>$\sum_{k&lt;n}c_k(t)A^k$</td><td>distinct eigenvalues (<a class="xref" href="#prop-poly"></a>)</td><td>$2\times 2$ and $3\times 3$ by hand</td><td>the Vandermonde system is ill-conditioned when eigenvalues are close</td></tr>
+    <tr><td>Scaling and squaring</td><td>$e^{A} = \big(e^{A/2^m}\big)^{2^m}$, Padé for $e^{A/2^m}$</td><td>nothing special</td><td>numerical computation</td><td>the standard method; used by this guide's figures</td></tr>
+  </tbody>
+</table></div>
+<p class="src">Moler and Van Loan, "Nineteen dubious ways to compute the exponential of a matrix, twenty-five years later", <i>SIAM Review</i> 45 (2003) 3–49, compares these and other methods.</p>
+</section>
+
+<section class="sec" id="s-modes">
+<h2>Modes and invariant subspaces</h2>
+
+<div class="blk prob"><p>Decompose a solution into pieces that evolve independently, each at its own rate, and identify the initial states that decay, grow or neither.</p></div>
+
+<div class="blk setting">
+<p>Let $A \in \C^{n\times n}$ be diagonalizable, $A = V\Lambda V^{-1}$, with $\Lambda = \diag(\lambda_1, \dots, \lambda_n)$ and right eigenvectors $v_1, \dots, v_n$ as the columns of $V$. Write the rows of $V^{-1}$ as $w_1^*, \dots, w_n^*$, where $w^*$ is the conjugate transpose, and call $\xi = V^{-1}x$, with entries $\xi_i = w_i^*x$, the modal coordinates.</p>
+</div>
+
+<div class="blk thm" id="thm-modal" data-name="Modal expansion">
+<p>Under these assumptions the $w_i$ are left eigenvectors, $w_i^*A = \lambda_iw_i^*$, normalized against the right ones by $w_i^*v_j = \delta_{ij}$ (biorthogonality), where $\delta_{ij}$ is the Kronecker delta. The modal coordinates satisfy $\dot\xi = \Lambda\xi$, and</p>
+<div class="eq">$$e^{tA} = \sum_{i=1}^n e^{\lambda_it}\,v_iw_i^*,\qquad x(t) = \sum_{i=1}^n \big(w_i^*x_0\big)\,e^{\lambda_it}\,v_i.$$</div>
+<p>The matrices $P_i = v_iw_i^*$ satisfy $P_i^2 = P_i$, $P_iP_j = 0$ for $i \neq j$, $\sum_iP_i = I$ and $AP_i = P_iA = \lambda_iP_i$: they are projectors, oblique in general (for distinct eigenvalues, the spectral projectors of $A$).</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Read row by row, $V^{-1}A = \Lambda V^{-1}$ gives $w_i^*A = \lambda_iw_i^*$, and $V^{-1}V = I$, entry by entry, gives $w_i^*v_j = \delta_{ij}$. Then $\dot\xi = V^{-1}Ax = V^{-1}AV\xi = \Lambda\xi$. Next, $e^{tA} = Ve^{t\Lambda}V^{-1}$ by part 4 of <a class="xref" href="#thm-expm"></a>, and $e^{t\Lambda} = \diag(e^{\lambda_it})$; expand the product as a sum of rank-one terms. The projector identities are $w_i^*v_j = \delta_{ij}$, $VV^{-1} = \sum_iv_iw_i^* = I$, and $AP_i = (Av_i)w_i^* = \lambda_iP_i = v_i(w_i^*A) = P_iA$. Finally $P_i$ fixes $v_i$ and annihilates the $v_j$, $j \neq i$, which for distinct eigenvalues span the other eigenspaces.</p>
+</div>
+
+<div class="blk pattern">
+<p>In the modal coordinates the system is $n$ uncoupled scalar equations $\dot\xi_i = \lambda_i\xi_i$ (<a class="xref" href="#thm-modal"></a>). The amplitudes $\xi_i(0) = w_i^*x_0$ are computed by the left eigenvectors, not by orthogonal projection onto the $v_i$; the two agree only for orthogonal eigenvectors:</p>
+</div>
+
+<div class="blk prop" id="prop-modal-orth" data-name="When amplitudes are orthogonal projections">
+<p>Under the assumptions of <a class="xref" href="#thm-modal"></a>, the amplitude $w_i^*x_0$ equals the coefficient $v_i^*x_0/\norm{v_i}^2$ of the orthogonal projection of $x_0$ onto the line spanned by $v_i$, for every $x_0 \in \C^n$ and every $i$, if and only if the eigenvectors $v_1, \dots, v_n$ are pairwise orthogonal. An eigenbasis with this property exists if and only if $A$ is normal, $AA^* = A^*A$; if the eigenvalues are distinct, every eigenbasis of a normal $A$ has it.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Agreement for every $x_0$ means $w_i = v_i/\norm{v_i}^2$ for every $i$; then $w_i^*v_j = 0$ for $i \neq j$ says $v_i^*v_j = 0$. Conversely, if the $v_i$ are pairwise orthogonal, the matrix with rows $v_i^*/\norm{v_i}^2$ maps each $v_j$ to the $j$-th standard basis vector, so it is a left inverse of $V$, hence equal to $V^{-1}$. An eigenbasis with orthogonal columns is $V = UD$ with $U$ unitary and $D$ positive diagonal, so $A = U\Lambda U^*$, which is normal; conversely a normal matrix has an orthonormal eigenbasis (<a href="ch04_svd.html#thm-normal">the normal-matrix theorem</a>, chapter 4). If the eigenvalues are distinct, each eigenspace is a line, so every eigenvector is a multiple of a column of that $U$.</p>
+</div>
+
+<div class="blk cex" id="cex-amplitudes">
+<p>Modal amplitudes can dwarf the state. Take $v_1 = (1, 0)^\T$, $v_2 = (1, \delta)^\T$ with small $\delta &gt; 0$, eigenvalues $-1$ and $-2$, and $x_0 = (0, 1)^\T$. Then $x_0 = (v_2 - v_1)/\delta$: amplitudes $\mp 1/\delta$ for a unit initial state. The modes cancel at $t = 0$, but they decay at different rates, so the cancellation fails at once and $x_1(t) = (e^{-2t} - e^{-t})/\delta$ reaches $-1/(4\delta)$ at $t = \ln 2$. This is the matrix $\begin{bmatrix}-1 & -1/\delta\\ 0 & -2\end{bmatrix}$, <a href="ch06_nonnormality.html#ex-transient">the transient-growth example</a> of chapter 6 with $w = -1/\delta$.</p>
+</div>
+
+<div class="blk prop" id="prop-real-pair" data-name="Real form of a complex pair">
+<p>Let $A$ be real with an eigenvalue $\lambda = \sigma + i\omega$, $\omega \neq 0$, and eigenvector $v = a + ib$ with $a, b \in \R^n$; here $i$ is the imaginary unit, which engineering texts write $j$. Then $a$ and $b$ are linearly independent, span an $A$-invariant plane, and</p>
+<div class="eq">$$A\begin{bmatrix}a & b\end{bmatrix} = \begin{bmatrix}a & b\end{bmatrix}\begin{bmatrix}\sigma & \omega\\ -\omega & \sigma\end{bmatrix},\qquad e^{t\begin{bmatrix}\sigma & \omega\\ -\omega & \sigma\end{bmatrix}} = e^{\sigma t}\begin{bmatrix}\cos\omega t & \sin\omega t\\ -\sin\omega t & \cos\omega t\end{bmatrix}.$$</div>
+<p>In the coordinates of the basis $(a, b)$, solutions in this plane rotate through the angle $\omega t$ while they are scaled by $e^{\sigma t}$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Separate real and imaginary parts of $A(a + ib) = (\sigma + i\omega)(a + ib)$: $Aa = \sigma a - \omega b$ and $Ab = \omega a + \sigma b$. If $a$ and $b$ were dependent, $v$ would be a complex multiple of a real vector, which would then be a real eigenvector of the real matrix $A$ for the non-real $\lambda$, impossible. The block equals $\sigma I + \omega K$ with $K = \begin{bmatrix}0 & 1\\ -1 & 0\end{bmatrix}$, $K^2 = -I$; the two terms commute, and $e^{\omega tK} = \cos(\omega t)I + \sin(\omega t)K$ by splitting the series into even and odd powers.</p>
+</div>
+
+<div class="blk probe">
+<p>Jordan blocks produce secular terms. For $\dot x = J_2(0)x$, <a class="xref" href="#prop-jordan-exp"></a> gives $x_1(t) = x_1(0) + t\,x_2(0)$ and $x_2(t) = x_2(0)$: a shear flow in which every point with $x_2(0) \neq 0$ drifts off linearly, although both eigenvalues are 0. For $J_k(\lambda)$ the solutions contain $t^je^{\lambda t}$ with $j &lt; k$. Combining the real form of complex pairs with Jordan blocks gives the real Jordan form $A = SJ_\R S^{-1}$ with real $S$:</p>
+</div>
+
+<div class="blk prop" id="prop-real-jordan" data-name="Real Jordan form">
+<p>Let $A \in \R^{n\times n}$. There is a real invertible $S$ such that $J_\R = S^{-1}AS$ is block diagonal, each block being either a Jordan block $J_k(\lambda)$ for a real eigenvalue $\lambda$ or, for a pair of eigenvalues $\sigma \pm i\omega$ with $\omega &gt; 0$, a real block of size $2k$,</p>
+<div class="eq">$$\begin{bmatrix}C & I_2 & & \\ & C & \ddots & \\ & & \ddots & I_2\\ & & & C\end{bmatrix},\qquad C = \begin{bmatrix}\sigma & \omega\\ -\omega & \sigma\end{bmatrix},$$</div>
+<p>with $I_2$ the $2\times 2$ identity. The blocks of size $2k$ for $\sigma \pm i\omega$ correspond one to one to the Jordan blocks $J_k(\sigma + i\omega)$ of $A$.</p>
+</div>
+<details class="proof"><summary>Proof sketch</summary><p>Start from a Jordan basis of $\C^n$ (<a href="ch03_eigenvalues.html#thm-jordan">the Jordan form theorem</a>, chapter 3). For a real eigenvalue the chains can be chosen real, because their construction only solves linear systems with the real matrices $(A - \lambda I)^j$. Since $A$ is real, the conjugate of a chain $v_1, \dots, v_k$ for $\lambda = \sigma + i\omega$, with $Av_1 = \lambda v_1$ and $Av_j = \lambda v_j + v_{j-1}$, is a chain for $\bar\lambda$. Writing $v_j = a_j + ib_j$ and separating real and imaginary parts as in <a class="xref" href="#prop-real-pair"></a> gives $A\begin{bmatrix}a_j & b_j\end{bmatrix} = \begin{bmatrix}a_j & b_j\end{bmatrix}C + \begin{bmatrix}a_{j-1} & b_{j-1}\end{bmatrix}$, with $a_0 = b_0 = 0$; and the $2k$ real vectors $a_j, b_j$ span the same complex space as the $2k$ vectors $v_j, \bar v_j$, so they are linearly independent.</p></details>
+<p class="src">Full statement and proof: Perko, ch. 1 (Jordan forms); Horn and Johnson, <i>Matrix Analysis</i>, 2nd ed., ch. 3.</p>
+
+<div class="blk def" id="def-subspaces" data-name="Stable, centre and unstable subspaces">
+<p>For real $A$, let $E^s$ ($E^c$, $E^u$) be the set of real vectors in the sum of the generalized eigenspaces $\Null\big((A - \lambda I)^n\big)$ over the eigenvalues with $\Re\lambda &lt; 0$ ($= 0$, $&gt; 0$), where $\Null$ denotes the null space.</p>
+</div>
+
+<div class="blk thm" id="thm-subspaces" data-name="Invariant splitting">
+<p>$\R^n = E^s \oplus E^c \oplus E^u$, each subspace is invariant under $A$ and under every $e^{tA}$, and $\dim E^s$ is the number of eigenvalues with negative real part counted with algebraic multiplicity (similarly for $E^c$, $E^u$). Moreover</p>
+<div class="eq">$$E^s = \{x_0 : e^{tA}x_0 \to 0 \text{ as } t \to +\infty\},\qquad E^u = \{x_0 : e^{tA}x_0 \to 0 \text{ as } t \to -\infty\}.$$</div>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof sketch.</span> The splitting and invariance come from the real Jordan form (<a class="xref" href="#prop-real-jordan"></a>): generalized eigenspaces are invariant under $A$, hence under $e^{tA}$, which is a polynomial in $A$ (<a class="xref" href="#prop-poly"></a>); they span $\C^n$, and complex conjugation maps the one for $\lambda$ onto the one for $\bar\lambda$, so their real vectors form real subspaces of the stated dimensions. In a Jordan basis, components in blocks with $\Re\lambda &lt; 0$ decay like $t^je^{t\Re\lambda}$. In a block with $\Re\lambda \ge 0$, let $y_j$ be the last nonzero coordinate of $y$; then $(e^{tJ}y)_j = e^{\lambda t}y_j$, whose modulus does not decrease, so the solution does not tend to 0. Hence $x(t) \to 0$ exactly when the components outside $E^s$ vanish. Apply the same argument to $-A$ for $E^u$.</p>
+</div>
+
+<figure class="viz" id="viz-modes">
+  <figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">Modes and the exponential</span><span class="viz-sub">Drag $x_0$ and move $t$. Left: the trajectory, the modal basis (eigenvectors, the real and imaginary parts of a complex eigenvector, or an eigenvector with a generalized eigenvector) and the decomposition of $x(t)$ along it. Right: the coordinates $x_1, x_2$ and the modal coordinates $\xi = V^{-1}x$.</span></figcaption>
+  <div class="viz-plots cols-2">
+    <div class="plot" id="md-phase"><div class="plot-cap">Phase plane; the arrows add up to $x(t)$</div></div>
+    <div class="plot" id="md-time"><div class="plot-cap" id="md-legend"></div></div>
+  </div>
+  <div class="viz-controls" id="md-controls"></div>
+  <div class="viz-notes">
+    <div><h5>Try this</h5><ol>
+      <li>In <i>Stable node</i>, put $x_0$ on or very near one eigenvector line: the other modal coordinate stays (nearly) 0 for all time and the trajectory stays on the line.</li>
+      <li>Put $x_0$ between the two lines and play. The fast mode (orange) dies first, so the trajectory turns onto the slow eigenvector (blue) before it reaches 0.</li>
+      <li>In <i>Saddle</i>, start near the stable line: the state first approaches 0, then leaves along the unstable line. Only $x_0$ exactly on the stable line converges, since that line is $E^s$ (<a class="xref" href="#thm-subspaces"></a>).</li>
+      <li>In <i>Degenerate node</i>, the modal coordinate $\xi_1$ is $e^{\lambda t}(\xi_1(0) + t\,\xi_2(0))$: it can rise before decaying although $\lambda &lt; 0$.</li>
+    </ol></div>
+    <div><h5>What to notice</h5><p>The standard coordinates $x_1, x_2$ mix the modes; the modal coordinates do not: they are pure exponentials, damped rotations or, for a Jordan block, $te^{\lambda t}$ terms (<a class="xref" href="#thm-modal"></a>, <a class="xref" href="#prop-real-pair"></a>, <a class="xref" href="#prop-jordan-exp"></a>). The readout compares $e^{tA}x_0$, computed by scaling and squaring, with $V e^{tJ_\R}\xi(0)$ assembled from the modes.</p></div>
+  </div>
+</figure>
+</section>
+
+<section class="sec" id="s-planar">
+<h2>Planar flows: the trace–determinant atlas</h2>
+
+<div class="blk prob"><p>Classify all flows $\dot x = Ax$ with $A \in \R^{2\times 2}$: up to linear changes of coordinates, and up to continuous ones.</p></div>
+
+<p>With $\tau = \tr A$ and $\Delta = \det A$, the characteristic polynomial is $\lambda^2 - \tau\lambda + \Delta$, so (<a href="ch03_eigenvalues.html#thm-2x2">the $2\times 2$ eigenvalue theorem</a>, chapter 3)</p>
+<div class="eq">$$\lambda_\pm = \frac{\tau}{2} \pm \sqrt{\frac{\tau^2}{4} - \Delta},\qquad \lambda_+ + \lambda_- = \tau,\qquad \lambda_+\lambda_- = \Delta.$$</div>
+<p>The pair $(\tau, \Delta)$ is a pair of similarity invariants (<a href="ch03_eigenvalues.html#prop-similar">similarity invariants</a>, chapter 3) that determines the eigenvalues; the parabola $\Delta = \tau^2/4$ separates real from complex eigenvalues. Region by region:</p>
+
+<div class="blk prop" id="prop-td" data-name="Trace–determinant classification">
+<p>Let $A \in \R^{2\times 2}$ with $\tau = \tr A$ and $\Delta = \det A$.</p>
+<ol>
+<li>If $\Delta &lt; \tau^2/4$, the eigenvalues are real and distinct, and each has an eigenvector line, invariant under the flow. They have opposite signs if $\Delta &lt; 0$, the sign of $\tau$ if $\Delta &gt; 0$, and they are $0$ and $\tau$ if $\Delta = 0$.</li>
+<li>If $\Delta = \tau^2/4$, the eigenvalue $\tau/2$ is double, and either $A = \frac\tau2 I$ or $A$ has exactly one eigenvector line.</li>
+<li>If $\Delta &gt; \tau^2/4$, the eigenvalues are $\frac\tau2 \pm i\omega$ with $\omega = \sqrt{\Delta - \tau^2/4} &gt; 0$, no line is invariant under $A$, and $e^{tA} = e^{\tau t/2}S\,U(\omega t)\,S^{-1}$ for a real invertible $S$, where $U(\theta) = \begin{bmatrix}\cos\theta & \sin\theta\\ -\sin\theta & \cos\theta\end{bmatrix}$. Hence $e^{-\tau t/2}x(t)$ runs around an ellipse centred at $0$ with period $2\pi/\omega$, and the polar angle of every solution $x(t) \neq 0$ changes monotonically, by $2\pi$ in each period; for $\tau = 0$ the orbits are these ellipses.</li>
+<li>Both eigenvalues have negative real part if and only if $\tau &lt; 0 &lt; \Delta$, and both have positive real part if and only if $\tau &gt; 0$ and $\Delta &gt; 0$. No eigenvalue lies on the imaginary axis ($A$ is hyperbolic, <a class="xref" href="#def-conjugacy"></a>) if and only if $\Delta &lt; 0$, or $\Delta &gt; 0$ and $\tau \neq 0$; then $\dim E^s$ is $1$ if $\Delta &lt; 0$, $2$ if $\tau &lt; 0 &lt; \Delta$, and $0$ if $\tau &gt; 0$ and $\Delta &gt; 0$.</li>
+<li>If $\Delta = 0$ and $A \neq 0$, the equilibria form the line $\Null(A)$. If moreover $\tau = 0$, then $A^2 = 0$ and $e^{tA} = I + tA$, a shear along this line.</li>
+</ol>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Use $\lambda_\pm$ above. (1) For $\Delta &lt; \tau^2/4$ the eigenvalues are real and distinct, so each eigenspace is a line, which $e^{tA}v = e^{\lambda t}v$ keeps invariant. The signs follow from the product $\Delta$ and the sum $\tau$; if $\Delta &gt; 0$, then $\tau^2 &gt; 4\Delta &gt; 0$, so $\tau \neq 0$. (2) If $A \neq \frac\tau2 I$, then $A - \frac\tau2 I$ is nonzero and singular, of rank 1, and its null space is the only eigenvector line. (3) An invariant line is spanned by a real eigenvector, whose eigenvalue would be real. For an eigenvector $a + ib$ of $\frac\tau2 + i\omega$, <a class="xref" href="#prop-real-pair"></a> gives the formula with $S = \begin{bmatrix}a & b\end{bmatrix}$. The rotation $U(\omega t)$ moves $y = S^{-1}x_0$ around a circle centred at $0$ at constant angular speed, and $S$ maps that circle onto an ellipse centred at $0$. The planar cross product $u \times v = u_1v_2 - u_2v_1$ satisfies $(Su)\times(Sv) = \det S\,(u \times v)$, so the angular velocity $(x \times \dot x)/\norm{x}^2$ of $x(t)$ has the constant sign of $-\omega\det S$, and the ellipse winds once around $0$. (4) If $\Delta &lt; 0$ one eigenvalue is positive, and if $\Delta = 0$ one is $0$. If $\Delta &gt; 0$, cases (1) to (3) show that both real parts have the sign of $\tau$, and are $0$ when $\tau = 0$. $\dim E^s$ counts the eigenvalues with negative real part (<a class="xref" href="#thm-subspaces"></a>). (5) A nonzero singular $2\times 2$ matrix has rank 1, so its null space, the set of equilibria, is a line. If also $\tau = 0$, the characteristic polynomial is $\lambda^2$, so $A^2 = 0$ by <a href="ch03_eigenvalues.html#thm-ch">the Cayley–Hamilton theorem</a> (chapter 3), and the exponential series stops after two terms.</p>
+</div>
+
+<p>The table collects <a class="xref" href="#prop-td"></a> and names the portraits. Its stability column uses the definitions of <a class="xref" href="#s-stability"></a> and is proved there as <a class="xref" href="#cor-planar-stab"></a>.</p>
+
+<div class="tbl-wrap"><table class="tbl">
+  <thead><tr><th>Region of the $(\tau, \Delta)$ plane</th><th>Eigenvalues</th><th>Phase portrait</th><th>Stability</th><th>$\dim E^s$</th></tr></thead>
+  <tbody>
+    <tr><td>$\Delta &lt; 0$</td><td>real, opposite signs</td><td>saddle</td><td>unstable</td><td>1</td></tr>
+    <tr><td>$0 &lt; \Delta &lt; \tau^2/4$, $\tau &lt; 0$</td><td>real, both negative</td><td>stable node</td><td>asymptotically stable</td><td>2</td></tr>
+    <tr><td>$\Delta &gt; \tau^2/4$, $\tau &lt; 0$</td><td>complex, $\Re\lambda &lt; 0$</td><td>stable spiral (focus)</td><td>asymptotically stable</td><td>2</td></tr>
+    <tr><td>$\Delta &gt; 0$, $\tau = 0$</td><td>$\pm i\sqrt{\Delta}$</td><td>centre: closed elliptical orbits</td><td>stable, not asymptotically</td><td>not hyperbolic</td></tr>
+    <tr><td>$\Delta &gt; \tau^2/4$, $\tau &gt; 0$</td><td>complex, $\Re\lambda &gt; 0$</td><td>unstable spiral</td><td>unstable</td><td>0</td></tr>
+    <tr><td>$0 &lt; \Delta &lt; \tau^2/4$, $\tau &gt; 0$</td><td>real, both positive</td><td>unstable node</td><td>unstable</td><td>0</td></tr>
+    <tr><td>$\Delta = \tau^2/4 \neq 0$</td><td>repeated, $\lambda = \tau/2$</td><td>star ($A = \lambda I$) or degenerate node (Jordan block)</td><td>by the sign of $\tau$</td><td>2 or 0</td></tr>
+    <tr><td>$\Delta = 0$</td><td>$0$ and $\tau$</td><td>a line of equilibria (a shear flow if $\tau = 0$, $A \neq 0$; every point is an equilibrium if $A = 0$)</td><td>stable if $\tau &lt; 0$ or $A = 0$; otherwise unstable</td><td>not hyperbolic</td></tr>
+  </tbody>
+</table></div>
+
+<p>A linear change of coordinates acts on $A$ by similarity, so classifying flows up to linear changes of coordinates is classifying matrices up to similarity:</p>
+
+<div class="blk prop" id="prop-linear-conj" data-name="Linear conjugacy is similarity">
+<p>Let $A, B \in \R^{n\times n}$ and let $S \in \R^{n\times n}$ be invertible. Then $Se^{tA} = e^{tB}S$ for all $t \in \R$, that is, $y = Sx$ maps the solutions of $\dot x = Ax$ onto those of $\dot y = By$, if and only if $B = SAS^{-1}$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> If $B = SAS^{-1}$, part 4 of <a class="xref" href="#thm-expm"></a> gives $e^{tB} = Se^{tA}S^{-1}$. Conversely, differentiating $Se^{tA} = e^{tB}S$ at $t = 0$ (part 1) gives $SA = BS$.</p>
+</div>
+
+<div class="blk thm" id="thm-planar-forms" data-name="Planar normal forms">
+<p>Every $A \in \R^{2\times 2}$ is similar, through a real invertible matrix, to exactly one of</p>
+<div class="eq">$$\begin{bmatrix}\lambda_1 & 0\\ 0 & \lambda_2\end{bmatrix}\ (\lambda_1 \ge \lambda_2 \text{ real}),\qquad \begin{bmatrix}\lambda & 1\\ 0 & \lambda\end{bmatrix}\ (\lambda \text{ real}),\qquad \begin{bmatrix}\sigma & \omega\\ -\omega & \sigma\end{bmatrix}\ (\omega &gt; 0).$$</div>
+<p>Off the parabola $\Delta = \tau^2/4$, the invariants $(\tau, \Delta)$ determine the similarity class; on it, $\lambda I$ and the Jordan block share $(\tau, \Delta) = (2\lambda, \lambda^2)$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> If $\tau^2/4 &gt; \Delta$, the two real eigenvalues are distinct and their eigenvectors form a basis. If $\tau^2/4 &lt; \Delta$, use <a class="xref" href="#prop-real-pair"></a> for the eigenvalue with $\omega &gt; 0$. If $\tau^2/4 = \Delta$, the eigenvalue $\lambda = \tau/2$ is repeated; either $A = \lambda I$, or $B = A - \lambda I \neq 0$ satisfies $B^2 = 0$ (<a href="ch03_eigenvalues.html#thm-ch">Cayley–Hamilton</a>, chapter 3). In the second case pick $u$ with $Bu \neq 0$; the vectors $Bu$ and $u$ are independent, since $u = cBu$ would give $Bu = cB^2u = 0$, and the basis $(Bu, u)$ gives the Jordan block. The forms are not similar to one another: they have different eigenvalues, or (on the parabola) differ in whether $A - \lambda I = 0$.</p>
+</div>
+
+<div class="blk probe">
+<p>Within one similarity class the eigenvalues are fixed but the eigenvectors are not: the angle between the two eigenvector lines of a node, or the eccentricity and tilt of the elliptical orbits of a centre, can be anything, because conjugating by $S$ moves the eigenvectors to $Sv_i$. Orthogonal changes of coordinates preserve lengths and angles, so they keep the angle and the eccentricity, though not the tilt; together with $\tau$ and $\Delta$, one more number, the Frobenius norm, classifies $2\times 2$ matrices up to orthogonal similarity (<a class="xref" href="#prop-orth2"></a>). The figure's sliders $\theta$ and $k$ move within a class.</p>
+</div>
+
+<div class="blk prop" id="prop-orth2" data-name="Orthogonal similarity in the plane">
+<p>Let $A, B \in \R^{2\times 2}$, and let $\norm{A}_F = \big(\sum_{i,j}a_{ij}^2\big)^{1/2}$ be the Frobenius norm. There is a real orthogonal $U$ with $B = UAU^\T$ if and only if $\tr A = \tr B$, $\det A = \det B$ and $\norm{A}_F = \norm{B}_F$. If $A$ has real eigenvalues $\lambda_1 \neq \lambda_2$, the angle $\varphi \in (0, \pi/2]$ between its two eigenvector lines satisfies</p>
+<div class="eq">$$\cot\varphi = \frac{\sqrt{\norm{A}_F^2 - \lambda_1^2 - \lambda_2^2}}{\abs{\lambda_1 - \lambda_2}}.$$</div>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> The three quantities are unchanged by $A \mapsto UAU^\T$, since $\norm{A}_F^2 = \tr(A^\T A)$. Conversely, write $A = \frac\tau2 I + \begin{bmatrix}a & b\\ b & -a\end{bmatrix} + cK$ with $\tau = \tr A$, $K = \begin{bmatrix}0 & 1\\ -1 & 0\end{bmatrix}$ and real $a, b, c$. Conjugation by the rotation through an angle $\theta$ fixes $I$ and $K$ and rotates the vector $(a, b)$ through $2\theta$; conjugation by the reflection $\diag(1, -1)$ maps $(a, b, c)$ to $(a, -b, -c)$. So $A$ is orthogonally similar to $\frac\tau2 I + r\diag(1, -1) + \abs c\,K$ with $r = \sqrt{a^2 + b^2}$. Since $\det A = \tau^2/4 - r^2 + c^2$ and $\norm{A}_F^2 = \tau^2/2 + 2r^2 + 2c^2$, the three invariants determine $r$ and $\abs c$, hence this normal form, so two matrices with the same invariants are orthogonally similar to the same normal form. For the angle, take an orthonormal basis whose first vector is an eigenvector for $\lambda_1$. In it $A$ becomes $\begin{bmatrix}\lambda_1 & s\\ 0 & \lambda_2\end{bmatrix}$ with $s^2 = \norm{A}_F^2 - \lambda_1^2 - \lambda_2^2$, whose eigenvector lines are spanned by $(1, 0)^\T$ and $(s, \lambda_2 - \lambda_1)^\T$, and the orthogonal change of basis preserves the angle.</p>
+</div>
+
+<div class="blk def" id="def-conjugacy" data-name="Topological conjugacy">
+<p>The flows of $\dot x = Ax$ and $\dot y = By$ on $\R^n$ are <dfn>topologically conjugate</dfn> if there is a homeomorphism $h: \R^n \to \R^n$ (a continuous bijection with continuous inverse) such that $h(e^{tA}x) = e^{tB}h(x)$ for all $x$ and $t$. The matrix $A$ is <dfn>hyperbolic</dfn> if no eigenvalue lies on the imaginary axis.</p>
+</div>
+
+<div class="blk thm" id="thm-topological" data-name="Topological classification of hyperbolic linear flows">
+<p>If $A, B \in \R^{n\times n}$ are hyperbolic, their flows are topologically conjugate if and only if $\dim E^s(A) = \dim E^s(B)$. There are exactly $n + 1$ classes; in the plane, sources, saddles and sinks.</p>
+</div>
+<details class="proof"><summary>Proof idea</summary><p>Suppose $A$ is stable, with all eigenvalues in the open left half-plane, and let $V(x) = x^\T Px$ be a Lyapunov function from <a class="xref" href="#thm-lyapunov"></a>. Each nonzero trajectory crosses the ellipsoid $\{V = 1\}$ exactly once, transversally, at a time $T(x)$ that depends continuously on $x$; mapping $x$ to $e^{T(x)}$ times the radial projection of $e^{T(x)A}x$ onto the unit sphere conjugates the flow to that of $\dot y = -y$. A hyperbolic flow splits into its parts on $E^s$ and $E^u$, each handled this way. Conversely, a conjugacy maps $E^s(A)$, the set of points attracted to the equilibrium, homeomorphically onto $E^s(B)$, and homeomorphic Euclidean spaces have equal dimension.</p></details>
+<p class="src">Proof for the planar case: Hirsch, Smale and Devaney, ch. 4 (dynamical classification of planar systems); the same construction works in $\R^n$.</p>
+
+<div class="blk lem" id="lem-no-periodic" data-name="Hyperbolic flows have no cycles">
+<p>Let $A \in \R^{n\times n}$ be hyperbolic. Then $e^{TA}x_0 \neq x_0$ for every $x_0 \neq 0$ and every $T \neq 0$: the flow has no periodic orbit other than the equilibrium $0$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> If $e^{TA}x_0 = x_0$ with $x_0 \neq 0$, then $1$ is an eigenvalue of $e^{TA}$, so $e^{T\lambda} = 1$ for an eigenvalue $\lambda$ of $A$ (part 5 of <a class="xref" href="#thm-expm"></a>). Then $\lambda \in \frac{2\pi i}{T}\Z$, with $\Z$ the integers, lies on the imaginary axis, which hyperbolicity excludes.</p>
+</div>
+
+<div class="blk cex" id="cex-topology">
+<p>Topology forgets rotation. The stable node $\diag(-1, -2)$ and the stable spiral $\begin{bmatrix}-1 & 3\\ -3 & -1\end{bmatrix}$ are topologically conjugate by <a class="xref" href="#thm-topological"></a> (both have $\dim E^s = 2$), although no linear change of coordinates relates them, since their eigenvalues differ (<a class="xref" href="#prop-linear-conj"></a>). The saddles $\diag(1, -1)$ and $\diag(5, -0.1)$ are conjugate too. In the other direction, the centre $A = \begin{bmatrix}0 & 1\\ -1 & 0\end{bmatrix}$ is conjugate to no hyperbolic flow $e^{tB}$. A conjugacy $h$ would fix $0$, the only equilibrium of $B$ (invertible, being hyperbolic), because $e^{tB}h(0) = h(e^{tA}0) = h(0)$. For $x \neq 0$ the orbit of the centre through $x$ is periodic, so $e^{tB}h(x) = h(e^{tA}x)$ would be a periodic orbit through $h(x) \neq 0$, which <a class="xref" href="#lem-no-periodic"></a> excludes.</p>
+</div>
+
+<div class="blk pattern">
+<p>The coarser the equivalence, the fewer the invariants. Similarity keeps continuous invariants (the eigenvalues and Jordan structure), topological conjugacy of hyperbolic flows keeps one integer. Hyperbolic flows are also structurally stable, and centres are not (<a class="xref" href="#prop-structural"></a>, after the table). <a href="ch13_neural_bridges.html#thm-hg">The Hartman–Grobman theorem</a> (chapter 13) carries the hyperbolic classification to equilibria of nonlinear systems.</p>
+</div>
+<div class="tbl-wrap"><table class="tbl">
+  <thead><tr><th>Equivalence</th><th>Allowed change of coordinates</th><th>Complete invariants (planar)</th><th>Classes</th></tr></thead>
+  <tbody>
+    <tr><td>Orthogonal conjugacy</td><td>$x \mapsto Ux$, $U$ orthogonal</td><td>$\tr A$, $\det A$ and the Frobenius norm $\norm{A}_F$, which fixes the eigenvector geometry (<a class="xref" href="#prop-orth2"></a>)</td><td>a 3-parameter family</td></tr>
+    <tr><td>Similarity (linear conjugacy)</td><td>$x \mapsto Sx$, $S$ invertible</td><td>eigenvalues; on the parabola also whether $A = \lambda I$ (<a class="xref" href="#thm-planar-forms"></a>)</td><td>a 2-parameter family</td></tr>
+    <tr><td>Topological conjugacy, hyperbolic $A$</td><td>$x \mapsto h(x)$, $h$ a homeomorphism</td><td>$\dim E^s$ (<a class="xref" href="#thm-topological"></a>)</td><td>3 (in $\R^n$: $n + 1$)</td></tr>
+  </tbody>
+</table></div>
+
+<div class="blk prop" id="prop-structural" data-name="Structural stability of hyperbolic flows">
+<p>Let $A \in \R^{n\times n}$ be hyperbolic. There is $\eps &gt; 0$ such that every $B \in \R^{n\times n}$ with $\norm{B - A} &lt; \eps$ is hyperbolic with $\dim E^s(B) = \dim E^s(A)$, so that the flows of $A$ and $B$ are topologically conjugate: hyperbolic flows are structurally stable among linear flows. A centre $A \in \R^{2\times 2}$, with $\tr A = 0 &lt; \det A$, is not: every $B$ close enough to $A$ with $\tr B \neq 0$ is a spiral, hyperbolic and not conjugate to $A$, and such $B$ exist arbitrarily close to $A$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Let $\delta = \min_i\abs{\Re\lambda_i(A)} &gt; 0$. The eigenvalues depend continuously on the entries, as an unordered list with multiplicities (<a href="ch03_eigenvalues.html#prop-continuity">continuity of the eigenvalues</a>, chapter 3; Horn and Johnson, 2nd ed., Appendix D): for $\norm{B - A}$ small enough, the eigenvalues of $B$ can be listed as $\mu_1, \dots, \mu_n$ with $\abs{\mu_i - \lambda_i(A)} &lt; \delta$. Then $\Re\mu_i$ has the sign of $\Re\lambda_i(A)$, so $B$ is hyperbolic with the same $\dim E^s$, and <a class="xref" href="#thm-topological"></a> gives the conjugacy. For the centre, $\det B - (\tr B)^2/4$ depends continuously on $B$ and equals $\det A &gt; 0$ at $B = A$, so it stays positive near $A$, and by <a class="xref" href="#prop-td"></a> such a $B$ with $\tr B \neq 0$ is a spiral, hence hyperbolic. It is not conjugate to the centre, by the argument of <a class="xref" href="#cex-topology"></a>. Examples are $A + sI$ for small $s \neq 0$.</p>
+</div>
+
+<figure class="viz" id="viz-atlas">
+  <figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">The trace–determinant atlas</span><span class="viz-sub">Drag the point in the $(\tau, \Delta)$ plane (it snaps to the axes and to the parabola). The right panel shows the flow of $A = SJS^{-1}$, where $J$ is the normal form of <a class="xref" href="#thm-planar-forms"></a> and $S$ rotates by $\theta$ and shears by $k$.</span></figcaption>
+  <div class="viz-plots cols-2">
+    <div class="plot" id="td-plane"><div class="plot-cap">Trace–determinant plane: green stable, red unstable; blue axis: centres</div></div>
+    <div class="plot" id="td-phase"><div class="plot-cap">Phase portrait: green and red lines are stable and unstable eigenvector directions</div></div>
+  </div>
+  <div class="viz-controls" id="td-controls"></div>
+  <div class="viz-notes">
+    <div><h5>Try this</h5><ol>
+      <li>Drag the point from the stable node region onto the parabola and then into the stable spirals: on the parabola only one eigenvector line is left (a degenerate node), past it there is none, and the trajectories start to wind (<a class="xref" href="#prop-td"></a>).</li>
+      <li>Drag along the positive $\Delta$ axis ($\tau = 0$): the orbits close into ellipses. Move $\tau$ slightly either way and they open into spirals: the centre is not structurally stable (<a class="xref" href="#prop-structural"></a>).</li>
+      <li>Cross the horizontal axis $\Delta = 0$ into the saddles: one eigenvalue passes through 0 (a line of equilibria) and changes sign.</li>
+      <li>Fix a point and move $\theta$ and $k$: the eigenvalues and the region do not change, only the geometry of the portrait.</li>
+    </ol></div>
+    <div><h5>What to notice</h5><p>The region, which depends only on $(\tau, \Delta)$, decides the qualitative portrait (<a class="xref" href="#prop-td"></a>); within a region the shape sliders change the geometry of the portrait but not the similarity class (<a class="xref" href="#thm-planar-forms"></a>). Nodes and spirals look different but are topologically the same sink (<a class="xref" href="#thm-topological"></a>). Along a path in the plane, $\dim E^s$ changes only where the path crosses $\Delta = 0$, or $\tau = 0$ with $\Delta &gt; 0$ (part 4 of <a class="xref" href="#prop-td"></a>).</p></div>
+  </div>
+</figure>
+</section>
+
+<section class="sec" id="s-stability">
+<h2>Stability in continuous and discrete time</h2>
+
+<div class="blk def" id="def-stability" data-name="Stability of the equilibrium 0">
+<p>The equilibrium $0$ of $\dot x = Ax$ (or of $x_{k+1} = Ax_k$) is <dfn>stable</dfn> (in the sense of Lyapunov) if for every $\eps &gt; 0$ there is $\delta &gt; 0$ such that $\norm{x_0} &lt; \delta$ (Euclidean norm) implies $\norm{x(t)} &lt; \eps$ for all $t \ge 0$; <dfn>asymptotically stable</dfn> if it is stable and $x(t) \to 0$ for every $x_0$; <dfn>exponentially stable</dfn> if there are $M \ge 1$ and $\beta &gt; 0$ with $\norm{x(t)} \le Me^{-\beta t}\norm{x_0}$ for all $x_0$ and $t \ge 0$. A matrix is <dfn>Hurwitz</dfn> if $\alpha(A) &lt; 0$ and <dfn>Schur stable</dfn> if its spectral radius $\rho(A) = \max_i\abs{\lambda_i}$ is less than 1.</p>
+</div>
+<p>For linear systems these are properties of the matrices $e^{tA}$, and a local property is a global one:</p>
+
+<div class="blk prop" id="prop-stab-norm" data-name="Stability as boundedness of the flow">
+<p>Let $A \in \F^{n\times n}$, where $\F$ is $\R$ or $\C$, with states in $\F^n$.</p>
+<ol>
+<li>The equilibrium $0$ of $\dot x = Ax$ is stable if and only if $\sup_{t\ge0}\norm{e^{tA}} &lt; \infty$.</li>
+<li>If $e^{tA}x_0 \to 0$ for every $x_0$ in some ball around $0$, then $e^{tA} \to 0$ as $t \to \infty$; hence $x(t) \to 0$ for every $x_0 \in \F^n$, and $0$ is asymptotically stable.</li>
+</ol>
+<p>The same holds for $x_{k+1} = Ax_k$, with $A^k$ in place of $e^{tA}$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (1) If $\norm{e^{tA}} \le M$ for all $t \ge 0$, then $\delta = \eps/M$ works in <a class="xref" href="#def-stability"></a>. Conversely, let $\delta$ belong to $\eps = 1$. For $x \neq 0$ the state $x_0 = \frac\delta2 x/\norm{x}$ gives $\norm{e^{tA}x} = \frac{2\norm{x}}{\delta}\norm{e^{tA}x_0} &lt; \frac2\delta\norm{x}$, so $\norm{e^{tA}} \le 2/\delta$. (2) If the ball has radius $r$, the vectors $e^{tA}(\frac r2e_j)$, with $e_j$ the standard basis vectors, tend to $0$; they are multiples of the columns of $e^{tA}$, so $e^{tA} \to 0$. A continuous function of $t \ge 0$ with limit $0$ is bounded, so $0$ is stable by (1). The discrete-time proofs are the same.</p>
+</div>
+
+<div class="blk thm" id="thm-ct-stability" data-name="Eigenvalue tests in continuous time">
+<p>Let $A \in \C^{n\times n}$.</p>
+<ol>
+<li>$0$ is stable if and only if $\alpha(A) \le 0$ and every eigenvalue on the imaginary axis is semisimple (all its Jordan blocks are $1\times 1$).</li>
+<li>The following are equivalent: $0$ is asymptotically stable; it is exponentially stable; $A$ is Hurwitz. Every $\beta &lt; -\alpha(A)$ is then an admissible decay rate.</li>
+</ol>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> By <a class="xref" href="#prop-stab-norm"></a>, stability means that $\norm{e^{tA}}$ is bounded on $t \ge 0$, and asymptotic stability that $e^{tA} \to 0$. With a Jordan form $A = SJS^{-1}$, $\kappa(S)^{-1}\norm{e^{tJ}} \le \norm{e^{tA}} \le \kappa(S)\norm{e^{tJ}}$, where $\kappa(S) = \norm{S}\norm{S^{-1}}$, so it suffices to study each block. By <a class="xref" href="#prop-jordan-exp"></a> the entries of $e^{tJ_k(\lambda)}$ have moduli $\frac{t^j}{j!}e^{t\Re\lambda}$ for $0 \le j \le k-1$. They are bounded on $t \ge 0$ if and only if $\Re\lambda &lt; 0$, or $\Re\lambda = 0$ and $k = 1$; they tend to 0 if and only if $\Re\lambda &lt; 0$; and in that case $t^je^{t\Re\lambda} \le C_\beta e^{-\beta t}$ for every $\beta &lt; -\Re\lambda$, with a constant $C_\beta$. So asymptotic stability is equivalent to $\alpha(A) &lt; 0$, which gives the exponential bound for every $\beta &lt; -\alpha(A)$, and exponential stability implies asymptotic stability.</p>
+</div>
+
+<div class="blk cor" id="cor-planar-stab" data-name="Planar stability from trace and determinant">
+<p>Let $A \in \R^{2\times 2}$ with $\tau = \tr A$ and $\Delta = \det A$. The equilibrium $0$ of $\dot x = Ax$ is asymptotically stable if and only if $\tau &lt; 0 &lt; \Delta$; it is stable but not asymptotically stable if and only if $\tau = 0 &lt; \Delta$, or $\Delta = 0 &gt; \tau$, or $A = 0$; in all other cases it is unstable.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> By part 4 of <a class="xref" href="#prop-td"></a>, $\alpha(A) &lt; 0$ exactly when $\tau &lt; 0 &lt; \Delta$, which gives the first claim by part 2 of <a class="xref" href="#thm-ct-stability"></a>. By the same proposition, $\alpha(A) = 0$ exactly when $\tau = 0 &lt; \Delta$, with the distinct, hence semisimple, eigenvalues $\pm i\sqrt\Delta$, or when $\Delta = 0$ and $\tau \le 0$, with the eigenvalues $0$ and $\tau$. If $\Delta = 0 &gt; \tau$, the eigenvalue $0$ is simple; if $\Delta = \tau = 0$, it is double, and semisimple only for $A = 0$. Part 1 of <a class="xref" href="#thm-ct-stability"></a> therefore gives stability exactly in the three listed cases, and instability in the others, which have $\alpha(A) &gt; 0$ or are the shears $\Delta = \tau = 0 \neq A$.</p>
+</div>
+
+<div class="blk cex" id="cex-marginal">
+<p>$\alpha(A) \le 0$ is not enough for stability. $J_2(0)$ has both eigenvalues at 0, yet $x_1(t) = x_1(0) + t\,x_2(0)$ is unbounded. The oscillator $\begin{bmatrix}0 & 1\\ -1 & 0\end{bmatrix}$, with semisimple eigenvalues $\pm i$, is stable but not asymptotically stable. Stability on the imaginary axis depends on the Jordan structure, which arbitrarily small perturbations can change (<a href="ch06_nonnormality.html#thm-jordan-pert">perturbing a Jordan block</a>, chapter 6), and it is fragile: for every $\eps &gt; 0$ the oscillator plus $\eps I$ has the eigenvalues $\eps \pm i$ and is an unstable spiral.</p>
+</div>
+
+<div class="blk thm" id="thm-dt-stability" data-name="Eigenvalue tests in discrete time">
+<p>For $x_{k+1} = Ax_k$: $0$ is stable if and only if $\rho(A) \le 1$ and every eigenvalue of modulus 1 is semisimple; and the following are equivalent: $A^kx_0 \to 0$ for every $x_0$; $\norm{A^k} \le Mr^k$ for some $M \ge 1$ and $0 &lt; r &lt; 1$; $\rho(A) &lt; 1$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> As for <a class="xref" href="#thm-ct-stability"></a>, using the discrete-time form of <a class="xref" href="#prop-stab-norm"></a> and $J_k(\lambda)^m$ in place of $e^{tJ_k(\lambda)}$: its entries are the binomial terms $\binom{m}{j}\lambda^{m-j}$ for $0 \le j \le k - 1$ (<a href="ch03_eigenvalues.html#prop-jpow">powers of a Jordan block</a>, chapter 3), whose moduli are polynomials in $m$ of degree $j$ times $\abs{\lambda}^{m-j}$.</p>
+</div>
+
+<div class="blk prop" id="prop-sampling" data-name="Sampling maps the left half-plane into the unit disk">
+<p>If $x(t)$ solves $\dot x = Ax$, the samples $x_k = x(kh)$ with period $h &gt; 0$ satisfy $x_{k+1} = e^{hA}x_k$. The eigenvalues of $e^{hA}$ are $z = e^{h\lambda}$ for $\lambda \in \Lambda(A)$, the spectrum of $A$, and $\abs{e^{h\lambda}} = e^{h\Re\lambda}$. Hence $A$ is Hurwitz if and only if $e^{hA}$ is Schur stable, for every $h &gt; 0$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> $x((k+1)h) = e^{(k+1)hA}x_0 = e^{hA}x(kh)$ by the semigroup property, and part 5 of <a class="xref" href="#thm-expm"></a> gives the eigenvalues.</p>
+</div>
+
+<figure class="wide" aria-label="The sampling map from the s-plane to the z-plane">
+<svg viewBox="0 0 700 336" role="img" aria-label="Left: the s-plane with the shaded left half-plane, vertical lines and horizontal lines in the strip of height two pi over h. Right: the z-plane with the shaded unit disk, circles and rays that are their images under z equals e to the s h." style="width:100%;height:auto;max-width:820px;display:block;margin:6px 0 4px">
+  <defs><marker id="sm-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--ink-2)"/></marker></defs>
+  <text x="170" y="16" text-anchor="middle" font-family="var(--font-ui)" font-size="12" letter-spacing="1.2" fill="var(--muted)">s-PLANE (CONTINUOUS TIME)</text>
+  <text x="530" y="16" text-anchor="middle" font-family="var(--font-ui)" font-size="12" letter-spacing="1.2" fill="var(--muted)">z-PLANE (DISCRETE TIME)</text>
+  <rect x="40" y="37" width="160" height="226" fill="var(--c3)" fill-opacity="0.12"/>
+  <line x1="40" y1="37" x2="290" y2="37" stroke="var(--ink-2)" stroke-width="1.2" stroke-dasharray="5 4"/>
+  <line x1="40" y1="263" x2="290" y2="263" stroke="var(--ink-2)" stroke-width="1.2" stroke-dasharray="5 4"/>
+  <line x1="40" y1="150" x2="292" y2="150" stroke="var(--axis)" stroke-width="1.2"/>
+  <line x1="200" y1="28" x2="200" y2="272" stroke="var(--ink-2)" stroke-width="2"/>
+  <line x1="128" y1="37" x2="128" y2="263" stroke="var(--c1)" stroke-width="1.5"/>
+  <line x1="164" y1="37" x2="164" y2="263" stroke="var(--c1)" stroke-width="1.5"/>
+  <line x1="182" y1="37" x2="182" y2="263" stroke="var(--c1)" stroke-width="1.5"/>
+  <line x1="211" y1="37" x2="211" y2="263" stroke="var(--c1)" stroke-width="1.5" stroke-dasharray="3 3"/>
+  <line x1="40" y1="121.7" x2="290" y2="121.7" stroke="var(--c2)" stroke-width="1.5"/>
+  <line x1="40" y1="93.5" x2="290" y2="93.5" stroke="var(--c2)" stroke-width="1.5"/>
+  <line x1="40" y1="65.2" x2="290" y2="65.2" stroke="var(--c2)" stroke-width="1.5"/>
+  <line x1="40" y1="178.3" x2="290" y2="178.3" stroke="var(--c2)" stroke-width="1.5"/>
+  <line x1="40" y1="206.5" x2="290" y2="206.5" stroke="var(--c2)" stroke-width="1.5"/>
+  <line x1="40" y1="234.8" x2="290" y2="234.8" stroke="var(--c2)" stroke-width="1.5"/>
+  <text x="296" y="41" font-family="var(--font-body)" font-style="italic" font-size="14" fill="var(--ink)">π/h</text>
+  <text x="296" y="267" font-family="var(--font-body)" font-style="italic" font-size="14" fill="var(--ink)">−π/h</text>
+  <text x="218" y="56" font-family="var(--font-body)" font-style="italic" font-size="14" fill="var(--ink)">Im s</text>
+  <text x="250" y="165" font-family="var(--font-body)" font-style="italic" font-size="14" fill="var(--ink)">Re s</text>
+  <text x="98" y="290" text-anchor="middle" font-family="var(--font-ui)" font-size="12" fill="var(--ink-2)">stable: Re s &lt; 0</text>
+  <path d="M318 110 Q 362 86 406 110" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#sm-arrow)"/>
+  <text x="362" y="80" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="16" fill="var(--ink)">z = eˢʰ</text>
+  <circle cx="530" cy="150" r="80" fill="var(--c3)" fill-opacity="0.12" stroke="var(--ink-2)" stroke-width="2"/>
+  <circle cx="530" cy="150" r="10.8" fill="none" stroke="var(--c1)" stroke-width="1.5"/>
+  <circle cx="530" cy="150" r="29.4" fill="none" stroke="var(--c1)" stroke-width="1.5"/>
+  <circle cx="530" cy="150" r="48.5" fill="none" stroke="var(--c1)" stroke-width="1.5"/>
+  <circle cx="530" cy="150" r="108" fill="none" stroke="var(--c1)" stroke-width="1.5" stroke-dasharray="3 3"/>
+  <line x1="420" y1="150" x2="645" y2="150" stroke="var(--axis)" stroke-width="1.2"/>
+  <line x1="530" y1="34" x2="530" y2="266" stroke="var(--axis)" stroke-width="1.2"/>
+  <line x1="530" y1="150" x2="613.4" y2="66.6" stroke="var(--c2)" stroke-width="1.5"/>
+  <line x1="530" y1="150" x2="530" y2="32" stroke="var(--c2)" stroke-width="1.5"/>
+  <line x1="530" y1="150" x2="446.6" y2="66.6" stroke="var(--c2)" stroke-width="1.5"/>
+  <line x1="530" y1="150" x2="613.4" y2="233.4" stroke="var(--c2)" stroke-width="1.5"/>
+  <line x1="530" y1="150" x2="530" y2="268" stroke="var(--c2)" stroke-width="1.5"/>
+  <line x1="530" y1="150" x2="446.6" y2="233.4" stroke="var(--c2)" stroke-width="1.5"/>
+  <line x1="530" y1="150" x2="412" y2="150" stroke="var(--ink-2)" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="530" y="290" text-anchor="middle" font-family="var(--font-ui)" font-size="12" fill="var(--ink-2)">stable: |z| &lt; 1</text>
+  <text x="350" y="312" text-anchor="middle" font-family="var(--font-ui)" font-size="12" fill="var(--muted)">Blue: vertical lines Re s = σ map to circles |z| = exp(σh); the dotted pair has σ &gt; 0.</text>
+  <text x="350" y="329" text-anchor="middle" font-family="var(--font-ui)" font-size="12" fill="var(--muted)">Orange: horizontal lines Im s = ω map to rays arg z = ωh; the strip edges ±π/h map to the negative real axis.</text>
+</svg>
+</figure>
+
+<div class="blk cex" id="cex-euler">
+<p>A naive discretization need not respect this. Forward Euler, $x_{k+1} = (I + hA)x_k$, approximates $e^{hA}$ to first order but maps eigenvalues by $\lambda \mapsto 1 + h\lambda$ (<a href="ch03_eigenvalues.html#cor-specmap">spectral mapping</a>, chapter 3), which sends the left half-plane onto a half-plane, not into the disk. For $\dot x = -10x$ and $h = 0.3$, $1 + h\lambda = -2$: the discrete iterates grow like $2^k$ while the system decays. Forward Euler is asymptotically stable for this equation only when $0 &lt; h &lt; 0.2$.</p>
+</div>
+
+<p>The sampling map $z = e^{sh}$ is not one to one, which limits what samples reveal:</p>
+
+<div class="blk prop" id="prop-alias" data-name="Aliasing under sampling">
+<p>Let $A \in \R^{n\times n}$ and $h &gt; 0$.</p>
+<ol>
+<li>For complex $\lambda$ and $\mu$, $e^{h\lambda} = e^{h\mu}$ if and only if $\mu - \lambda \in \frac{2\pi i}{h}\Z$.</li>
+<li>If every eigenvalue of $A$ satisfies $\abs{\Im\lambda} &lt; \pi/h$, the eigenvalues of $A$, with multiplicity, are the numbers $\frac1h\operatorname{Log}z$ for the eigenvalues $z$ of $e^{hA}$, where $\operatorname{Log}z = \ln\abs z + i\arg z$ with $\arg z \in (-\pi, \pi]$ is the principal logarithm.</li>
+<li>Without this condition $e^{hA}$ need not determine the eigenvalues of $A$: $A = 0$ and $A = \frac{2\pi}{h}\begin{bmatrix}0 & 1\\ -1 & 0\end{bmatrix}$ both give $e^{hA} = I$.</li>
+</ol>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (1) $e^{h\lambda} = e^{h\mu}$ means $e^{h(\mu - \lambda)} = 1$, that is, $h(\mu - \lambda) \in 2\pi i\Z$. (2) By part 5 of <a class="xref" href="#thm-expm"></a> the eigenvalues of $e^{hA}$ are the numbers $e^{h\lambda}$, with multiplicity, and $\operatorname{Log}e^{h\lambda} = h\lambda$ when $\abs{\Im(h\lambda)} &lt; \pi$. (3) The formula of <a class="xref" href="#prop-real-pair"></a> with $\sigma = 0$, $\omega = 2\pi/h$ and $t = h$ gives the rotation through $2\pi$, which is $I$.</p>
+</div>
+
+<div class="blk rem">
+<p>By part 1 of <a class="xref" href="#prop-alias"></a>, a sampled system determines the imaginary parts of the continuous-time eigenvalues only modulo $2\pi/h$: faster oscillations are folded into the strip $\abs{\Im s} &lt; \pi/h$, as in the sampling of signals.</p>
+</div>
+</section>
+
+<section class="sec" id="s-lyapunov">
+<h2>Lyapunov's method</h2>
+
+<div class="blk prob"><p>Certify that $A$ is Hurwitz without computing eigenvalues, by exhibiting an energy that decreases along every trajectory. The certificate should also bound transients and survive situations, such as time variation, in which eigenvalues say nothing.</p></div>
+
+<div class="blk probe">
+<p>Try the Euclidean energy $V(x) = \norm{x}^2$. Along solutions, $\dot V = x^\T(A^\T + A)x$, which is negative for all $x \neq 0$ exactly when $A + A^\T \prec 0$ (negative definite), that is, when the numerical abscissa $\omega(A) = \lambda_{\max}\big(\frac12(A + A^\T)\big)$, the largest eigenvalue of the symmetric part of $A$, is negative (<a href="ch06_nonnormality.html#def-abscissas">abscissas</a>, chapter 6). For $A = \begin{bmatrix}-1 & w\\ 0 & -2\end{bmatrix}$ with $w &gt; 2\sqrt2$ this fails although $A$ is Hurwitz: $\frac12(A + A^\T)$ has determinant $2 - w^2/4 &lt; 0$, hence a positive eigenvalue, and solutions starting along the corresponding eigenvector initially move away from 0. The remedy is to weight the norm, $V(x) = x^\T Px$ with $P \succ 0$ (positive definite: $x^\T Px &gt; 0$ for $x \neq 0$), for which $\dot V = x^\T(A^\T P + PA)x$.</p>
+</div>
+
+<div class="blk def" id="def-lyap" data-name="Lyapunov equation">
+<p>For real $A$ and symmetric $Q$, the <dfn>Lyapunov equation</dfn> is $A^\T P + PA = -Q$, a linear equation for the symmetric matrix $P$. A quadratic $V(x) = x^\T Px$ with $P \succ 0$ is a <dfn>Lyapunov function</dfn> for $\dot x = Ax$ if $\dot V = -x^\T Qx &lt; 0$ for all $x \neq 0$, that is, $Q \succ 0$.</p>
+</div>
+
+<div class="blk thm" id="thm-lyapunov" data-name="Lyapunov's theorem for linear systems">
+<p>For $A \in \R^{n\times n}$ the following are equivalent.</p>
+<ol>
+<li>$A$ is Hurwitz.</li>
+<li>For every $Q \succ 0$ the Lyapunov equation has a unique solution $P$, and $P \succ 0$; it is $P = \int_0^\infty e^{tA^\T}Qe^{tA}\,\dd t$.</li>
+<li>There is $P \succ 0$ with $A^\T P + PA \prec 0$.</li>
+</ol>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (1 $\Rightarrow$ 2) By <a class="xref" href="#thm-ct-stability"></a>, $\norm{e^{tA}} \le Me^{-\beta t}$ with $\beta &gt; 0$, so the integral converges. It is positive definite: $x^\T Px = \int_0^\infty \norm{Q^{1/2}e^{tA}x}^2\dd t &gt; 0$ for $x \neq 0$, with $Q^{1/2}$ the positive definite square root of $Q$, because the integrand is continuous and positive at $t = 0$. It solves the equation:</p>
+<div class="eq">$$A^\T P + PA = \int_0^\infty \frac{\dd}{\dd t}\big(e^{tA^\T}Qe^{tA}\big)\,\dd t = \big[e^{tA^\T}Qe^{tA}\big]_0^\infty = -Q.$$</div>
+<p>It is unique: if $A^\T X + XA = 0$, then $\frac{\dd}{\dd t}(e^{tA^\T}Xe^{tA}) = e^{tA^\T}(A^\T X + XA)e^{tA} = 0$, so $e^{tA^\T}Xe^{tA} = X$ for all $t$, and letting $t \to \infty$ gives $X = 0$. (2 $\Rightarrow$ 3) Take $Q = I$. (3 $\Rightarrow$ 1) Let $Av = \lambda v$ with $v \in \C^n$ nonzero and put $Q = -(A^\T P + PA) \succ 0$. Since $A$ is real, $v^*A^\T = \bar\lambda v^*$, so</p>
+<div class="eq">$$-v^*Qv = v^*(A^\T P + PA)v = (\bar\lambda + \lambda)\,v^*Pv = 2\Re\lambda\;v^*Pv.$$</div>
+<p>As $v^*Pv &gt; 0$ and $v^*Qv &gt; 0$, $\Re\lambda &lt; 0$.</p>
+</div>
+
+<div class="blk prop" id="prop-lyap-op" data-name="The Lyapunov operator">
+<p>The linear map $\mathcal L_A(P) = A^\T P + PA$ on $\R^{n\times n}$ has eigenvalues $\lambda_i + \lambda_j$, $1 \le i, j \le n$. Hence $A^\T P + PA = -Q$ has exactly one solution $P \in \R^{n\times n}$ for every $Q \in \R^{n\times n}$ if and only if $\lambda_i + \lambda_j \neq 0$ for all $i, j$ (possibly equal); this solution is symmetric whenever $Q$ is.</p>
+</div>
+<details class="proof"><summary>Proof sketch</summary><p>Stacking the columns of $P$ into a vector, $\mathcal L_A$ becomes the $n^2\times n^2$ matrix $I \otimes A^\T + A^\T \otimes I$, with $\otimes$ the Kronecker product. Triangularizing $A^\T = UTU^*$ turns it into $(U \otimes U)(I \otimes T + T \otimes I)(U \otimes U)^*$, and $I \otimes T + T \otimes I$ is triangular with diagonal entries $\lambda_i + \lambda_j$. A linear map is invertible exactly when 0 is not an eigenvalue. If $Q$ is symmetric, $P^\T$ solves the same equation, so $P^\T = P$. The Kronecker form is also how this guide's runtime solves the equation, as a linear system in $n^2$ unknowns.</p></details>
+
+<div class="blk prop" id="prop-lyap-bounds" data-name="Decay rate and transient bound from P">
+<p>Let $A^\T P + PA = -Q$ with $P \succ 0$ and $Q \succ 0$, write $\lambda_{\max}$ and $\lambda_{\min}$ for the largest and smallest eigenvalues of a symmetric matrix, and let $\kappa(P) = \lambda_{\max}(P)/\lambda_{\min}(P)$. Then along every solution</p>
+<div class="eq">$$V(x(t)) \le e^{-2\gamma t}V(x_0),\qquad \norm{x(t)} \le \sqrt{\kappa(P)}\,e^{-\gamma t}\norm{x_0},\qquad \gamma = \frac{\lambda_{\min}(Q)}{2\lambda_{\max}(P)}.$$</div>
+<p>In particular $\sup_{t\ge0}\norm{e^{tA}} \le \sqrt{\kappa(P)}$ whenever $P \succ 0$ and $A^\T P + PA \preceq 0$ (negative semidefinite; in general $X \preceq Y$ means $Y - X \succeq 0$).</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> $\lambda_{\min}(P)\norm{x}^2 \le V(x) \le \lambda_{\max}(P)\norm{x}^2$ and $x^\T Qx \ge \lambda_{\min}(Q)\norm{x}^2$, so $\dot V = -x^\T Qx \le -2\gamma V$, and $e^{2\gamma t}V(x(t))$ is nonincreasing. Then $\lambda_{\min}(P)\norm{x(t)}^2 \le V(x(t)) \le e^{-2\gamma t}\lambda_{\max}(P)\norm{x_0}^2$. For the last claim, $V$ is nonincreasing when $A^\T P + PA \preceq 0$.</p>
+</div>
+
+<div class="blk ex" id="ex-lyap-2x2" data-name="A Lyapunov function for the non-normal example">
+<p>For $A = \begin{bmatrix}-1 & w\\ 0 & -2\end{bmatrix}$ and $Q = I$, write $P = \begin{bmatrix}p & q\\ q & r\end{bmatrix}$; the equation $A^\T P + PA = -I$ reads $-2p = -1$, $wp - 3q = 0$, $2wq - 4r = -1$, so</p>
+<div class="eq">$$P = \begin{bmatrix}\frac12 & \frac w6\\ \frac w6 & \frac14 + \frac{w^2}{12}\end{bmatrix},\qquad \det P = \frac18 + \frac{w^2}{72} &gt; 0.$$</div>
+<p>For $w = 0$, $P = \diag(\frac12, \frac14)$ and the bound of <a class="xref" href="#prop-lyap-bounds"></a> gives $\gamma = 1 = -\alpha(A)$, the true rate. For $w = 10$, $\lambda(P) \approx 8.91$ and $0.170$, so $\kappa(P) \approx 52.5$: the bound $\sqrt{\kappa(P)} \approx 7.2$ is valid but loose against the true peak $2.56$ of $\norm{e^{tA}}$ (chapter 6), and $\gamma \approx 0.056$ is far below the true rate 1. Conversely, by <a class="xref" href="#prop-lyap-bounds"></a> every $P \succ 0$ with $A^\T P + PA \preceq 0$ has $\kappa(P) \ge \max_{t\ge0}\norm{e^{tA}}^2 \approx 6.57$: transient growth forces elongated Lyapunov ellipses.</p>
+</div>
+
+<div class="blk prop" id="prop-lyap-cost" data-name="The Lyapunov solution as a cost">
+<p>Let $A \in \R^{n\times n}$ be Hurwitz and $Q \in \R^{n\times n}$ symmetric, not necessarily definite. The Lyapunov equation $A^\T P + PA = -Q$ has the unique solution $P = \int_0^\infty e^{tA^\T}Qe^{tA}\,\dd t$, which is symmetric, and every solution of $\dot x = Ax$ satisfies</p>
+<div class="eq">$$x_0^\T Px_0 = \int_0^\infty x(t)^\T Qx(t)\,\dd t.$$</div>
+<p>If $Q \succeq 0$, then $P \succeq 0$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> The proof of (1 $\Rightarrow$ 2) in <a class="xref" href="#thm-lyapunov"></a> shows the convergence of the integral, the equation and uniqueness without using $Q \succ 0$. The integrand is symmetric, and substituting $x(t) = e^{tA}x_0$ gives the cost formula, whose integrand $x^\T Qx$ is nonnegative when $Q \succeq 0$.</p>
+</div>
+
+<div class="blk rem">
+<p>$P$ is a cost and a Gramian. By <a class="xref" href="#prop-lyap-cost"></a>, $x_0^\T Px_0$ is the quadratic cost accumulated along the trajectory from $x_0$, a value function. With $Q = C^\T C$ for an output $y = Cx$, $C \in \R^{p\times n}$, the cost is the output energy $\int_0^\infty\norm{y(t)}^2\,\dd t$, and $P$ is the infinite-horizon limit of the observability Gramian $W_o(t_f)$ of <a href="ch09_controllability.html#def-obs">chapter 9</a>. The <a href="ch11_lqr_kalman.html#thm-care">Riccati equation</a> of chapter 11 is this equation with a quadratic term added for the control.</p>
+</div>
+
+<div class="blk thm" id="thm-dlyap" data-name="Discrete-time Lyapunov theorem">
+<p>For $A \in \R^{n\times n}$: $\rho(A) &lt; 1$ if and only if for some (equivalently, every) $Q \succ 0$ the equation $A^\T PA - P = -Q$ has a solution $P \succ 0$; it is then unique and equals $\sum_{k\ge0}(A^\T)^kQA^k$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof sketch.</span> If $\rho(A) &lt; 1$ the series converges by <a class="xref" href="#thm-dt-stability"></a>, and substituting shows it solves the equation, since the sum telescopes; it satisfies $P \succeq Q \succ 0$, because the term $k = 0$ is $Q$ and the other terms are positive semidefinite. Conversely, if $Av = \lambda v$ with $v \neq 0$, then $-v^*Qv = v^*(A^\T PA - P)v = (\abs{\lambda}^2 - 1)\,v^*Pv$, which forces $\abs{\lambda} &lt; 1$. Uniqueness follows as in <a class="xref" href="#thm-lyapunov"></a>, with $(A^\T)^kXA^k = X$ and $k \to \infty$.</p>
+</div>
+
+<div class="blk pattern">
+<p>The condition "$P \succ 0$ and $A^\T P + PA \prec 0$" is a linear matrix inequality (LMI) in $P$: its feasible set is a convex cone, which convex optimization can search. Unlike an eigenvalue test, the same inequality can be imposed for a whole family of matrices at once, and a common solution then serves every matrix in the convex hull of the family (<a class="xref" href="#prop-lmi"></a>); by <a class="xref" href="#prop-ltv-omega"></a> in <a class="xref" href="#s-ltv"></a>, it certifies stability of systems whose matrix varies continuously in time within that hull. Equivalences to remember (<a class="xref" href="#thm-ct-stability"></a>, <a class="xref" href="#thm-lyapunov"></a>): Hurwitz $\Leftrightarrow$ exponential decay $\Leftrightarrow$ a quadratic Lyapunov function exists $\Leftrightarrow$ the Lyapunov equation with $Q \succ 0$ has a positive definite solution.</p>
+</div>
+
+<div class="blk prop" id="prop-lmi" data-name="Lyapunov inequalities are convex">
+<p>Let $A_1, \dots, A_m \in \R^{n\times n}$. The symmetric matrices $P$ with $P \succ 0$ and $A_i^\T P + PA_i \prec 0$ for $i = 1, \dots, m$ form a convex cone: with $P$ and $P'$ it contains $aP + bP'$ for all $a, b \ge 0$ not both $0$. For each such $P$ there is $c &gt; 0$ with $A^\T P + PA \preceq -cP$ for every $A$ in the convex hull of $A_1, \dots, A_m$, that is, every $A = \sum_i\theta_iA_i$ with $\theta_i \ge 0$ and $\sum_i\theta_i = 1$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> The map $P \mapsto A_i^\T P + PA_i$ is linear, and sums and positive multiples of positive definite matrices are positive definite. Given $P$, let $Q_i = -(A_i^\T P + PA_i) \succ 0$ and $c = \min_i\lambda_{\min}\big(P^{-1/2}Q_iP^{-1/2}\big) &gt; 0$, where $P^{-1/2}$ is the inverse of the positive definite square root of $P$. Then $Q_i \succeq cP$ for every $i$, and $A^\T P + PA = -\sum_i\theta_iQ_i \preceq -cP$.</p>
+</div>
+
+<figure class="viz" id="viz-lyap">
+  <figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">Lyapunov ellipses versus Euclidean circles</span><span class="viz-sub">Drag $x_0$. Green ellipses are level sets of $V(x) = x^\T Px$ with $A^\T P + PA = -Q$; the dashed circle has radius $\norm{x_0}$. Right: $V(x(t))$ and $\norm{x(t)}^2$, both normalized by their initial values, with the bounds of <a class="xref" href="#prop-lyap-bounds"></a> dashed.</span></figcaption>
+  <div class="viz-plots cols-2">
+    <div class="plot" id="ly-phase"><div class="plot-cap">Phase plane: the violet trajectory crosses every green ellipse inward; the red dot marks its largest $\norm{x(t)}$</div></div>
+    <div class="plot" id="ly-time"><div class="plot-cap" id="ly-legend"></div></div>
+  </div>
+  <div class="viz-controls" id="ly-controls"></div>
+  <div class="viz-notes">
+    <div><h5>Try this</h5><ol>
+      <li>With the default $Q = I$, set the non-normality to 0: then $P = \diag(\frac12, \frac14)$ (<a class="xref" href="#ex-lyap-2x2"></a>), the ellipses are axis-aligned and $\norm{x(t)}$ decreases monotonically from every $x_0$.</li>
+      <li>Raise it to about 6 and place $x_0$ near the positive $x_2$ axis. The trajectory leaves the dashed circle, so $\norm{x}^2$ rises, while $V$ falls monotonically.</li>
+      <li>Change the ratio and angle of $Q$: $P$ and the ellipses change, $V$ always decreases, and the dashed bounds move; the eigenvalues of $A$ do not change.</li>
+      <li>Switch the family to <i>stable spiral</i> with a large shear: the orbits are tilted spirals, and the Euclidean norm oscillates on its way down.</li>
+    </ol></div>
+    <div><h5>What to notice</h5><p><a class="xref" href="#thm-lyapunov"></a> guarantees a weighted norm that decreases for every Hurwitz $A$; the Euclidean norm is one only if $\omega(A) &lt; 0$. The readout checks $\max_t\norm{x(t)}^2/\norm{x_0}^2 \le \kappa(P)$ (<a class="xref" href="#prop-lyap-bounds"></a>): transient growth is bounded by how elongated the Lyapunov ellipses must be.</p></div>
+  </div>
+</figure>
+</section>
+
+<section class="sec" id="s-ltv">
+<h2>Time-varying systems</h2>
+
+<div class="blk setting">
+<p>A linear time-varying (LTV) system is $\dot x = A(t)x$ with $A: \R \to \R^{n\times n}$ continuous. Superposition still holds, with the proof of <a class="xref" href="#prop-superposition"></a> once uniqueness is known (<a class="xref" href="#thm-stm-exist"></a>), so the solutions are again described by a matrix.</p>
+</div>
+
+<div class="blk def" id="def-stm" data-name="State-transition matrix">
+<p>The <dfn>state-transition matrix</dfn> $\Phi(t, t_0)$ is the solution of the matrix equation $\partial_t\Phi(t, t_0) = A(t)\Phi(t, t_0)$ (the derivative in $t$ with $t_0$ fixed) with $\Phi(t_0, t_0) = I$; it exists and is unique by <a class="xref" href="#thm-stm-exist"></a>.</p>
+</div>
+
+<div class="blk thm" id="thm-stm-exist" data-name="Existence and uniqueness, time-varying case">
+<p>Let $A: \R \to \R^{n\times n}$ be continuous and $t_0 \in \R$. The Peano–Baker series</p>
+<div class="eq">$$\Phi(t, t_0) = I + \int_{t_0}^tA(s_1)\,\dd s_1 + \int_{t_0}^t\!\int_{t_0}^{s_1}A(s_1)A(s_2)\,\dd s_2\,\dd s_1 + \cdots,$$</div>
+<p>whose $k$-th term is $\int_{t_0}^t\int_{t_0}^{s_1}\cdots\int_{t_0}^{s_{k-1}}A(s_1)\cdots A(s_k)\,\dd s_k\cdots\dd s_1$, converges uniformly for $t$ in bounded intervals, and its sum is the only solution of $\partial_t\Phi = A(t)\Phi$ with $\Phi(t_0, t_0) = I$. For every $x_0$, $x(t) = \Phi(t, t_0)x_0$ is the only solution of $\dot x = A(t)x$ with $x(t_0) = x_0$.</p>
+</div>
+<details class="proof"><summary>Proof sketch</summary><p>On an interval $\abs{t - t_0} \le T$ let $a = \max\norm{A(s)}$. The $k$-th term has norm at most $a^k\abs{t - t_0}^k/k!$, the volume of the simplex of integration times $a^k$, so the series converges uniformly (Weierstrass M-test); so does the series of derivatives, whose $k$-th term is $A(t)$ times the $(k-1)$-th term of the series. Hence the sum is differentiable with $\partial_t\Phi = A(t)\Phi$, and $\Phi(t_0, t_0) = I$. If $x$ and $y$ solve $\dot x = A(t)x$ with $x(t_0) = y(t_0)$, then $e = x - y$ satisfies $\norm{e(t)} \le a\,\big|\int_{t_0}^t\norm{e(s)}\,\dd s\big|$, and Grönwall's inequality gives $e = 0$. Applied column by column, this gives the uniqueness of $\Phi$.</p></details>
+<p class="src">Hespanha, <i>Linear Systems Theory</i>, lecture on solutions to LTV systems; Brockett, <i>Finite Dimensional Linear Systems</i>.</p>
+
+<div class="blk thm" id="thm-stm" data-name="Properties of the state-transition matrix">
+<p>For all $t, s, r$:</p>
+<ol>
+<li>$\Phi(t, s)\Phi(s, r) = \Phi(t, r)$, and $\Phi(t, s)$ is invertible with $\Phi(t, s)^{-1} = \Phi(s, t)$;</li>
+<li>$\det\Phi(t, s) = \exp\int_s^t\tr A(\sigma)\,\dd\sigma$;</li>
+<li>if $A$ is constant, $\Phi(t, s) = e^{(t-s)A}$; if the matrices $A(t)$ commute with one another, $\Phi(t, s) = \exp\int_s^tA(\sigma)\,\dd\sigma$.</li>
+</ol>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (1) As functions of $t$, both sides solve $\dot X = A(t)X$ and equal $\Phi(s, r)$ at $t = s$; by uniqueness (<a class="xref" href="#thm-stm-exist"></a>) they agree. With $r = t$ this gives the inverse. (2) Jacobi's formula for the derivative of a determinant gives $\partial_t\det\Phi = \tr\big(\operatorname{adj}(\Phi)\,A\Phi\big) = \tr(A)\det\Phi$, with $\operatorname{adj}$ the adjugate ($\Phi\operatorname{adj}\Phi = \det\Phi\, I$); integrate. (3) If the $A(t)$ commute, $M(t) = \int_s^tA$ commutes with $\dot M(t) = A(t)$, so $\frac{\dd}{\dd t}e^{M(t)} = A(t)e^{M(t)}$.</p>
+</div>
+
+<div class="blk conj"><p>If every frozen matrix $A(t)$ is Hurwitz, uniformly in $t$, then $\dot x = A(t)x$ is asymptotically stable.</p></div>
+
+<div class="blk cex" id="cex-markus-yamabe" data-name="Frozen eigenvalues do not decide stability">
+<p>The conjecture is false. Take</p>
+<div class="eq">$$A(t) = \begin{bmatrix}-1 + \frac32\cos^2 t & 1 - \frac32\cos t\sin t\\ -1 - \frac32\sin t\cos t & -1 + \frac32\sin^2 t\end{bmatrix}.$$</div>
+<p>For every $t$, $\tr A(t) = -\frac12$ and $\det A(t) = \frac12$, so the frozen eigenvalues are the constants $\frac{-1 \pm i\sqrt7}{4}$, with real part $-\frac14$. Yet $x(t) = e^{t/2}(-\cos t, \sin t)^\T$ is a solution (substitute), and $\norm{x(t)} = e^{t/2} \to \infty$.</p>
+<p>The mechanism: $A(t) = U(t)A_0U(t)^\T$ with $A_0 = A(0) = \begin{bmatrix}\frac12 & 1\\ -1 & -1\end{bmatrix}$ and $U(t) = \begin{bmatrix}\cos t & \sin t\\ -\sin t & \cos t\end{bmatrix}$, a rotation by $-t$. In the rotating coordinates $y = U(t)^\T x$, the equation becomes $\dot y = (A_0 - K)y$ with $K = U^\T\dot U = \begin{bmatrix}0 & 1\\ -1 & 0\end{bmatrix}$, and $A_0 - K = \diag(\frac12, -1)$. So $\Phi(t, 0) = U(t)\diag(e^{t/2}, e^{-t})$: the rotation of the frame adds the skew term $-K$, and $A_0 - K$ is unstable although every frozen matrix is stable.</p>
+</div>
+<p class="src">The example is from L. Markus and H. Yamabe, "Global stability criteria for differential systems", <i>Osaka Math. J.</i> 12 (1960) 305–317, p. 310.</p>
+
+<p>The computation works for every rotation rate, and it explains the figure below:</p>
+
+<div class="blk prop" id="prop-rotating-frame" data-name="Rotating frames">
+<p>Let $A_0 \in \R^{2\times 2}$ and $\nu \in \R$, let $U(\theta) = \begin{bmatrix}\cos\theta & \sin\theta\\ -\sin\theta & \cos\theta\end{bmatrix}$ and $K = \begin{bmatrix}0 & 1\\ -1 & 0\end{bmatrix}$, and let $A_\nu(t) = U(\nu t)A_0U(\nu t)^\T$. Every frozen matrix $A_\nu(t)$ has the eigenvalues of $A_0$, and the solutions of $\dot x = A_\nu(t)x$ are</p>
+<div class="eq">$$x(t) = U(\nu t)\,e^{t(A_0 - \nu K)}x(0),\qquad \norm{x(t)} = \norm{e^{t(A_0 - \nu K)}x(0)}.$$</div>
+<p>Hence every solution tends to 0 if and only if $A_0 - \nu K$ is Hurwitz, and $\frac1t\ln\norm{\Phi(t, 0)} \to \alpha(A_0 - \nu K)$ as $t \to \infty$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> $A_\nu(t)$ is orthogonally similar to $A_0$. Since $U(\theta)^\T U'(\theta) = K$, $\frac{\dd}{\dd t}U(\nu t) = \nu\,U(\nu t)K$. Put $x = U(\nu t)y$: then $\dot x = U(\nu t)(\dot y + \nu Ky)$ and $A_\nu(t)x = U(\nu t)A_0y$, so $\dot y = (A_0 - \nu K)y$ with $y(0) = x(0)$. Since $U(\nu t)$ is orthogonal, $\norm{x(t)} = \norm{y(t)}$ and $\norm{\Phi(t, 0)} = \norm{e^{t(A_0 - \nu K)}}$. The convergence criterion is <a class="xref" href="#prop-stab-norm"></a> with part 2 of <a class="xref" href="#thm-ct-stability"></a>, and the growth rate is <a href="ch06_nonnormality.html#thm-envelope">the envelope theorem</a> of chapter 6.</p>
+</div>
+
+<figure class="viz" id="viz-ltv">
+  <figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">Frozen eigenvalues versus the flow</span><span class="viz-sub">$A_\nu(t) = U(\nu t)A_0U(\nu t)^\T$: the same frozen matrix, rotated at rate $\nu$; $\nu = 1$ is the counterexample above. Left: $\norm{x(t)}$ from $x_0 = (-1, 0)^\T$, simulated with a fourth-order Runge–Kutta method, against the rotating-frame solution. Right: the growth rate predicted by the rotating frame, as a function of $\nu$.</span></figcaption>
+  <div class="viz-plots cols-2">
+    <div class="plot" id="ltv-time"><div class="plot-cap" id="ltv-legend"></div></div>
+    <div class="plot" id="ltv-rate"><div class="plot-cap">Largest real part of the eigenvalues of $A_0 - \nu K$; shaded: unstable rotation rates</div></div>
+  </div>
+  <div class="viz-controls" id="ltv-controls"></div>
+  <div class="viz-notes">
+    <div><h5>Try this</h5><ol>
+      <li>Set $\nu = 0$: $A$ is constant, Hurwitz, and $\norm{x(t)}$ decays at the frozen rate $-\frac14$.</li>
+      <li>Set $\nu = 1$: the simulated norm follows $e^{t/2}$ exactly, the largest growth that the numerical abscissa allows (<a class="xref" href="#prop-ltv-omega"></a>).</li>
+      <li>Sweep $\nu$ from 0 to 3. The system is unstable only for $\abs{1 - \nu} &lt; 1/\sqrt2$, that is $0.29 &lt; \nu &lt; 1.71$; slow and fast rotations are harmless.</li>
+    </ol></div>
+    <div><h5>What to notice</h5><p>The frozen eigenvalues are the same for every $\nu$ and $t$, so no frozen-time test can see the instability. The rotating-frame matrix $A_0 - \nu K$ has trace $-\frac12$ and determinant $(1 - \nu)^2 - \frac12$, hence eigenvalues $-\frac14 \pm \sqrt{\frac{9}{16} - (1 - \nu)^2}$, and its largest real part is the growth rate (<a class="xref" href="#prop-rotating-frame"></a>). The numerical abscissa $\omega(A(t)) = \frac12$ bounds every rate, as <a class="xref" href="#prop-ltv-omega"></a> shows.</p></div>
+  </div>
+</figure>
+
+<div class="blk prop" id="prop-ltv-omega" data-name="What does work for time-varying systems">
+<p>Let $\dot x = A(t)x$ with $A(t)$ continuous.</p>
+<ol>
+<li>For all $t \ge t_0$, $\norm{x(t)} \le \exp\big(\int_{t_0}^t\omega(A(s))\,\dd s\big)\norm{x(t_0)}$; in particular, if $\omega(A(t)) \le -\beta$ for all $t \ge t_0$, then $\norm{x(t)} \le e^{-\beta(t - t_0)}\norm{x(t_0)}$.</li>
+<li>If there are $P \succ 0$ and $c &gt; 0$ with $A(t)^\T P + PA(t) \preceq -cP$ for all $t \ge t_0$ (a common quadratic Lyapunov function), then for all $t \ge t_0$, $V(x(t)) \le e^{-c(t - t_0)}V(x(t_0))$ and $\norm{x(t)} \le \sqrt{\kappa(P)}\,e^{-c(t - t_0)/2}\norm{x(t_0)}$: the system is exponentially stable, with constants that do not depend on $t_0$.</li>
+</ol>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (1) $\frac{\dd}{\dd t}\norm{x}^2 = x^\T(A(t) + A(t)^\T)x \le 2\,\omega(A(t))\norm{x}^2$; integrate this differential inequality. (2) $\dot V = x^\T(A^\T P + PA)x \le -cV$, and then $\norm{x(t)} \le \sqrt{\kappa(P)}e^{-c(t-t_0)/2}\norm{x(t_0)}$ as in <a class="xref" href="#prop-lyap-bounds"></a>.</p>
+</div>
+<p>In the counterexample, $\omega(A(t)) = \omega(A_0) = \frac12$ for every $t$, since the symmetric part of $A_0$ is $\diag(\frac12, -1)$ and that of $A(t) = U(t)A_0U(t)^\T$ is $U(t)\diag(\frac12, -1)U(t)^\T$, with the same eigenvalues; the solution grows at exactly this rate, so part 1 is sharp. No common $P$ can exist there, since the system is unstable.</p>
+
+<p>Periodic systems are decided by one matrix:</p>
+
+<div class="blk prop" id="prop-floquet" data-name="Periodic systems and Floquet multipliers">
+<p>Let $A: \R \to \R^{n\times n}$ be continuous with $A(t + T) = A(t)$ for all $t$, for some period $T &gt; 0$. Call $\Phi(T, 0)$ the monodromy matrix and its eigenvalues the Floquet multipliers. Then $\Phi(t + T, s + T) = \Phi(t, s)$ for all $t, s$, and $\Phi(kT + t, 0) = \Phi(t, 0)\Phi(T, 0)^k$ for all integers $k \ge 0$ and all $t$. Hence every solution of $\dot x = A(t)x$ tends to 0 as $t \to \infty$ if and only if all Floquet multipliers lie in the open unit disk, and every solution is bounded on $t \ge 0$ if and only if the powers $\Phi(T, 0)^k$ are bounded.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> As a function of $t$, $\Phi(t + T, s + T)$ solves $\dot X = A(t + T)X = A(t)X$ and equals $I$ at $t = s$, so it is $\Phi(t, s)$ by <a class="xref" href="#thm-stm-exist"></a>. With part 1 of <a class="xref" href="#thm-stm"></a>,</p>
+<div class="eq">$$\Phi(kT + t, 0) = \Phi(kT + t, kT)\,\Phi(kT, (k-1)T)\cdots\Phi(T, 0) = \Phi(t, 0)\,\Phi(T, 0)^k.$$</div>
+<p>On $[0, T]$ the continuous functions $\norm{\Phi(t, 0)}$ and $\norm{\Phi(t, 0)^{-1}}$ are bounded by some $c$, so $\norm{\Phi(T, 0)^kx_0}/c \le \norm{x(kT + t)} \le c\,\norm{\Phi(T, 0)^kx_0}$ for $t \in [0, T]$. The solution therefore behaves like the iterates of $x_{k+1} = \Phi(T, 0)x_k$, and <a class="xref" href="#thm-dt-stability"></a> with <a class="xref" href="#prop-stab-norm"></a> gives both criteria.</p>
+</div>
+
+<div class="blk rem">
+<p>This is a discrete-time test, not a frozen-time one. In the counterexample $T = \pi$ and $\Phi(\pi, 0) = -\diag(e^{\pi/2}, e^{-\pi})$, with a multiplier of modulus $e^{\pi/2} \approx 4.81$.</p>
+</div>
+</section>
+
+<section class="selfcheck" id="s-selfcheck">
+<h2>Self-check</h2>
+<ol>
+<li><p>Compute $e^{tA}$ for $A = \begin{bmatrix}a & b\\ -b & a\end{bmatrix}$ and for $A = \begin{bmatrix}\lambda & 1\\ 0 & \lambda\end{bmatrix}$.</p>
+<details><summary>Answer</summary><p>$e^{at}\begin{bmatrix}\cos bt & \sin bt\\ -\sin bt & \cos bt\end{bmatrix}$ (<a class="xref" href="#prop-real-pair"></a>) and $e^{\lambda t}\begin{bmatrix}1 & t\\ 0 & 1\end{bmatrix}$ (<a class="xref" href="#prop-jordan-exp"></a>). In both, $aI$ (or $\lambda I$) commutes with the rest, which is why the exponential factors.</p></details></li>
+<li><p>Is the equilibrium of $\dot x = Ax$ stable for $A = 0 \in \R^{2\times 2}$? For $A = J_2(0)$? Both have the double eigenvalue 0.</p>
+<details><summary>Answer</summary><p>$A = 0$: every point is an equilibrium, $x(t) = x_0$, stable but not asymptotically stable; the eigenvalue 0 is semisimple. $J_2(0)$: $x_1(t) = x_1(0) + t\,x_2(0)$ is unbounded, so it is unstable (<a class="xref" href="#thm-ct-stability"></a>, <a class="xref" href="#cex-marginal"></a>).</p></details></li>
+<li><p>A real $3\times 3$ matrix has eigenvalues $-1$ and $2 \pm i$. Give $\dim E^s$ and $\dim E^u$. Is its flow topologically conjugate to that of $\diag(-1, 1, 1)$? To that of $\diag(-1, -1, 1)$?</p>
+<details><summary>Answer</summary><p>$\dim E^s = 1$, $\dim E^u = 2$. Both matrices are hyperbolic; it is conjugate to $\diag(-1, 1, 1)$ (also $\dim E^s = 1$) and not to $\diag(-1, -1, 1)$ (<a class="xref" href="#thm-topological"></a>).</p></details></li>
+<li><p>Let $A$ be normal and Hurwitz, so that $A$ commutes with $A^\T$. Show that $P = -(A + A^\T)^{-1}$ solves $A^\T P + PA = -I$. What does this say about the Lyapunov ellipses?</p>
+<details><summary>Answer</summary><p>$A + A^\T$ commutes with $A$ and $A^\T$, so $A^\T P + PA = -(A^\T + A)(A + A^\T)^{-1} = -I$; and $A + A^\T \prec 0$ because, with $A = U\Lambda U^*$ for a unitary $U$ (<a href="ch04_svd.html#thm-normal">the normal-matrix theorem</a>, chapter 4), $A + A^\T = A + A^* = U(\Lambda + \bar\Lambda)U^*$ has the eigenvalues $2\Re\lambda_i &lt; 0$. For symmetric Hurwitz $A$, $P = -\frac12A^{-1}$ has the same eigenvectors as $A$: the ellipses are aligned with the modes, and $\kappa(P) = \max_i\abs{\lambda_i}/\min_i\abs{\lambda_i} = \norm{A}\norm{A^{-1}}$.</p></details></li>
+<li><p>Is $x_{k+1} = Ax_k$ with $A = \begin{bmatrix}0.5 & 10\\ 0 & 0.5\end{bmatrix}$ asymptotically stable? What does $\norm{A^k}$ do for small $k$?</p>
+<details><summary>Answer</summary><p>Yes: $\rho(A) = 0.5 &lt; 1$ (<a class="xref" href="#thm-dt-stability"></a>). But $A^k = 0.5^kI + 10k\,0.5^{k-1}N$ with $N = J_2(0)$, so the $(1,2)$ entry is $10, 10, 7.5, 5, \dots$ for $k = 1, 2, 3, 4$: the powers first grow to about 10 before they decay, the discrete analogue of transient growth.</p></details></li>
+</ol>
+</section>
+
+<section class="refs" id="s-refs">
+<h2>Sources and further reading</h2>
+<ul>
+<li>M. W. Hirsch, S. Smale and R. L. Devaney, <i>Differential Equations, Dynamical Systems, and an Introduction to Chaos</i>, 3rd ed. (Academic Press, 2013): ch. 2–6 (planar linear systems, phase portraits, the trace–determinant plane and dynamical classification, higher-dimensional linear systems).</li>
+<li>L. Perko, <i>Differential Equations and Dynamical Systems</i>, 3rd ed. (Springer, 2001): ch. 1 (exponentials of operators, Jordan forms, stability theory for linear systems).</li>
+<li>S. H. Strogatz, <i>Nonlinear Dynamics and Chaos</i>, 2nd ed. (Westview, 2015): ch. 5 (linear systems and their classification).</li>
+<li>J. P. Hespanha, <i>Linear Systems Theory</i>, 2nd ed. (Princeton, 2018): lectures on solutions of LTI and LTV systems and on Lyapunov stability.</li>
+<li>S. Boyd, EE263 <i>Introduction to Linear Dynamical Systems</i>, course reader: autonomous systems, the matrix exponential, eigenvectors and modes, Lyapunov theory. <a href="https://web.stanford.edu/class/archive/ee/ee263/ee263.1082/notes/ee263coursereader.pdf">PDF</a><span class="free">Free</span></li>
+<li>S. Boyd, L. El Ghaoui, E. Feron and V. Balakrishnan, <i>Linear Matrix Inequalities in System and Control Theory</i> (SIAM, 1994): ch. 2 (LMIs and the Lyapunov inequality), ch. 5 (quadratic stability of systems that vary in a set). <a href="https://web.stanford.edu/~boyd/lmibook/">book page</a><span class="free">Free</span></li>
+<li>K. J. Åström and R. M. Murray, <i>Feedback Systems</i>, 2nd ed. (Princeton, 2021): ch. 5 (dynamic behaviour, Lyapunov stability) and ch. 6 (linear systems, the matrix exponential). <a href="https://www.cds.caltech.edu/~murray/amwiki/Second_Edition.html">book page</a><span class="free">Free</span></li>
+<li>C. Moler and C. Van Loan, "Nineteen dubious ways to compute the exponential of a matrix, twenty-five years later", <i>SIAM Review</i> 45 (2003) 3–49.</li>
+<li>L. Markus and H. Yamabe, "Global stability criteria for differential systems", <i>Osaka Math. J.</i> 12 (1960) 305–317.</li>
+</ul>
+</section>
+
+</div>
+</main>
+</div>
+<script>LT.page.init();</script>
+<script>
+(function () {
+  'use strict';
+  const { Plot, ui, mat: M, fmt, fmtSig, fmtC } = LT;
+  const R = th => [[Math.cos(th), -Math.sin(th)], [Math.sin(th), Math.cos(th)]];
+  const norm2x2 = E => { const a = E[0][0], b = E[0][1], c = E[1][0], d = E[1][1]; const f = a * a + b * b + c * c + d * d, de = a * d - b * c; return Math.sqrt((f + Math.sqrt(Math.max(0, f * f - 4 * de * de))) / 2); };
+  const tag = (txt, kind) => `<span class="tag${kind ? ' ' + kind : ''}">${txt}</span>`;
+
+  /* ---------------- Visual 7.1: modes and the exponential ---------------- */
+  (function () {
+    const u = a => [Math.cos(a), Math.sin(a)];
+    const PRE = {
+      node: { name: 'Stable node', kind: 'real', J: [[-0.4, 0], [0, -2]], b: [u(0.32), u(1.35)], T: 8 },
+      saddle: { name: 'Saddle', kind: 'real', J: [[0.6, 0], [0, -1.2]], b: [u(0.4), u(2.15)], T: 3.4 },
+      spiral: { name: 'Stable spiral', kind: 'complex', J: [[-0.25, 2], [-2, -0.25]], b: [[1, 0], [0.4, 0.75]], T: 9 },
+      centre: { name: 'Centre', kind: 'complex', J: [[0, 1.5], [-1.5, 0]], b: [[1, 0], [0.5, 0.7]], T: 8.4 },
+      jordan: { name: 'Degenerate node', kind: 'jordan', J: [[-0.8, 1], [0, -0.8]], b: [u(0.25), [0, 1]], T: 8 }
+    };
+    const st = { pre: 'node', x0: [-1.4, 2.4], t: 0.6 };
+    const pp = new Plot('#md-phase', { xlim: [-3.2, 3.2], ylim: [-3, 3], equal: true, maxH: 420, label: 'Phase plane with the modal basis and the decomposition of the state' });
+    const pt = new Plot('#md-time', { xlim: [0, 8], ylim: [-3, 3], frame: true, aspect: 0.82, maxH: 420, xlabel: 'time t', label: 'State and modal coordinates against time' });
+    pp.el.insertBefore(pp.canvas, pp.el.firstChild); pt.el.insertBefore(pt.canvas, pt.el.firstChild);
+    document.getElementById('md-legend').innerHTML = ui.legend([{ color: 'c7', label: '<span>x₁(t)</span>' }, { color: 'c5', label: '<span>x₂(t)</span>' }, { color: 'c1', label: '<span>ξ₁(t)</span>', kind: 'dash' }, { color: 'c2', label: '<span>ξ₂(t)</span>', kind: 'dash' }]);
+    const panel = ui.panel('#md-controls');
+    panel.select({ id: 'md-preset', label: 'System', value: st.pre, options: Object.keys(PRE).map(k => [k, PRE[k].name]), onChange: v => { st.pre = v; st.t = Math.min(st.t, PRE[v].T); tsl.input.max = PRE[v].T; tsl.set(st.t); setup(); update(); } });
+    const tsl = panel.slider({ id: 'md-t', label: 'Time $t$', min: 0, max: PRE.node.T, step: 0.01, value: st.t, digits: 2, onInput: v => { st.t = v; update(); } });
+    const playBtn = panel.buttons([{ label: 'Play', kind: 'primary', onClick: () => anim.toggle() }])[0];
+    const out = panel.readout({});
+    let V, Vi, J, A, kind, T;
+    const expJ = t => {
+      if (kind === 'real') return [[Math.exp(J[0][0] * t), 0], [0, Math.exp(J[1][1] * t)]];
+      if (kind === 'jordan') { const e = Math.exp(J[0][0] * t); return [[e, t * e], [0, e]]; }
+      const s = J[0][0], w = J[0][1], e = Math.exp(s * t); return [[e * Math.cos(w * t), e * Math.sin(w * t)], [-e * Math.sin(w * t), e * Math.cos(w * t)]];
+    };
+    function setup() {
+      const p = PRE[st.pre]; kind = p.kind; J = p.J; T = p.T;
+      V = M.fromCols(p.b); Vi = M.inv(V); A = M.mul(M.mul(V, J), Vi);
+      pt.setLimits([0, T], null);
+    }
+    const xi = t => M.mv(expJ(t), M.mv(Vi, st.x0));
+    const xs = t => M.mv(V, xi(t));
+    pp.draw = g => {
+      const b1 = M.col(V, 0), b2 = M.col(V, 1);
+      if (kind === 'real') {
+        g.ray([0, 0], b1, { color: 'c1', width: 1.5, alpha: 0.7 }); g.ray([0, 0], b2, { color: 'c2', width: 1.5, alpha: 0.7 });
+      } else if (kind === 'jordan') {
+        g.ray([0, 0], b1, { color: 'c1', width: 1.5, alpha: 0.7 }); g.ray([0, 0], b2, { color: 'c2', width: 1.25, dash: [6, 5], alpha: 0.7 });
+      }
+      g.arrow([0, 0], b1, { color: 'c1', width: 2.25, label: kind === 'complex' ? 'Re v' : 'v₁', labelFont: 'ui' });
+      g.arrow([0, 0], b2, { color: 'c2', width: 2.25, label: kind === 'complex' ? 'Im v' : (kind === 'jordan' ? 'u' : 'v₂'), labelFont: 'ui' });
+      const full = [], done = [];
+      for (let k = 0; k <= 400; k++) { const t = T * k / 400, q = xs(t); full.push(q); if (t <= st.t) done.push(q); }
+      done.push(xs(st.t));
+      g.path(full, { color: 'c7', width: 1.25, alpha: 0.35 });
+      g.path(done, { color: 'c7', width: 2.5 });
+      const z = xi(st.t), p1 = M.vscale(b1, z[0]), x = xs(st.t);
+      g.arrow([0, 0], p1, { color: 'c1', width: 2, alpha: 0.85 });
+      g.arrow(p1, x, { color: 'c2', width: 2, alpha: 0.85 });
+      g.dot(x, { r: 5, color: 'c7' });
+      g.text(x, 'x(t)', { size: 14, dx: 12, dy: 12 });
+      g.dot([0, 0], { r: 3, color: 'ink' });
+    };
+    pp.addHandle({ get: () => st.x0, set: (x, y) => { st.x0 = [x, y]; update(); }, color: 'c7', snap: 0.05, label: 'x₀' });
+    pt.draw = g => {
+      const n = 300, c = [[], [], [], []];
+      for (let k = 0; k <= n; k++) { const t = T * k / n, z = xi(t), x = M.mv(V, z); c[0].push([t, x[0]]); c[1].push([t, x[1]]); c[2].push([t, z[0]]); c[3].push([t, z[1]]); }
+      g.path(c[2], { color: 'c1', width: 1.75, dash: [6, 4] }); g.path(c[3], { color: 'c2', width: 1.75, dash: [6, 4] });
+      g.path(c[0], { color: 'c7', width: 2.25 }); g.path(c[1], { color: 'c5', width: 2.25 });
+      g.vline(st.t, { color: 'muted', width: 1, dash: [4, 4] });
+    };
+    function fitY() {
+      let m = 0.5; for (let k = 0; k <= 200; k++) { const t = T * k / 200, z = xi(t), x = M.mv(V, z); m = Math.max(m, Math.abs(x[0]), Math.abs(x[1]), Math.abs(z[0]), Math.abs(z[1])); }
+      m = Math.min(m, 40); pt.setLimits(null, [-1.1 * m, 1.1 * m]);
+    }
+    const anim = LT.animate(dt => { st.t += dt * T / 6; if (st.t > T) st.t = 0; tsl.set(st.t); update(true); }, { el: '#viz-modes', onState: on => playBtn.setLabel(on ? 'Pause' : 'Play') });
+    function update(fromAnim) {
+      if (!fromAnim) fitY();
+      const E = M.expm(M.scale(A, st.t)), xe = M.mv(E, st.x0), xm = xs(st.t), err = M.vnorm(M.vsub(xe, xm));
+      const Jlab = kind === 'complex' ? 'J<sub>ℝ</sub>' : 'J';
+      out.set(
+        `${ui.mat(A, 2, { name: 'A' })}${ui.mat(J, 2, { name: Jlab })}${ui.mat(E, 3, { name: 'e<sup>tA</sup>' })}` +
+        `<span>ξ(0) = <i>V</i><sup>−1</sup><i>x</i>₀ ${ui.vec(M.mv(Vi, st.x0), 2)}</span><span>ξ(<i>t</i>) ${ui.vec(xi(st.t), 2)}</span>` +
+        `<span>‖e<sup>tA</sup>x₀ − <i>V</i>ξ(<i>t</i>)‖ <span class="num">${fmtSig(Math.max(err, 1e-17), 2)}</span></span>`
+      );
+      pp.redraw(); pt.redraw();
+    }
+    setup(); update();
+  })();
+
+  /* ---------------- Visual 7.2: trace-determinant atlas ---------------- */
+  (function () {
+    const PRE = {
+      custom: null, saddle: { tau: 0.6, det: -1.6 }, snode: { tau: -3, det: 1.5 }, sspiral: { tau: -0.8, det: 2.4 }, centre: { tau: 0, det: 2 },
+      uspiral: { tau: 0.8, det: 2.4 }, unode: { tau: 3, det: 1.5 }, jordan: { tau: -2, det: 1 }, star: { tau: -2, det: 1, star: true }, line: { tau: -1.6, det: 0 }
+    };
+    const st = { tau: -0.8, det: 2.4, th: 0.35, k: 0.9, star: false };
+    const pl = new Plot('#td-plane', { xlim: [-4.2, 4.2], ylim: [-3, 5.4], equal: true, maxH: 430, label: 'Trace determinant plane with regions and a draggable point' });
+    const pp = new Plot('#td-phase', { xlim: [-3, 3], ylim: [-3, 3], equal: true, maxH: 430, label: 'Phase portrait of the representative matrix' });
+    pl.el.insertBefore(pl.canvas, pl.el.firstChild); pp.el.insertBefore(pp.canvas, pp.el.firstChild);
+    const panel = ui.panel('#td-controls');
+    const sel = panel.select({ id: 'td-preset', label: 'Preset', value: 'sspiral', options: [['custom', 'Drag the point'], ['saddle', 'Saddle'], ['snode', 'Stable node'], ['sspiral', 'Stable spiral'], ['centre', 'Centre'], ['uspiral', 'Unstable spiral'], ['unode', 'Unstable node'], ['jordan', 'Degenerate node (Jordan block)'], ['star', 'Star (A = λI)'], ['line', 'Line of equilibria']],
+      onChange: v => { const p = PRE[v]; if (p) { st.tau = p.tau; st.det = p.det; st.star = !!p.star; update(); } } });
+    panel.slider({ id: 'td-theta', label: 'Eigenbasis angle $\\theta$', min: 0, max: Math.PI, step: 0.01, value: st.th, digits: 2, onInput: v => { st.th = v; update(); } });
+    panel.slider({ id: 'td-k', label: 'Shear $k$', min: -3, max: 3, step: 0.05, value: st.k, digits: 2, onInput: v => { st.k = v; update(); } });
+    const playBtn = panel.buttons([{ label: 'Pause', kind: 'primary', onClick: () => anim.toggle() }])[0];
+    const out = panel.readout({});
+    let A = [[0, 0], [0, 0]], info = {}, paths = [];
+    function build() {
+      const disc = st.tau * st.tau / 4 - st.det, S = M.mul(R(st.th), [[1, st.k], [0, 1]]);
+      let J, kind;
+      if (Math.abs(disc) < 1e-12) { const l = st.tau / 2; J = st.star ? [[l, 0], [0, l]] : [[l, 1], [0, l]]; kind = st.star ? 'star' : 'jordan'; }
+      else if (disc > 0) { const r = Math.sqrt(disc); J = [[st.tau / 2 + r, 0], [0, st.tau / 2 - r]]; kind = 'real'; }
+      else { const om = Math.sqrt(-disc); J = [[st.tau / 2, om], [-om, st.tau / 2]]; kind = 'complex'; }
+      A = M.mul(M.mul(S, J), M.inv(S));
+      const ev = M.eigvals(A), dirs = [];
+      if (kind === 'real') { dirs.push({ v: M.col(S, 0), l: J[0][0] }, { v: M.col(S, 1), l: J[1][1] }); }
+      else if (kind === 'jordan') dirs.push({ v: M.col(S, 0), l: J[0][0] });
+      info = { kind, ev, dirs, disc };
+      paths = [];
+      const f = x => M.mv(A, x), fb = x => M.mv(A, x).map(v => -v);
+      for (let i = 0; i < 12; i++) {
+        const a = 2 * Math.PI * i / 12 + 0.13, x0 = [2.75 * Math.cos(a), 2.75 * Math.sin(a)];
+        const fw = LT.sys.rk4(f, x0, 0.02, 300, 30), bw = LT.sys.rk4(fb, x0, 0.02, 300, 30);
+        paths.push({ pts: bw.slice().reverse().concat(fw.slice(1)), fw });
+      }
+    }
+    function classify() {
+      const t = st.tau, d = st.det, eps = 1e-9;
+      if (d < -eps) return ['saddle', 'bad', 1];
+      if (Math.abs(d) <= eps) return ['line of equilibria (not hyperbolic)', t < 0 ? 'good' : 'bad', null];
+      if (Math.abs(t) <= eps) return ['centre (not hyperbolic)', '', null];
+      const rep = Math.abs(info.disc) < 1e-12;
+      const nm = rep ? (st.star ? 'star' : 'degenerate node') : (info.disc > 0 ? 'node' : 'spiral');
+      return t < 0 ? ['stable ' + nm, 'good', 2] : ['unstable ' + nm, 'bad', 0];
+    }
+    pl.draw = g => {
+      const X0 = pl.xlim[0], X1 = pl.xlim[1], Y0 = pl.ylim[0], Y1 = pl.ylim[1];
+      g.poly([[X0, 0], [X1, 0], [X1, Y0], [X0, Y0]], { fill: 'c8', fillAlpha: 0.1, stroke: false });
+      g.poly([[X0, 0], [0, 0], [0, Y1], [X0, Y1]], { fill: 'c3', fillAlpha: 0.12, stroke: false });
+      g.poly([[0, 0], [X1, 0], [X1, Y1], [0, Y1]], { fill: 'c8', fillAlpha: 0.1, stroke: false });
+      g.curve(t => [t, t * t / 4], X0, X1, { color: 'ink', width: 1.5 });
+      g.line(0, 0, 0, Y1, { color: 'c1', width: 2.75 });
+      g.line(X0, 0, X1, 0, { color: 'ink-2', width: 1.25 });
+      const lab = (p, s, o) => g.text(p, s, Object.assign({ font: 'ui', italic: false, size: 12, color: 'ink-2', align: 'center' }, o || {}));
+      lab([-2.4, -1.5], 'saddles');
+      lab([-3.2, 0.9], 'stable nodes'); lab([3.2, 0.9], 'unstable nodes');
+      lab([-1.7, 3.9], 'stable spirals'); lab([1.7, 3.9], 'unstable spirals');
+      lab([0, 4.4], 'centres', { dx: 10, align: 'left', color: 'ink' });
+      lab([2.75, 1.89], 'Δ = τ²/4', { align: 'left', dx: 10, color: 'ink', font: 'body', italic: true, size: 13 });
+      lab([X1, 0], 'τ = tr A', { align: 'right', dx: -4, dy: -12, color: 'ink', font: 'body', italic: true, size: 13 });
+      lab([0, Y1], 'Δ = det A', { align: 'left', dx: 8, dy: 12, color: 'ink', font: 'body', italic: true, size: 13 });
+    };
+    pl.addHandle({ get: () => [st.tau, st.det], set: (x, y) => { st.tau = x; st.det = y; st.star = false; sel.set('custom'); update(); }, color: 'c7', r: 7,
+      constrain: (x, y) => { let t = x, d = y; if (Math.abs(t) < 0.07) t = 0; if (Math.abs(d) < 0.07) d = 0; if (Math.abs(d - t * t / 4) < 0.07) d = t * t / 4; return [t, d]; } });
+    const NP = 90, rnd = M.rng(11);
+    const spawn = () => ({ x: [5.8 * rnd() - 2.9, 5.8 * rnd() - 2.9], age: 0, life: 1.5 + 3 * rnd() });
+    let parts = Array.from({ length: NP }, spawn);
+    pp.draw = g => {
+      g.field(x => M.mv(A, x), { n: 15, len: 10, alpha: 0.45 });
+      paths.forEach(p => {
+        g.path(p.pts, { color: 'c1', width: 1.25, alpha: 0.5 });
+        const k = Math.min(p.fw.length - 2, 18); if (k > 1) g.arrow(p.fw[k - 1], p.fw[k + 1], { color: 'c1', width: 1.25, head: 8, alpha: 0.7 });
+      });
+      info.dirs.forEach(d => g.ray([0, 0], d.v, { color: Math.abs(d.l) < 1e-9 ? 'c4' : (d.l < 0 ? 'c3' : 'c8'), width: 2.25 }));
+      if (Math.abs(st.det) < 1e-9 && info.kind !== 'star') {
+        const nl = info.dirs.find(d => Math.abs(d.l) < 1e-9); if (nl) g.ray([0, 0], nl.v, { color: 'c4', width: 3 });
+      }
+      parts.forEach(q => g.dot(q.x, { r: 2.6, color: 'c7', ring: false, alpha: Math.min(1, 3 * Math.min(q.age, q.life - q.age) / q.life + 0.15) }));
+      g.dot([0, 0], { r: 3.5, color: 'ink' });
+    };
+    function step(dt) {
+      const E = M.expm(M.scale(A, dt * 0.9));
+      parts.forEach((q, i) => {
+        q.x = M.mv(E, q.x); q.age += dt;
+        if (q.age > q.life || Math.abs(q.x[0]) > 3.2 || Math.abs(q.x[1]) > 3.2 || Math.hypot(q.x[0], q.x[1]) < 0.03) parts[i] = spawn();
+      });
+      pp.redraw();
+    }
+    const anim = LT.animate(step, { el: '#viz-atlas', autoplay: !LT.reducedMotion, onState: on => playBtn.setLabel(on ? 'Pause' : 'Play') });
+    if (LT.reducedMotion) playBtn.setLabel('Play');
+    function update() {
+      build();
+      const [name, cls, ds] = classify();
+      const ang = info.kind === 'real' ? Math.acos(Math.min(1, Math.abs(M.dot(M.unit(info.dirs[0].v), M.unit(info.dirs[1].v))))) * 180 / Math.PI : null;
+      out.set(
+        `${ui.mat(A, 2, { name: 'A' })}<span>τ <span class="num">${fmt(st.tau, 2)}</span></span><span>Δ <span class="num">${fmt(st.det, 2)}</span></span>` +
+        `<span>eigenvalues <span class="num">${info.ev.map(z => fmtC(z, 2)).join(', ')}</span></span>${tag(name, cls)}` +
+        `<span>dim <i>E</i><sup>s</sup> <span class="num">${info.ev.filter(z => z.re < -1e-9).length}</span>${ds === null ? ' (not hyperbolic: this number alone does not classify the flow)' : ''}</span>` +
+        (ang !== null ? `<span>angle between eigenvectors <span class="num">${fmt(ang, 1)}°</span></span>` : '')
+      );
+      pl.redraw(); pp.redraw();
+    }
+    update();
+  })();
+
+  /* ---------------- Visual 7.3: Lyapunov ellipses ---------------- */
+  (function () {
+    const st = { fam: 'node', w: 6, k: 1.5, q: 1, phi: 0, x0: [0.2, 1.5] };
+    const pp = new Plot('#ly-phase', { xlim: [-3, 3], ylim: [-3, 3], equal: true, maxH: 420, label: 'Lyapunov level sets, a Euclidean circle and a trajectory' });
+    const pt = new Plot('#ly-time', { xlim: [0, 8], ylim: [1e-3, 300], logy: true, frame: true, aspect: 0.82, maxH: 420, xlabel: 'time t', ylabel: 'relative to t = 0', label: 'Lyapunov function and squared norm along the trajectory' });
+    pp.el.insertBefore(pp.canvas, pp.el.firstChild); pt.el.insertBefore(pt.canvas, pt.el.firstChild);
+    document.getElementById('ly-legend').innerHTML = ui.legend([{ color: 'c3', label: '<span>V(x(t))/V(x₀)</span>' }, { color: 'c8', label: '<span>‖x(t)‖²/‖x₀‖²</span>' }, { color: 'c3', label: '<span>e<sup>−2γt</sup></span>', kind: 'dash' }, { color: 'c8', label: '<span>κ(P)e<sup>−2γt</sup></span>', kind: 'dash' }]);
+    const panel = ui.panel('#ly-controls');
+    panel.select({ id: 'ly-fam', label: 'Family', value: st.fam, options: [['node', 'stable node: −1, −2'], ['spiral', 'stable spiral: −0.5 ± 2i']], onChange: v => { st.fam = v; slW.el.style.display = v === 'node' ? '' : 'none'; slK.el.style.display = v === 'spiral' ? '' : 'none'; update(); } });
+    const slW = panel.slider({ id: 'ly-w', label: 'Non-normality $w$', min: 0, max: 12, step: 0.05, value: st.w, digits: 2, onInput: v => { st.w = v; update(); } });
+    const slK = panel.slider({ id: 'ly-k', label: 'Shear $k$', min: 0, max: 3, step: 0.02, value: st.k, digits: 2, onInput: v => { st.k = v; update(); } });
+    slK.el.style.display = 'none';
+    panel.slider({ id: 'ly-q', label: 'Ratio $q_2/q_1$ of $Q$', min: -1.3, max: 0, step: 0.01, value: st.q, log: true, onInput: v => { st.q = v; update(); } });
+    panel.slider({ id: 'ly-phi', label: 'Angle of $Q$', min: 0, max: Math.PI, step: 0.01, value: st.phi, digits: 2, onInput: v => { st.phi = v; update(); } });
+    const out = panel.readout({});
+    let A, P, Pih, traj = [], Vs = [], Ns = [], kap = 1, gam = 1;
+    function compute() {
+      if (st.fam === 'node') A = [[-1, st.w], [0, -2]];
+      else { const S = [[1, st.k], [0, 1]]; A = M.mul(M.mul(S, [[-0.5, 2], [-2, -0.5]]), M.inv(S)); }
+      const Rq = R(st.phi), Q = M.mul(M.mul(Rq, [[1, 0], [0, st.q]]), M.T(Rq));
+      P = M.lyap(M.T(A), Q);
+      const es = M.eigSym(P), lmax = es.values[0], lmin = es.values[1];
+      Pih = M.mul(M.mul(es.vectors, [[1 / Math.sqrt(lmax), 0], [0, 1 / Math.sqrt(lmin)]]), M.T(es.vectors));
+      kap = lmax / lmin; gam = Math.min(1, st.q) / (2 * lmax);
+      const E = M.expm(M.scale(A, 0.02)), V0 = M.dot(st.x0, M.mv(P, st.x0)), N0 = M.dot(st.x0, st.x0);
+      traj = []; Vs = []; Ns = []; let x = st.x0.slice();
+      for (let k = 0; k <= 400; k++) { traj.push(x); Vs.push([0.02 * k, M.dot(x, M.mv(P, x)) / V0]); Ns.push([0.02 * k, M.dot(x, x) / N0]); x = M.mv(E, x); }
+    }
+    pp.draw = g => {
+      const V0 = M.dot(st.x0, M.mv(P, st.x0)), E4 = M.expm(M.scale(A, 0.04));
+      for (let j = 0; j < 7; j++) { const c = V0 * Math.pow(0.45, j); g.ellipse([0, 0], M.scale(Pih, Math.sqrt(c)), { color: 'c3', width: j === 0 ? 2 : 1.25, alpha: j === 0 ? 1 : 0.8 }); }
+      g.circle([0, 0], M.vnorm(st.x0), { color: 'muted', width: 1.4, dash: [5, 4] });
+      for (let i = 0; i < 8; i++) {
+        const a = 2 * Math.PI * i / 8 + 0.4, d = [Math.cos(a), Math.sin(a)], s = Math.sqrt(V0 / M.dot(d, M.mv(P, d))), y0 = M.vscale(d, s);
+        const pts = [y0]; let y = y0; for (let k = 0; k < 200; k++) { y = M.mv(E4, y); pts.push(y); }
+        g.path(pts, { color: 'c7', width: 1, alpha: 0.3 });
+      }
+      g.path(traj, { color: 'c7', width: 2.25 });
+      let im = 0; Ns.forEach((p, i) => { if (p[1] > Ns[im][1]) im = i; });
+      if (im > 0) { const xm = traj[im]; g.circle([0, 0], M.vnorm(xm), { color: 'c8', width: 1, dash: [2, 3] }); g.dot(xm, { r: 4.5, color: 'c8' }); }
+    };
+    pp.addHandle({ get: () => st.x0, set: (x, y) => { if (Math.hypot(x, y) > 0.05) { st.x0 = [x, y]; update(); } }, color: 'c7', snap: 0.02, label: 'x₀' });
+    pt.draw = g => {
+      g.fn(t => Math.exp(-2 * gam * t), { color: 'c3', width: 1.4, dash: [6, 4] });
+      g.fn(t => kap * Math.exp(-2 * gam * t), { color: 'c8', width: 1.4, dash: [6, 4] });
+      g.path(Ns, { color: 'c8', width: 2.25 });
+      g.path(Vs, { color: 'c3', width: 2.25 });
+      g.hline(1, { color: 'muted', width: 1, dash: [2, 3] });
+    };
+    function update() {
+      compute();
+      const maxN = Math.max(...Ns.map(p => p[1])), mono = Vs.every((p, i) => i === 0 || p[1] <= Vs[i - 1][1] * (1 + 1e-12));
+      const monoN = Ns.every((p, i) => i === 0 || p[1] <= Ns[i - 1][1] * (1 + 1e-12));
+      const Rw = Math.min(9, Math.max(3, 1.12 * M.vnorm(st.x0) * Math.sqrt(Math.max(1, maxN))));
+      if (Math.abs(Rw - (pp.o.xlim[1])) > 1e-9) pp.setLimits([-Rw, Rw], [-Rw, Rw]);
+      const al = M.spectralAbscissa(A), om = M.numericalAbscissa(A);
+      out.set(
+        `${ui.mat(A, 2, { name: 'A' })}${ui.mat(P, 3, { name: 'P' })}` +
+        `<span>α(<i>A</i>) <span class="num">${fmt(al, 2)}</span>, ω(<i>A</i>) <span class="num">${fmt(om, 2)}</span></span>` +
+        `<span>κ(<i>P</i>) <span class="num">${fmtSig(kap, 3)}</span>, γ <span class="num">${fmtSig(gam, 3)}</span></span>` +
+        `<span>max<sub><i>t</i></sub> ‖<i>x</i>(<i>t</i>)‖²/‖<i>x</i>₀‖² <span class="num">${fmt(maxN, 3)}</span> ≤ κ(<i>P</i>)</span>` +
+        tag(mono ? 'V decreasing' : 'V not monotone', mono ? 'good' : 'bad') + (maxN > 1 + 1e-9 ? tag('‖x‖ exceeds ‖x₀‖', 'bad') : (monoN ? tag('‖x‖ decreasing', 'good') : tag('‖x‖ ≤ ‖x₀‖, not monotone')))
+      );
+      pp.redraw(); pt.redraw();
+    }
+    update();
+  })();
+
+  /* ---------------- Visual 7.4: frozen eigenvalues versus the flow ---------------- */
+  (function () {
+    const A0 = [[0.5, 1], [-1, -1]], K = [[0, 1], [-1, 0]], x0 = [-1, 0];
+    const st = { nu: 1 };
+    const U = th => [[Math.cos(th), Math.sin(th)], [-Math.sin(th), Math.cos(th)]];
+    const At = (nu, t) => { const u = U(nu * t); return M.mul(M.mul(u, A0), M.T(u)); };
+    const rate = nu => -0.25 + Math.sqrt(Math.max(0, 9 / 16 - (1 - nu) * (1 - nu)));
+    const pt = new Plot('#ltv-time', { xlim: [0, 20], ylim: [1e-4, 1e5], logy: true, frame: true, aspect: 0.82, maxH: 400, xlabel: 'time t', ylabel: 'norm of x(t)', label: 'Norm of the solution of the time-varying system against time' });
+    const pr = new Plot('#ltv-rate', { xlim: [0, 3], ylim: [-0.6, 0.8], frame: true, aspect: 0.82, maxH: 400, xlabel: 'rotation rate ν', ylabel: 'growth rate', label: 'Growth rate against rotation rate' });
+    pt.el.insertBefore(pt.canvas, pt.el.firstChild); pr.el.insertBefore(pr.canvas, pr.el.firstChild);
+    document.getElementById('ltv-legend').innerHTML = ui.legend([{ color: 'c7', label: '<span>simulated ‖x(t)‖</span>' }, { color: 'c2', label: '<span>rotating-frame solution</span>', kind: 'dash' }, { color: 'c3', label: '<span>e<sup>−t/4</sup> (frozen eigenvalues)</span>', kind: 'dash' }, { color: 'c8', label: '<span>e<sup>t/2</sup> (bound from ω)</span>', kind: 'dash' }]);
+    const panel = ui.panel('#ltv-controls');
+    const later = LT.throttle(() => update());
+    panel.slider({ id: 'ltv-nu', label: 'Rotation rate $\\nu$', min: 0, max: 3, step: 0.01, value: st.nu, digits: 2, onInput: v => { st.nu = v; later(); } });
+    const out = panel.readout({});
+    let sim = [], cf = [], maxRel = 0;
+    function compute() {
+      const nu = st.nu, h = 0.01, B = M.sub(A0, M.scale(K, nu));
+      sim = []; cf = []; maxRel = 0;
+      let x = x0.slice(), t = 0; const f = (tt, xx) => M.mv(At(nu, tt), xx);
+      const Eb = M.expm(M.scale(B, h)); let y = x0.slice();
+      for (let k = 0; k <= 2000; k++) {
+        if (k % 4 === 0) { const nx = M.vnorm(x), ny = M.vnorm(y); sim.push([t, nx]); cf.push([t, ny]); maxRel = Math.max(maxRel, Math.abs(nx - ny) / ny); }
+        const k1 = f(t, x), k2 = f(t + h / 2, M.vadd(x, M.vscale(k1, h / 2))), k3 = f(t + h / 2, M.vadd(x, M.vscale(k2, h / 2))), k4 = f(t + h, M.vadd(x, M.vscale(k3, h)));
+        x = M.vadd(x, M.vscale(M.vadd(M.vadd(k1, M.vscale(k2, 2)), M.vadd(M.vscale(k3, 2), k4)), h / 6)); t += h;
+        y = M.mv(Eb, y);
+      }
+    }
+    pt.draw = g => {
+      g.fn(t => Math.exp(-t / 4), { color: 'c3', width: 1.4, dash: [6, 4] });
+      g.fn(t => Math.exp(t / 2), { color: 'c8', width: 1.4, dash: [6, 4] });
+      g.path(sim, { color: 'c7', width: 2.75 });
+      g.path(cf, { color: 'c2', width: 1.5, dash: [7, 4] });
+    };
+    pr.draw = g => {
+      const a = 1 - Math.SQRT1_2, b = 1 + Math.SQRT1_2;
+      g.poly([[a, -0.6], [b, -0.6], [b, 0.8], [a, 0.8]], { fill: 'c8', fillAlpha: 0.1, stroke: false });
+      g.hline(-0.25, { color: 'c3', width: 1.4, dash: [6, 4] });
+      g.hline(0.5, { color: 'c8', width: 1.4, dash: [6, 4] });
+      g.fn(rate, { color: 'c2', width: 2.25 }, { n: 600 });
+      g.dot([st.nu, rate(st.nu)], { r: 5, color: 'c7' });
+      g.text([2.95, -0.25], 'frozen: −1/4', { font: 'ui', italic: false, size: 11.5, color: 'ink-2', align: 'right', dy: 11 });
+      g.text([2.95, 0.5], 'ω(A(t)) = 1/2', { font: 'ui', italic: false, size: 11.5, color: 'ink-2', align: 'right', dy: -11 });
+    };
+    function update() {
+      compute();
+      const nu = st.nu, B = M.sub(A0, M.scale(K, nu)), evB = M.eigvals(B);
+      let flo = '';
+      if (nu > 1e-9) { const Mon = M.scale(M.expm(M.scale(B, Math.PI / nu)), -1); flo = `<span>Floquet multipliers (period π/ν) <span class="num">${M.eigvals(Mon).map(z => fmtC(z, 3)).join(', ')}</span></span>`; }
+      const mu = rate(nu);
+      out.set(
+        `<span>frozen eigenvalues of <i>A</i>(<i>t</i>), every <i>t</i> <span class="num">−0.25 ± 0.661i</span></span>` +
+        `<span>eigenvalues of <i>A</i>₀ − ν<i>K</i> <span class="num">${evB.map(z => fmtC(z, 3)).join(', ')}</span></span>` +
+        `<span>growth rate <span class="num">${fmt(mu, 3)}</span></span>${tag(mu > 1e-9 ? 'unstable' : 'asymptotically stable', mu > 1e-9 ? 'bad' : 'good')}` + flo +
+        `<span>simulation vs rotating frame: max relative difference <span class="num">${fmtSig(Math.max(maxRel, 1e-16), 2)}</span></span>`
+      );
+      pt.redraw(); pr.redraw();
+    }
+    update();
+  })();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,879 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>5 Norms, operators and Hilbert space · Linear Theory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap">
+<link rel="stylesheet" href="assets/lt.css">
+<script src="assets/toc.js"></script>
+<script src="assets/lt.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+</head>
+<body>
+<div class="topbar"><button class="btn" id="lt-menu" type="button" aria-controls="lt-side" aria-expanded="false">Contents</button><span class="topbar-title">5 · Beyond ℝⁿ: norms, operators and Hilbert space</span></div>
+<div class="shell">
+<nav class="side" id="lt-side" aria-label="Chapters"></nav>
+<main class="page" id="main" data-chapter="5">
+<div class="content">
+
+<header class="ch-head">
+  <div class="eyebrow">Part II · Linear analysis · Chapter 5</div>
+  <h1 class="ch-title">Beyond $\R^n$: norms, operators and Hilbert space</h1>
+  <p class="ch-lead">Signals, trajectories and input histories are vectors in infinite-dimensional spaces. This chapter sorts the facts of $\R^n$ into those that survive there (orthogonal projection, orthonormal expansion, minimum-norm solutions) and those that fail (equivalence of norms, compactness of the unit ball, spectra made only of eigenvalues). It ends with the two results that the control chapters use most: Fourier modes diagonalize shift-invariant operators, exactly through the discrete Fourier transform (DFT) in the cyclic case and as generalized eigenfunctions for convolutions on the line, and minimum-energy steering is a projection.</p>
+  <p class="ch-meta"><span><b>Prerequisites</b> chapters 1, 2 and 4: subspaces, projections, the singular value decomposition (SVD) and matrix norms</span><span><b>Leads to</b> chapters 6, 8, 9 and 12</span><span><b>Visuals</b> 3</span></p>
+  <ol class="core-q">
+    <li>Which finite-dimensional facts survive in spaces of functions and sequences, and which fail?</li>
+    <li>Why do exponentials and Fourier modes diagonalize every shift-invariant linear operator?</li>
+    <li>How does a minimum-norm problem in a Hilbert space become a minimum-energy control problem?</li>
+  </ol>
+  <details class="notation">
+    <summary>Notation introduced in this chapter</summary>
+    <div class="tbl-wrap"><table class="tbl">
+      <thead><tr><th>Symbol</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td>$X$, $Y$; $H$</td><td>normed (usually complete) spaces; a Hilbert space</td></tr>
+        <tr><td>$\ell^p$, $\norm{x}_p$</td><td>sequences $(x_1, x_2, \dots)$ with $\norm{x}_p = (\sum_k\abs{x_k}^p)^{1/p} &lt; \infty$; $\ell^\infty$ uses $\sup_k\abs{x_k}$</td></tr>
+        <tr><td>$C[a,b]$, $\norm{f}_\infty$</td><td>continuous functions on $[a,b]$ with the sup norm $\max_t\abs{f(t)}$</td></tr>
+        <tr><td>$L^p[a,b]$</td><td>functions with $\int_a^b\abs{f}^p &lt; \infty$, identified when equal almost everywhere</td></tr>
+        <tr><td>$\norm{T}$, $B(X,Y)$</td><td>operator norm $\sup_{x\ne0}\norm{Tx}/\norm{x}$; the bounded linear operators $X \to Y$</td></tr>
+        <tr><td>$\norm{A}_1$, $\norm{A}_\infty$</td><td>matrix norms induced by $\norm{\cdot}_1$ and $\norm{\cdot}_\infty$</td></tr>
+        <tr><td>$T^*$</td><td>adjoint operator, $\inner{Tx}{y} = \inner{x}{T^*y}$</td></tr>
+        <tr><td>$\Lambda(T)$</td><td>spectrum: the $\lambda \in \C$ for which $T - \lambda I$ has no bounded inverse</td></tr>
+        <tr><td>$S_R$, $S_L$</td><td>right and left shifts on $\ell^2$</td></tr>
+        <tr><td>$P_M$</td><td>orthogonal projector onto a closed subspace $M$</td></tr>
+        <tr><td>$\hat f_k$, $S_Nf$</td><td>Fourier coefficients $\inner{f}{e_k}$; partial Fourier sum of degree $N$</td></tr>
+        <tr><td>$P$, $\operatorname{circ}(c)$</td><td>cyclic shift on $\C^N$; circulant matrix with first column $c$</td></tr>
+        <tr><td>$\omega$, $F$, $\hat c$</td><td>$\omega = e^{-2\pi i/N}$; discrete Fourier transform matrix $F_{jk} = \omega^{jk}$; $\hat c = Fc$</td></tr>
+        <tr><td>$G$</td><td>Gram matrix $G_{ij} = \inner{y_j}{y_i}$ of vectors $y_1, \dots, y_n$</td></tr>
+        <tr><td>$W_c(t_f)$</td><td>controllability Gramian on the horizon $[0, t_f]$ (scalar case here, chapter 9 in general)</td></tr>
+      </tbody>
+    </table></div>
+  </details>
+</header>
+
+<section class="sec" id="s-normed">
+<h2>Normed and Banach spaces</h2>
+
+<div class="blk prob"><p>In $\R^n$ every norm gives the same notions of convergence, every subspace is closed and the unit ball is compact (<a class="xref" href="#thm-equiv"></a>, <a class="xref" href="#prop-findim"></a>, <a class="xref" href="#thm-ball"></a>). Decide which of these facts survive when the vectors are functions or infinite sequences.</p></div>
+
+<div class="blk def" id="def-norm" data-name="Norm, Banach space">
+<p>A <dfn>norm</dfn> on a vector space $X$ over $\F$ ($\R$ or $\C$) is a function $\norm{\cdot}: X \to [0, \infty)$ with $\norm{x} = 0$ only for $x = 0$, $\norm{\alpha x} = \abs{\alpha}\norm{x}$, and $\norm{x + y} \le \norm{x} + \norm{y}$. A sequence $(x_n)$ is <dfn>Cauchy</dfn> if $\norm{x_n - x_m} \to 0$ as $n, m \to \infty$. A normed space in which every Cauchy sequence converges is <dfn>complete</dfn>, or a <dfn>Banach space</dfn>.</p>
+</div>
+
+<div class="blk ex" id="ex-spaces" data-name="The standard spaces">
+<p>The sequence spaces $\ell^p$ for $1 \le p &lt; \infty$, the sequences $x = (x_1, x_2, \dots)$ with $\norm{x}_p = (\sum_k\abs{x_k}^p)^{1/p} &lt; \infty$, and $\ell^\infty$, the bounded sequences with $\norm{x}_\infty = \sup_k\abs{x_k}$; the space $C[a,b]$ of continuous functions on an interval $[a,b]$, $a &lt; b$, with the sup norm $\norm{f}_\infty = \max_t\abs{f(t)}$; and, for $1 \le p &lt; \infty$, $L^p[a,b]$, the Lebesgue-measurable functions with $\norm{f}_p = (\int_a^b\abs{f}^p\,\dd t)^{1/p} &lt; \infty$, where two functions that agree except on a set of measure zero ("almost everywhere") are identified. Continuous functions on $[a,b]$ are bounded and measurable, so they lie in every $L^p[a,b]$, and $\norm{f}_p$ is also a norm on $C[a,b]$, since a continuous $f$ with $\int_a^b\abs{f}^p\,\dd t = 0$ vanishes. All of these spaces are complete (<a class="xref" href="#prop-banach"></a>), and among them only $\ell^2$ and $L^2[a,b]$ carry an inner product that induces the norm (<a class="xref" href="#cex-parallelogram"></a>).</p>
+</div>
+
+<div class="blk prop" id="prop-banach" data-name="The standard spaces are complete">
+<p>(i) For $1 \le p \le \infty$, $\norm{\cdot}_p$ is a norm on $\ell^p$, and $\ell^p$ is a Banach space. (ii) $C[a,b]$ with the sup norm is a Banach space. (iii) For $1 \le p &lt; \infty$, $L^p[a,b]$ is a Banach space, and $C[a,b]$ is dense in it. So $L^p[a,b]$ is the completion of $(C[a,b], \norm{\cdot}_p)$: a Banach space that contains it as a dense subspace.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof of (ii).</span> If $(f_n)$ is Cauchy in the sup norm, then $(f_n(t))$ is Cauchy in $\F$ for every $t$; let $f(t)$ be its limit. Given $\eps &gt; 0$, choose $N$ with $\norm{f_n - f_m}_\infty \le \eps$ for $n, m \ge N$; letting $m \to \infty$ gives $\abs{f_n(t) - f(t)} \le \eps$ for all $t$ and all $n \ge N$, so $f_n \to f$ uniformly. A uniform limit of continuous functions is continuous, since $\abs{f(t) - f(s)} \le 2\eps + \abs{f_N(t) - f_N(s)}$; so $f \in C[a,b]$ and $\norm{f_n - f}_\infty \to 0$.</p>
+</div>
+<p class="src">(i): Kreyszig, <i>Introductory Functional Analysis with Applications</i>, ch. 1 (with Minkowski's inequality for the triangle inequality). Completeness in (iii), the Riesz–Fischer theorem: G. B. Folland, <i>Real Analysis</i>, 2nd ed., ch. 6. Density in (iii): simple functions are dense in $L^p$, a measurable subset of $[a,b]$ differs from a finite union of intervals by a set of small measure, and the indicator function of an interval is an $L^p$ limit of continuous piecewise-linear functions; Folland, ch. 7. Luenberger, <i>Optimization by Vector Space Methods</i>, ch. 2, surveys all of these spaces.</p>
+
+<div class="blk probe">
+<p>The functions $f_n(t) = t^n$ on $[0, 1]$ have</p>
+<div class="eq">$$\norm{f_n}_\infty = 1,\qquad \norm{f_n}_1 = \int_0^1 t^n\,\dd t = \frac{1}{n+1},\qquad \norm{f_n}_2 = \frac{1}{\sqrt{2n+1}}.$$</div>
+<p>So $f_n \to 0$ in the $L^1$ and $L^2$ norms but not uniformly, and no constant $c$ satisfies $\norm{f}_\infty \le c\norm{f}_1$ for all $f \in C[0,1]$. Which sequences converge now depends on the norm.</p>
+</div>
+
+<div class="blk thm" id="thm-equiv" data-name="Equivalence of norms in finite dimension">
+<p>On a finite-dimensional vector space any two norms $\norm{\cdot}_a$, $\norm{\cdot}_b$ are equivalent: there are constants $0 &lt; c \le C$ with $c\norm{x}_a \le \norm{x}_b \le C\norm{x}_a$ for every $x$. On $\F^n$, for example,</p>
+<div class="eq">$$\norm{x}_\infty \le \norm{x}_2 \le \norm{x}_1 \le \sqrt n\,\norm{x}_2 \le n\norm{x}_\infty .$$</div>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof of the chain.</span> $\abs{x_k} \le \norm{x}_2$ for every $k$; $\norm{x}_1^2 = \sum_{j,k}\abs{x_j}\abs{x_k} \ge \sum_k\abs{x_k}^2 = \norm{x}_2^2$; Cauchy–Schwarz with the vector of ones gives $\norm{x}_1 \le \sqrt n\,\norm{x}_2$; and $\norm{x}_2^2 \le n\norm{x}_\infty^2$.</p>
+</div>
+<p class="src">Idea of the general statement: in coordinates, a norm is continuous and positive on the compact unit sphere of $\norm{\cdot}_2$, so it is bounded above and below there. Proof: Kreyszig, ch. 2; for $\F^n$ also <a href="ch02_least_squares.html#thm-equiv">the norm-equivalence theorem</a> of chapter 2.</p>
+
+<div class="blk cex" id="cex-complete">
+<p>Completeness depends on the norm. With the sup norm $C[-1,1]$ is complete (<a class="xref" href="#prop-banach"></a>); with the $L^2$ norm it is not: the ramps $g_n(t) = \max(-1, \min(1, nt))$ are continuous, form a Cauchy sequence in $L^2$ (for $m &gt; n$, $g_m$ and $g_n$ differ only on $\abs{t} \le 1/n$, where $\abs{g_m - g_n} \le 1$, so $\norm{g_m - g_n}_2^2 \le 2/n$), and converge in $L^2$ to the sign function, which has no continuous representative. So the Cauchy sequence $(g_n)$ has no limit in $C[-1,1]$; by <a class="xref" href="#prop-banach"></a>, the completion of $(C[a,b], \norm{\cdot}_2)$ is $L^2[a,b]$.</p>
+</div>
+
+<div class="blk def" id="def-closed" data-name="Closed and dense subspaces">
+<p>A subset $M$ of a normed space $X$ is <dfn>closed</dfn> if it contains the limit of every convergent sequence of its elements, and <dfn>dense</dfn> if every $x \in X$ is such a limit.</p>
+</div>
+
+<div class="blk prop" id="prop-findim" data-name="Consequences of finite dimension">
+<p>Let $V$ be a finite-dimensional normed space. (i) $V$ is complete. Hence every finite-dimensional subspace of a normed space $X$ is closed in $X$, and every subspace of a finite-dimensional normed space is closed. (ii) For every normed space $Y$ and every linear map $T: V \to Y$ there is a constant $C$ with $\norm{Tx} \le C\norm{x}$ for all $x \in V$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Choose a basis $v_1, \dots, v_n$ of $V$ and write $x = \sum_j\xi_jv_j$ with coordinate vector $\xi \in \F^n$. The maps $x \mapsto \norm{\xi}_2$ and $x \mapsto \norm{\xi}_1$ are norms on $V$, so by <a class="xref" href="#thm-equiv"></a> there are constants $0 &lt; c \le C'$ with $c\norm{\xi}_2 \le \norm{x} \le C'\norm{\xi}_2$, and a constant $c_1$ with $\norm{\xi}_1 \le c_1\norm{x}$. (i) If $(x_k)$ is Cauchy in $V$, its coordinate vectors are Cauchy in $\F^n$, which is complete, so they converge to some $\xi$, and then $x_k \to \sum_j\xi_jv_j$. If $V \subseteq X$ and $x_k \in V$ converge to $x \in X$, then $(x_k)$ is Cauchy, so it has a limit in $V$, which is $x$ because limits are unique. (ii) $\norm{Tx} = \norm{\sum_j\xi_jTv_j} \le \big(\max_j\norm{Tv_j}\big)\norm{\xi}_1$, which is at most $c_1\max_j\norm{Tv_j}\,\norm{x}$.</p>
+</div>
+
+<div class="blk cex" id="cex-polys">
+<p>The polynomials form a subspace of $L^2[0,1]$ that is dense but not closed. Dense: by the Weierstrass approximation theorem polynomials approximate every continuous function uniformly, hence in $L^2$ (on $[0,1]$, $\norm{g}_2 \le \norm{g}_\infty$), and continuous functions are dense in $L^2[0,1]$ (<a class="xref" href="#prop-banach"></a>). Not closed: a closed dense subspace contains every limit, so it would be all of $L^2[0,1]$; but $e^t$ is not a polynomial, even after a change on a set of measure zero, because two continuous functions that agree almost everywhere agree everywhere and no derivative of $e^t$ vanishes. The same holds for the finitely supported sequences inside $\ell^2$: the truncations $x^{(N)} = (x_1, \dots, x_N, 0, 0, \dots)$ of any $x \in \ell^2$ converge to $x$, since $\norm{x - x^{(N)}}_2^2 = \sum_{k &gt; N}\abs{x_k}^2 \to 0$, while $(1, \frac12, \frac13, \dots) \in \ell^2$ is not finitely supported.</p>
+</div>
+
+<div class="blk thm" id="thm-ball" data-name="Compactness of the unit ball">
+<p>The closed unit ball $\{x : \norm{x} \le 1\}$ of a normed space $X$ is compact if and only if $\dim X &lt; \infty$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof in a Hilbert space.</span> If $\dim X &lt; \infty$, the ball is closed and bounded in coordinates, by <a class="xref" href="#thm-equiv"></a>, hence compact by the Heine–Borel theorem. Conversely, an infinite-dimensional Hilbert space contains an orthonormal sequence $(e_k)$ (apply <a href="ch02_least_squares.html#thm-gs">Gram–Schmidt</a>, chapter 2, to any independent sequence), and $\norm{e_j - e_k}^2 = 2$ for $j \ne k$, so no subsequence is Cauchy and none converges. For general normed spaces the same conclusion follows from Riesz's lemma; Kreyszig, ch. 2.</p>
+</div>
+
+<div class="blk pattern">
+<p>Three finite-dimensional conveniences rest on one fact, compactness of the unit sphere: all norms are equivalent (<a class="xref" href="#thm-equiv"></a>), every subspace is closed (<a class="xref" href="#prop-findim"></a>), and every bounded sequence has a convergent subsequence (<a class="xref" href="#thm-ball"></a>). In infinite dimension each must be replaced by a hypothesis that one states and checks: a chosen norm, a closed subspace, a compact operator (<a class="xref" href="#s-spectra"></a>).</p>
+</div>
+</section>
+
+<section class="sec" id="s-operators">
+<h2>Bounded operators and induced norms</h2>
+
+<div class="blk prob"><p>Extend the matrix norm of chapter 4 to linear maps between normed spaces, decide when such a map is continuous, and find when $I - T$ can be inverted by a series.</p></div>
+
+<div class="blk def" id="def-bounded" data-name="Bounded operator, operator norm">
+<p>A linear map $T: X \to Y$ between normed spaces is <dfn>bounded</dfn> if $\norm{Tx} \le C\norm{x}$ for some constant $C$ and all $x$. The smallest such $C$ is the <dfn>operator norm</dfn></p>
+<div class="eq">$$\norm{T} = \sup_{x \ne 0}\frac{\norm{Tx}}{\norm{x}} = \sup_{\norm{x} = 1}\norm{Tx}.$$</div>
+<p>We write $B(X, Y)$ for the set of bounded linear maps $X \to Y$, and $B(X) = B(X, X)$.</p>
+</div>
+
+<div class="blk prop" id="prop-bxy" data-name="The space of bounded operators">
+<p>Let $X$, $Y$, $Z$ be normed spaces. (i) The operator norm is a norm on $B(X, Y)$, and $\norm{Tx} \le \norm{T}\norm{x}$ for every $x$. (ii) If $Y$ is a Banach space, so is $B(X, Y)$. (iii) If $T \in B(X, Y)$ and $S \in B(Y, Z)$, then $ST \in B(X, Z)$ and $\norm{ST} \le \norm{S}\norm{T}$; in particular $\norm{T^k} \le \norm{T}^k$ for $T \in B(X)$ and $k \ge 1$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (i) $\norm{(S + T)x} \le (\norm{S} + \norm{T})\norm{x}$ and $\norm{\alpha Tx} = \abs\alpha\norm{Tx}$ give the triangle inequality and homogeneity, and $\norm{T} = 0$ forces $Tx = 0$ for every $x$. (ii) If $(T_n)$ is Cauchy in $B(X, Y)$, then $\norm{T_nx - T_mx} \le \norm{T_n - T_m}\norm{x}$, so $(T_nx)$ is Cauchy in $Y$; call its limit $Tx$. The map $T$ is linear. Given $\eps &gt; 0$, choose $N$ with $\norm{T_n - T_m} \le \eps$ for $n, m \ge N$; letting $m \to \infty$ in $\norm{T_nx - T_mx} \le \eps\norm{x}$ gives $\norm{(T_n - T)x} \le \eps\norm{x}$. So $T = T_n - (T_n - T)$ is bounded and $\norm{T_n - T} \le \eps$ for $n \ge N$. (iii) $\norm{STx} \le \norm{S}\norm{Tx} \le \norm{S}\norm{T}\norm{x}$.</p>
+</div>
+
+<div class="blk thm" id="thm-bounded" data-name="Bounded means continuous">
+<p>For a linear $T: X \to Y$ the following are equivalent: $T$ is bounded; $T$ is continuous; $T$ is continuous at $0$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> If $T$ is bounded, $\norm{Tx - Ty} \le \norm{T}\norm{x - y}$, so $T$ is Lipschitz. Continuity at $0$ is a special case of continuity. If $T$ is continuous at $0$, there is $\delta &gt; 0$ with $\norm{Tx} \le 1$ whenever $\norm{x} \le \delta$; scaling gives $\norm{Tx} \le \norm{x}/\delta$ for every $x$.</p>
+</div>
+
+<div class="blk cex" id="cex-diff">
+<p>Differentiation is unbounded. On $C^1[0,1]$ (continuously differentiable functions) with the sup norm, $D f = f'$ is linear, and $f_n(t) = \sin(n\pi t)$ has $\norm{f_n}_\infty = 1$ but $\norm{Df_n}_\infty = n\pi$. In finite dimension this cannot happen: every linear map on a finite-dimensional normed space is bounded (<a class="xref" href="#prop-findim"></a>). Unbounded operators such as $D$ are one reason why differential equations posed on function spaces need more care than the matrix equation $\dot x = Ax$ of chapter 7.</p>
+</div>
+
+<div class="blk thm" id="thm-induced" data-name="Induced matrix norms">
+<p>For $A \in \C^{m\times n}$ with entries $a_{ij}$, the norms induced by $\norm{\cdot}_1$, $\norm{\cdot}_2$ and $\norm{\cdot}_\infty$ on both sides are</p>
+<div class="eq">$$\norm{A}_1 = \max_j\sum_{i}\abs{a_{ij}},\qquad \norm{A}_2 = \sigma_1(A),\qquad \norm{A}_\infty = \max_i\sum_{j}\abs{a_{ij}},$$</div>
+<p>the largest column sum, the largest singular value and the largest row sum of absolute values. Consequently $\norm{A^*}_1 = \norm{A}_\infty$ and $\norm{A^*}_2 = \norm{A}_2$, where $A^*$ is the conjugate transpose.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> For $\norm{\cdot}_1$,</p>
+<div class="eq">$$\norm{Ax}_1 = \sum_i\Big\lvert\sum_j a_{ij}x_j\Big\rvert \le \sum_j\abs{x_j}\sum_i\abs{a_{ij}} \le \Big(\max_j\sum_i\abs{a_{ij}}\Big)\norm{x}_1,$$</div>
+<p>with equality at $x = e_{j^*}$, the $j^*$-th standard basis vector, for a column $j^*$ of largest sum. $\norm{\cdot}_\infty$: $\abs{(Ax)_i} \le \sum_j\abs{a_{ij}}\abs{x_j} \le \big(\sum_j\abs{a_{ij}}\big)\norm{x}_\infty$, with equality for the row $i^*$ of largest sum at $x_j = \overline{a_{i^*j}}/\abs{a_{i^*j}}$, the bar denoting complex conjugation (and $x_j = 1$ where $a_{i^*j} = 0$), which has $\norm{x}_\infty = 1$. The spectral norm is <a href="ch04_svd.html#thm-norms">the norms-from-singular-values theorem</a> of chapter 4. Finally, row $i$ of $A$, conjugated, is column $i$ of $A^*$, so the largest row sum of $A$ is the largest column sum of $A^*$; and with the standard inner product $\inner{x}{y} = y^*x$, both $\norm{A}_2$ and $\norm{A^*}_2$ equal the maximum of $\abs{\inner{Ax}{y}} = \abs{\inner{x}{A^*y}}$ over unit vectors $x$ and $y$, by Cauchy–Schwarz with equality at $y = Ax/\norm{Ax}_2$ (and at $x = A^*y/\norm{A^*y}_2$).</p>
+</div>
+
+<div class="blk probe">
+<p>For $A = \begin{bmatrix}1 & 2\\ 3 & 4\end{bmatrix}$: $\norm{A}_1 = \max(4, 6) = 6$, $\norm{A}_\infty = \max(3, 7) = 7$, $\norm{A}_2 = \sigma_1 \approx 5.465$ (from $A^\T A$, which has trace $30$ and determinant $4$; $A^\T$ is the transpose), and the spectral radius $\rho(A) = \max\abs{\lambda} = (5 + \sqrt{33})/2 \approx 5.372$. Every norm exceeds $\rho(A)$, and $\norm{A}_\infty \ne \norm{A}_1$, which can happen only because $A \ne A^\T$: by <a class="xref" href="#thm-induced"></a>, $\norm{A}_\infty = \norm{A^*}_1$, and here $A^* = A^\T$.</p>
+</div>
+
+<div class="blk prop" id="prop-rho" data-name="Spectral radius below every induced norm">
+<p>Let $A \in \F^{n\times n}$, let $\norm{\cdot}$ be a norm on $\F^n$, and let $\norm{A}$ be the operator norm it induces. Then $\rho(A) \le \norm{A}$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> If $Ax = \lambda x$ with $x \ne 0$, then $\abs{\lambda}\norm{x} = \norm{Ax} \le \norm{A}\norm{x}$. (If $A$ is real, $\lambda$ is complex and the norm is defined only on $\R^n$, apply this argument to $\norm{\cdot}_2$ on $\C^n$ and to $A^k$: $\abs{\lambda}^k \le \norm{A^k}_2 \le c\norm{A^k} \le c\norm{A}^k$ for every $k$, where the constant $c$ comes from the equivalence of norms on $\R^{n\times n}$ (<a class="xref" href="#thm-equiv"></a>) and the last step is <a class="xref" href="#prop-bxy"></a>; take $k$-th roots and let $k \to \infty$.)</p>
+</div>
+
+<div class="blk prop" id="prop-rho-inf" data-name="The spectral radius as an infimum">
+<p>Let $A \in \F^{n\times n}$. For every $\eps &gt; 0$ there is a norm on $\F^n$ whose induced norm satisfies $\norm{A} \le \rho(A) + \eps$. Hence $\rho(A)$ is the infimum of $\norm{A}$ over all induced norms, and $\rho(A) &lt; 1$ if and only if $\norm{A} &lt; 1$ for some induced norm.</p>
+</div>
+<details class="proof"><summary>Proof</summary>
+<p>By <a href="ch03_eigenvalues.html#thm-schur">Schur triangularization</a> (chapter 3), $A = UTU^*$ with $U$ unitary and $T$ upper triangular with the eigenvalues of $A$ on its diagonal. For $t &gt; 0$ let $D_t = \diag(1, t, \dots, t^{n-1})$. The matrix $D_t^{-1}TD_t$ has entries $t^{l-j}T_{jl}$ for $l \ge j$ and $0$ below the diagonal, so its largest column sum of absolute values is at most $\rho(A) + \eps$ once $t$ is small enough. With $S = UD_t$, the norm $\norm{x}_S = \norm{S^{-1}x}_1$ on $\C^n$ induces $\norm{A}_S = \norm{S^{-1}AS}_1$ (substitute $x = Sy$), and $\norm{S^{-1}AS}_1 = \norm{D_t^{-1}TD_t}_1 \le \rho(A) + \eps$ by <a class="xref" href="#thm-induced"></a>. For real $A$, restrict $\norm{\cdot}_S$ to $\R^n$, which can only lower the induced norm. Together with <a class="xref" href="#prop-rho"></a> this gives the infimum. If $\rho(A) &lt; 1$, the choice $\eps = (1 - \rho(A))/2$ gives an induced norm with $\norm{A} &lt; 1$; the converse is <a class="xref" href="#prop-rho"></a> again. The infimum need not be attained: $A = \begin{bmatrix}0 & 1\\ 0 & 0\end{bmatrix}$ has $\rho(A) = 0$, but $\norm{A} &gt; 0$ in every norm because $A \ne 0$.</p></details>
+<p class="src">Horn and Johnson, <i>Matrix Analysis</i>, ch. 5.</p>
+
+<div class="blk thm" id="thm-neumann" data-name="Neumann series">
+<p>Let $X$ be a Banach space and $T \in B(X)$ with $\norm{T} &lt; 1$. Then $I - T$ has a bounded inverse,</p>
+<div class="eq">$$(I - T)^{-1} = \sum_{k=0}^\infty T^k,\qquad \norm{(I - T)^{-1}} \le \frac{1}{1 - \norm{T}}.$$</div>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> $\norm{T^k} \le \norm{T}^k$, so the partial sums $S_N = \sum_{k\le N}T^k$ form a Cauchy sequence in $B(X)$, which is complete because $X$ is (<a class="xref" href="#prop-bxy"></a>); let $S$ be the limit. Then $(I - T)S_N = I - T^{N+1}$, which tends to $I$, and likewise $S_N(I - T)$, so $S$ is a two-sided inverse, and $\norm{S} \le \sum_k\norm{T}^k = 1/(1 - \norm{T})$.</p>
+</div>
+
+<div class="blk cor" id="cor-perturb" data-name="Invertibility is stable">
+<p>Let $X$ be a Banach space. If $A \in B(X)$ has a bounded inverse and $E \in B(X)$ satisfies $\norm{E} &lt; 1/\norm{A^{-1}}$, then $A + E$ has a bounded inverse with $\norm{(A + E)^{-1}} \le \norm{A^{-1}}/(1 - \norm{A^{-1}}\norm{E})$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> $A + E = A(I + A^{-1}E)$ and $\norm{A^{-1}E} \le \norm{A^{-1}}\norm{E} &lt; 1$; apply <a class="xref" href="#thm-neumann"></a> to $T = -A^{-1}E$.</p>
+</div>
+<p>For invertible matrices $A \in \F^{n\times n}$ in the spectral norm the threshold is sharp: $1/\norm{A^{-1}}_2 = \sigma_n$, the smallest singular value (<a href="ch04_svd.html#thm-norms">chapter 4</a>), and <a href="ch04_svd.html#cor-distance">the distance-to-singularity corollary</a> of chapter 4 exhibits a perturbation $E$ of exactly that size that makes $A + E$ singular.</p>
+
+<div class="blk cex" id="cex-neumann">
+<p>$\norm{T} &lt; 1$ is sufficient, not necessary. $T = \begin{bmatrix}0 & 10\\ 0 & 0\end{bmatrix}$ has $\norm{T} = 10$, yet $T^2 = 0$ and $(I - T)^{-1} = I + T$; for matrices the exact condition for convergence is $\rho(T) &lt; 1$ (<a class="xref" href="#prop-neumann-mat"></a>). Invertibility of $I - T$ does not need convergence: for the scalar $T = -2$ the series $\sum(-2)^k$ diverges while $(1 + 2)^{-1} = 1/3$ exists. Completeness cannot be dropped: on the finitely supported sequences with the $\ell^2$ norm, a normed space that is not complete (<a class="xref" href="#cex-polys"></a>), $T(x_1, x_2, \dots) = (0, x_1/2, x_2/2, \dots)$ has $\norm{T} = 1/2$, but the only sequence with $(I - T)x = e_1 = (1, 0, 0, \dots)$ is $x = (1, \frac12, \frac14, \dots)$, which is not finitely supported, so $I - T$ is not onto.</p>
+</div>
+
+<div class="blk prop" id="prop-neumann-mat" data-name="Neumann series for matrices">
+<p>For $T \in \F^{n\times n}$ the series $\sum_{k\ge0}T^k$ converges if and only if $\rho(T) &lt; 1$, and then its sum is $(I - T)^{-1}$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> If $\rho(T) &lt; 1$, <a class="xref" href="#prop-rho-inf"></a> gives an induced norm with $\norm{T} &lt; 1$, and $\F^n$ is complete, so <a class="xref" href="#thm-neumann"></a> applies. Conversely, if the series converges, its terms tend to $0$; for an eigenpair $Tx = \lambda x$ with $x \in \C^n$ nonzero, $T^kx = \lambda^kx \to 0$ forces $\abs\lambda &lt; 1$.</p>
+</div>
+
+<div class="blk why">
+<p>For a linear rate network $\tau\dot r = -r + Wr + u$ with firing rates $r(t) \in \R^n$, connectivity $W \in \R^{n\times n}$, time constant $\tau &gt; 0$ and constant input $u$, the steady state is $r^* = (I - W)^{-1}u$ whenever $1$ is not an eigenvalue of $W$. When $\rho(W) &lt; 1$ it expands as $\sum_k W^ku$ (<a class="xref" href="#prop-neumann-mat"></a>), a sum over paths of length $k$ through the network. Stability of the dynamics only needs the eigenvalues of $W$ to have real part below $1$ (<a href="ch07_autonomous_systems.html#thm-ct-stability">the eigenvalue test</a> of chapter 7), which is weaker because $\Re\lambda \le \abs\lambda$: the inhibitory self-loop $W = -2$ gives the stable $\tau\dot r = -3r + u$ with $r^* = u/3$, while the path expansion diverges.</p>
+</div>
+
+<figure class="viz" id="viz-balls">
+  <figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">Unit balls and induced matrix norms</span><span class="viz-sub">For $p = 1, 2, \infty$: the unit ball of $\norm{\cdot}_p$ (grey), its image under $A$ (green), and the smallest $p$-ball containing the image, whose radius is $\norm{A}_p$ (dashed). A violet dot marks a unit vector $x^*$ that attains the norm, and the arrow its image. Drag the columns $Ae_1$, $Ae_2$ in any panel.</span></figcaption>
+  <div class="viz-plots">
+    <div class="plot" id="balls-1"><div class="plot-cap">$p = 1$: the image is the convex hull of $\pm Ae_1$, $\pm Ae_2$</div></div>
+    <div class="plot" id="balls-2"><div class="plot-cap">$p = 2$: the image is an ellipse with semi-axes $\sigma_1$, $\sigma_2$</div></div>
+    <div class="plot" id="balls-inf"><div class="plot-cap">$p = \infty$: the image of the square, with corners $A(\pm1, \pm1)$</div></div>
+  </div>
+  <div class="viz-controls" id="balls-controls"></div>
+  <div class="viz-notes">
+    <div><h5>Try this</h5><ol>
+      <li>Drag $Ae_1$ outward. In the $p = 1$ panel the dashed diamond grows until it passes through $Ae_1$ itself: the norm is the largest column sum, attained at a vertex $x^* = e_j$.</li>
+      <li>Choose <i>Rotation by 45°</i>. The circle maps to itself, so $\norm{A}_2 = 1$, but $\norm{A}_1 = \norm{A}_\infty = \sqrt2$: this rotation is not an isometry of $\ell^1$ or $\ell^\infty$ (rotations by multiples of $90^\circ$ are, since they permute the coordinates up to sign).</li>
+      <li>Choose <i>Nilpotent</i>. All three norms equal $2$ while $\rho(A) = 0$.</li>
+      <li>Choose <i>Heavy first column</i> and then <i>Its transpose</i>: $\norm{A}_1$ and $\norm{A}_\infty$ swap, while $\norm{A}_2$ stays the same (<a class="xref" href="#thm-induced"></a>, with $A^* = A^\T$).</li>
+    </ol></div>
+    <div><h5>What to notice</h5><p>Each norm is read off where the image touches the dashed ball: at a vertex of the image for $p = 1$ and $p = \infty$ (the images of the maximizers found in the proof of <a class="xref" href="#thm-induced"></a>), at the end of the major axis for $p = 2$ (<a href="ch04_svd.html#prop-ellipsoid">the ellipse of chapter 4</a>). That is why the formulas of <a class="xref" href="#thm-induced"></a> are a column sum, a singular value and a row sum. The readout compares each value read off the picture with its formula, and shows $\rho(A)$ below all three (<a class="xref" href="#prop-rho"></a>).</p></div>
+  </div>
+</figure>
+</section>
+
+<section class="sec" id="s-hilbert">
+<h2>Hilbert spaces and the projection theorem</h2>
+
+<div class="blk prob"><p>Least squares in chapter 2 rested on one picture: the closest point of a subspace is the foot of the perpendicular (<a href="ch02_least_squares.html#thm-proj">the projection theorem</a> of chapter 2). Find what that picture needs in infinite dimension.</p></div>
+
+<div class="blk def" id="def-hilbert" data-name="Hilbert space">
+<p>An <dfn>inner product</dfn> on $X$ is a map $\inner{\cdot}{\cdot}: X \times X \to \F$ that is linear in the first argument, satisfies $\inner{y}{x} = \overline{\inner{x}{y}}$, and has $\inner{x}{x} &gt; 0$ for $x \ne 0$. It induces the norm $\norm{x} = \inner{x}{x}^{1/2}$ (the triangle inequality is <a href="ch02_least_squares.html#cor-triangle">a corollary of Cauchy–Schwarz</a>, chapter 2). A <dfn>Hilbert space</dfn> is an inner product space that is complete in this norm. The main examples, complete by <a class="xref" href="#prop-banach"></a>, are $\ell^2$ with $\inner{x}{y} = \sum_k x_k\overline{y_k}$ and $L^2[a,b]$ with $\inner{f}{g} = \int_a^b f(t)\overline{g(t)}\,\dd t$; the sum and the integral converge absolutely because $2\abs{x\bar y} \le \abs{x}^2 + \abs{y}^2$.</p>
+</div>
+<p>Cauchy–Schwarz, $\abs{\inner{x}{y}} \le \norm{x}\norm{y}$, and the parallelogram law, $\norm{x + y}^2 + \norm{x - y}^2 = 2\norm{x}^2 + 2\norm{y}^2$, hold in every inner product space, with the dimension-free proofs of chapter 2 (<a href="ch02_least_squares.html#thm-cs">Cauchy–Schwarz</a>, <a href="ch02_least_squares.html#thm-parallelogram">the parallelogram law</a>).</p>
+
+<div class="blk cex" id="cex-parallelogram">
+<p>The parallelogram law characterizes norms that come from inner products (<a href="ch02_least_squares.html#thm-parallelogram">Jordan–von Neumann</a>, chapter 2), and it fails in $\ell^p$ and $L^p[a,b]$ for every $p \ne 2$ and for the sup norm. In $\ell^p$, $x = e_1$ and $y = e_2$ (the first two standard unit sequences) give $\norm{x+y}_p^2 + \norm{x-y}_p^2 = 2\cdot 2^{2/p}$, which equals $2\norm{x}_p^2 + 2\norm{y}_p^2 = 4$ only for $p = 2$; for $p = 1$ it is $8$, and in $\ell^\infty$ the left side is $2$. In $L^p[a,b]$ the same computation applies to the indicator functions of two disjoint intervals of equal length, scaled to norm $1$. In $C[0,1]$ with the sup norm, $f = 1$ and $g(t) = t$ give $\norm{f + g}_\infty^2 + \norm{f - g}_\infty^2 = 4 + 1 = 5 \ne 4$. These Banach spaces have no notion of angle, and their closest points behave differently (<a class="xref" href="#cex-closest"></a>).</p>
+</div>
+
+<div class="blk thm" id="thm-projection" data-name="Projection theorem">
+<p>Let $H$ be a Hilbert space, $K \subseteq H$ a nonempty closed convex set and $x \in H$. There is exactly one $k^* \in K$ with $\norm{x - k^*} = \inf_{k\in K}\norm{x - k}$. If $K = M$ is a closed subspace, $k^* = P_Mx$ is characterized by $x - k^* \perp M$ (orthogonal to every element of $M$), the map $P_M$ is a bounded linear projector with $P_M^2 = P_M$ and $\norm{P_M} \le 1$, and $H = M \oplus M^\perp$: every $x \in H$ is uniquely $m + z$ with $m \in M$ and $z$ in the orthogonal complement $M^\perp = \{z \in H : \inner{z}{m} = 0 \text{ for all } m \in M\}$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Let $d$ be the infimum and $k_n \in K$ with $\norm{x - k_n} \to d$. The parallelogram law applied to $x - k_n$ and $x - k_m$ gives</p>
+<div class="eq">$$\norm{k_n - k_m}^2 = 2\norm{x - k_n}^2 + 2\norm{x - k_m}^2 - 4\Big\lVert x - \tfrac{k_n + k_m}{2}\Big\rVert^2 \le 2\norm{x - k_n}^2 + 2\norm{x - k_m}^2 - 4d^2,$$</div>
+<p>because the midpoint lies in $K$ by convexity. The right side tends to $0$, so $(k_n)$ is Cauchy; it converges by completeness, and the limit $k^*$ lies in $K$ because $K$ is closed. Applied to two minimizers, the same inequality shows that they coincide. For a subspace $M$ and a unit vector $m \in M$, put $z = x - k^*$; the point $k^* + \inner{z}{m}m \in M$ has distance $\big(\norm{z}^2 - \abs{\inner{z}{m}}^2\big)^{1/2}$ from $x$, so minimality forces $\inner{z}{m} = 0$. Conversely, if $x - k \perp M$ for some $k \in M$, Pythagoras gives $\norm{x - k'}^2 = \norm{x - k}^2 + \norm{k - k'}^2$ for every $k' \in M$, so $k = P_Mx$. Linearity of $P_M$ follows from the characterization, since $\alpha P_Mx + \beta P_My \in M$ and $\alpha x + \beta y - (\alpha P_Mx + \beta P_My) \perp M$. For $m \in M$, $P_Mm = m$, so $P_M^2 = P_M$; Pythagoras gives $\norm{x}^2 = \norm{P_Mx}^2 + \norm{x - P_Mx}^2$, so $\norm{P_M} \le 1$; and $x = P_Mx + (x - P_Mx)$ with $x - P_Mx \in M^\perp$, uniquely because $M \cap M^\perp = \{0\}$.</p>
+</div>
+<p class="src">Projection onto closed convex sets and its use in optimization: Luenberger, <i>Optimization by Vector Space Methods</i>, ch. 3; Kreyszig, ch. 3.</p>
+
+<div class="blk cex" id="cex-closest">
+<p>Both hypotheses matter. Without closedness the infimum need not be attained: the polynomials are dense in $L^2[0,1]$ (<a class="xref" href="#cex-polys"></a>), so their distance from $e^t$ is $0$, yet no polynomial equals $e^t$. Without an inner product the closest point need not be unique: in $\R^2$ with $\norm{\cdot}_\infty$, every point $(s, 0)$ with $\abs{s} \le 1$ is at distance $1$ from $(0, 1)$.</p>
+</div>
+
+<div class="blk def" id="def-onb" data-name="Orthonormal basis">
+<p>A sequence $(e_k)$ in $H$ is <dfn>orthonormal</dfn> if $\inner{e_j}{e_k} = \delta_{jk}$ (the Kronecker delta: $1$ if $j = k$, else $0$). It is an <dfn>orthonormal basis</dfn> if its span is dense in $H$. The numbers $\inner{x}{e_k}$ are the <dfn>Fourier coefficients</dfn> of $x$.</p>
+</div>
+
+<div class="blk thm" id="thm-bessel" data-name="Bessel, Parseval, expansion">
+<p>Let $(e_k)$ be orthonormal in $H$ and $x \in H$. Then $\sum_k\abs{\inner{x}{e_k}}^2 \le \norm{x}^2$ (Bessel's inequality), and the series $\sum_k\inner{x}{e_k}e_k$ converges to the projection of $x$ onto the closed span of $(e_k)$, the closure of its span. The following are equivalent: $(e_k)$ is an orthonormal basis; $x = \sum_k\inner{x}{e_k}e_k$ for every $x$; $\norm{x}^2 = \sum_k\abs{\inner{x}{e_k}}^2$ for every $x$ (Parseval's identity).</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof sketch.</span> The finite sum $S_Nx = \sum_{k\le N}\inner{x}{e_k}e_k$ is the projection onto $\spn(e_1,\dots,e_N)$, since $\inner{x - S_Nx}{e_j} = 0$ for $j \le N$; Pythagoras gives $\norm{x}^2 = \sum_{k\le N}\abs{\inner{x}{e_k}}^2 + \norm{x - S_Nx}^2$, hence Bessel. By Bessel and orthogonality the partial sums are Cauchy, so the series converges, and its limit has residual orthogonal to every $e_k$, hence to the closed span. Parseval for all $x$ means that every residual vanishes, which happens exactly when the closed span is $H$.</p>
+</div>
+
+<div class="blk thm" id="thm-riesz" data-name="Riesz representation">
+<p>For every bounded linear functional $\varphi: H \to \F$ there is a unique $y \in H$ with $\varphi(x) = \inner{x}{y}$ for all $x$, and $\norm{\varphi} = \norm{y}$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> If $\varphi = 0$ take $y = 0$. Otherwise $N = \Null(\varphi)$, the null space of $\varphi$, is a proper subspace, closed because $\varphi$ is continuous (<a class="xref" href="#thm-bounded"></a>), so by <a class="xref" href="#thm-projection"></a> there is $z \perp N$ with $\varphi(z) = 1$. For any $x$, $x - \varphi(x)z \in N$, hence $\inner{x - \varphi(x)z}{z} = 0$, that is $\varphi(x) = \inner{x}{z}/\norm{z}^2$; take $y = z/\norm{z}^2$. Uniqueness: $\inner{x}{y - y'} = 0$ for all $x$ forces $y = y'$. Cauchy–Schwarz gives $\norm{\varphi} \le \norm{y}$, with equality at $x = y$.</p>
+</div>
+
+<div class="blk thm" id="thm-trig" data-name="Completeness of the trigonometric system">
+<p>Give $L^2[-\pi, \pi]$ the normalized inner product $\inner{f}{g} = \frac{1}{2\pi}\int_{-\pi}^{\pi}f(t)\overline{g(t)}\,\dd t$, and let $e_k(t) = e^{ikt}$ for $k \in \Z$ (the integers), with $i$ the imaginary unit (engineering texts write $j$, which this guide reserves for indices). Then $(e_k)_{k\in\Z}$ is an orthonormal basis of $L^2[-\pi, \pi]$.</p>
+</div>
+<details class="proof"><summary>Proof sketch</summary><p>Orthonormality: $\frac{1}{2\pi}\int_{-\pi}^{\pi}e^{i(j-k)t}\,\dd t = \delta_{jk}$. Density of the span: trigonometric polynomials approximate every continuous $2\pi$-periodic function uniformly (by the Stone–Weierstrass theorem, or by Fejér's theorem on the averages of the partial sums), hence in $L^2$. Continuous functions $g$ with $g(-\pi) = g(\pi)$ are dense in $L^2[-\pi, \pi]$: by <a class="xref" href="#prop-banach"></a> every element is close to a continuous $g$, and replacing $g$ on $[\pi - \eta, \pi]$ by the linear interpolation to the value $g(-\pi)$ changes it by at most $2\norm{g}_\infty\sqrt{\eta/(2\pi)}$ in this norm.</p></details>
+<p class="src">Folland, <i>Real Analysis</i>, ch. 8.</p>
+
+<div class="blk ex" id="ex-fourier" data-name="Fourier series as orthogonal projection">
+<p>With the inner product and the exponentials $e_k$ of <a class="xref" href="#thm-trig"></a>, the partial sum</p>
+<div class="eq">$$S_Nf(t) = \sum_{\abs k\le N}\hat f_k\,e^{ikt},\qquad \hat f_k = \inner{f}{e_k} = \frac{1}{2\pi}\int_{-\pi}^{\pi}f(t)e^{-ikt}\,\dd t,$$</div>
+<p>is the orthogonal projection of $f$ onto the trigonometric polynomials of degree at most $N$, the span of $e_{-N}, \dots, e_N$ (<a class="xref" href="#thm-bessel"></a>). It is therefore the best approximation of $f$ there (<a class="xref" href="#thm-projection"></a>), and by Parseval's identity, valid by <a class="xref" href="#thm-trig"></a>, its squared error is the tail $\sum_{\abs k &gt; N}\abs{\hat f_k}^2$, which tends to $0$. For the square wave $f(t) = \operatorname{sign}(t)$, $\hat f_k = 2/(i\pi k)$ for odd $k$ and $0$ for even $k$, so $f = \frac{4}{\pi}\sum_{k \text{ odd}}\frac{\sin kt}{k}$ in $L^2$, summed over the positive odd $k$. In the norm of this inner product the squared error is $\frac{8}{\pi^2}\sum_{k &gt; N,\ k\text{ odd}}k^{-2}$, which is asymptotic to $4/(\pi^2N)$, so $\norm{f - S_Nf} \approx \frac{2}{\pi}N^{-1/2}$ for large $N$ (the unnormalized $L^2$ norm is $\sqrt{2\pi}$ times larger).</p>
+</div>
+
+<div class="blk probe">
+<p>Compare the coefficients of four functions on $[-\pi, \pi)$, extended $2\pi$-periodically. The square wave and the sawtooth $t/\pi$, whose periodic extensions jump, have $\abs{\hat f_k}$ equal to $2/(\pi\abs k)$ for odd $k$ and to $1/(\pi\abs k)$ for $k \ne 0$; the triangle wave $1 - 2\abs t/\pi$ and $\abs{\sin t}$, continuous with kinks, have $\abs{\hat f_k}$ equal to $4/(\pi^2k^2)$ for odd $k$ and to $2/\big(\pi\abs{k^2 - 1}\big)$ for even $k$. All other coefficients are $0$. Removing the jumps gains a power of $k$. The last two coefficient sequences are summable, so their Fourier series converge uniformly; the first two series cannot, because every $S_Nf$ is continuous and $f$ jumps. <a class="xref" href="#prop-decay"></a> shows why.</p>
+</div>
+
+<div class="blk prop" id="prop-decay" data-name="Smoothness, decay and uniform convergence">
+<p>Let $f$ be $2\pi$-periodic and square integrable on a period, with Fourier coefficients $\hat f_k$ and partial sums $S_Nf$ as in <a class="xref" href="#ex-fourier"></a>. Call $f$ piecewise $C^1$ if each period splits into finitely many closed intervals on each of which $f$ coincides with a continuously differentiable function, except possibly at the endpoints; then $f$ has one-sided limits $f(t^\pm)$ everywhere, and a jump at $t$ if they differ.</p>
+<p>(i) If $f$ is piecewise $C^1$, then $\abs{\hat f_k} \le C/\abs k$ for all $k \ne 0$, with $C$ independent of $k$.</p>
+<p>(ii) If $f$ is continuous and piecewise $C^1$, then $\hat f_k = \widehat{(f')}_k/(ik)$ for $k \ne 0$, and $\sum_k\abs{\hat f_k} &lt; \infty$. Hence, for an integer $m \ge 1$, if $f, f', \dots, f^{(m-1)}$ are continuous and $f^{(m)}$ is piecewise $C^1$, then $\abs{\hat f_k} \le C/\abs{k}^{m+1}$.</p>
+<p>(iii) If $\sum_k\abs{\hat f_k} &lt; \infty$, then $S_Nf$ converges uniformly to a continuous function that equals $f$ almost everywhere, and equals $f$ everywhere if $f$ is continuous. If $f$ is piecewise $C^1$ with a jump at $t_0$, then $(S_Nf)$ does not converge uniformly on any open interval containing $t_0$, and $\sum_k\abs{\hat f_k} = \infty$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (i) On each of the closed intervals $[s_{j-1}, s_j]$ of a period, integration by parts gives</p>
+<div class="eq">$$\int_{s_{j-1}}^{s_j}f(t)e^{-ikt}\,\dd t = \Big[\frac{f(t)e^{-ikt}}{-ik}\Big]_{s_{j-1}^+}^{s_j^-} + \frac{1}{ik}\int_{s_{j-1}}^{s_j}f'(t)e^{-ikt}\,\dd t ;$$</div>
+<p>with $r$ intervals, $2\pi\abs{\hat f_k} \le \big(2r\sup\abs f + \int_{-\pi}^{\pi}\abs{f'}\,\dd t\big)/\abs k$. (ii) If $f$ is continuous, the boundary terms telescope to $\big(f(\pi)e^{-ik\pi} - f(-\pi)e^{ik\pi}\big)/(-ik) = 0$, which leaves $\hat f_k = \widehat{(f')}_k/(ik)$. By Cauchy–Schwarz and Bessel's inequality for $f'$,</p>
+<div class="eq">$$\sum_{k\ne0}\abs{\hat f_k} \le \Big(\sum_k\abs{\widehat{(f')}_k}^2\Big)^{1/2}\Big(\sum_{k\ne0}k^{-2}\Big)^{1/2} &lt; \infty .$$</div>
+<p>Applying the identity $m$ times and (i) to $f^{(m)}$ gives the bound. (iii) By the Weierstrass M-test the series converges uniformly to a continuous $g$; uniform convergence implies $L^2$ convergence, and $S_Nf \to f$ in $L^2$ (<a class="xref" href="#thm-trig"></a>, <a class="xref" href="#thm-bessel"></a>), so $g = f$ almost everywhere, and everywhere if $f$ is continuous, since continuous functions that agree almost everywhere agree. If $S_Nf$ converged uniformly to some $h$ on an open interval $I \ni t_0$, then $h$ would be continuous on $I$ and equal to $f$ almost everywhere there, hence equal to $f$ on both sides of $t_0$ near $t_0$, which forces $f(t_0^+) = h(t_0) = f(t_0^-)$. The last claim follows from the first sentence of (iii).</p>
+</div>
+
+<div class="blk prop" id="prop-gibbs" data-name="Wilbraham–Gibbs phenomenon">
+<p>Let $f$ be $2\pi$-periodic and piecewise $C^1$ (<a class="xref" href="#prop-decay"></a>), with a jump $J = f(t_0^+) - f(t_0^-) \ne 0$ at $t_0$. Then (i) $S_Nf(t_0) \to \frac12\big(f(t_0^+) + f(t_0^-)\big)$, the midpoint of the jump; (ii) $S_Nf \to f$ uniformly on every closed interval that contains no discontinuity of $f$; (iii) $S_Nf(t_0 \pm \pi/N) \to f(t_0^\pm) \pm \gamma J$, where</p>
+<div class="eq">$$\gamma = \frac{1}{\pi}\int_0^\pi\frac{\sin u}{u}\,\dd u - \frac12 \approx 0.0895 .$$</div>
+<p>So next to the jump the partial sums overshoot on each side by about $9\%$ of $\abs J$; the overshoot does not shrink as $N$ grows, it only moves toward the jump.</p>
+</div>
+<details class="proof"><summary>Proof sketch</summary><p>Let $s$ be the $2\pi$-periodic sawtooth with $s(t) = (\pi - t)/(2\pi)$ on $(0, 2\pi)$, which jumps by $1$ at $0$ and has $S_Ns(t) = \frac1\pi\sum_{k=1}^N\frac{\sin kt}{k}$. Subtracting $J_j\,s(t - t_j)$ at every jump $t_j$ of $f$, with $J_j$ the size of that jump, and changing the values at finitely many points, which does not affect $S_Nf$, leaves a continuous piecewise $C^1$ function, whose partial sums converge uniformly by <a class="xref" href="#prop-decay"></a>. So everything reduces to $s$: $S_Ns(0) = 0$ is the midpoint; summation by parts gives uniform convergence of $S_Ns$ on $[\delta, 2\pi - \delta]$ for every $\delta &gt; 0$; and $S_Ns(\pi/N) = \frac1\pi\sum_{k=1}^N\frac{\sin(k\pi/N)}{k\pi/N}\cdot\frac{\pi}{N}$ is a Riemann sum for $\frac1\pi\int_0^\pi\frac{\sin u}{u}\,\dd u = s(0^+) + \gamma$, while $S_Ns(-\pi/N) = -S_Ns(\pi/N)$.</p></details>
+<p class="src">E. Hewitt and R. E. Hewitt, "The Gibbs–Wilbraham phenomenon: an episode in Fourier analysis", <i>Arch. Hist. Exact Sci.</i> 21 (1979) 129–160; Oppenheim and Willsky, <i>Signals and Systems</i> (2nd ed.), ch. 3; for (i) and (ii), Folland, <i>Real Analysis</i>, ch. 8. For the square wave, $\max_t S_Nf(t) \to \frac{2}{\pi}\int_0^\pi\frac{\sin u}{u}\dd u \approx 1.1790$, an overshoot of $0.179$ on a jump of $2$.</p>
+
+<figure class="viz" id="viz-fourier">
+  <figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">Fourier partial sums as projections</span><span class="viz-sub">$S_Nf$ is the orthogonal projection of $f$ onto trigonometric polynomials of degree at most $N$. Pick a function, or choose <i>Draw your own</i> and drag across the left panel. The right panel shows the $L^2$ error and the sup error against $N$ on log–log axes.</span></figcaption>
+  <div class="viz-plots main-side">
+    <div class="plot" id="four-main"><div class="plot-cap">$f$ (grey) and $S_Nf$ (blue) over one period $[-\pi, \pi)$; red marks the largest overshoot</div></div>
+    <div class="plot" id="four-err"><div class="plot-cap">$\norm{f - S_Nf}_2$ in the normalized norm of <a class="xref" href="#thm-trig"></a> (blue) and $\sup\abs{f - S_Nf}$ (red) for $N = 1,\dots,60$; dots at the current $N$</div></div>
+  </div>
+  <div class="viz-controls" id="four-controls"></div>
+  <div class="viz-notes">
+    <div><h5>Try this</h5><ol>
+      <li>With the square wave, raise $N$. The $L^2$ error falls along a line of slope $-\tfrac12$, but the sup error stays near $1$ and the overshoot readout settles near $9\%$ of the jump.</li>
+      <li>Choose the triangle wave: no jump, coefficients of order $1/k^2$ (<a class="xref" href="#prop-decay"></a>), and both errors fall; the sup error now has slope about $-1$ and the $L^2$ error about $-\tfrac32$.</li>
+      <li>Choose the sawtooth $t/\pi$. Its jump sits at $t = \pm\pi$: the periodic extension, not the formula on the interval, decides the smoothness.</li>
+      <li>Choose <i>Draw your own</i> and add a step or a spike. The projection still converges in $L^2$, and it rings at every jump you draw.</li>
+    </ol></div>
+    <div><h5>What to notice</h5><p>By <a class="xref" href="#thm-bessel"></a> and <a class="xref" href="#thm-trig"></a> the squared $L^2$ error is the tail $\sum_{\abs k &gt; N}\abs{\hat f_k}^2$ of a convergent series, so it always tends to $0$, at a rate set by smoothness (<a class="xref" href="#prop-decay"></a>). Uniform convergence is a different question: a continuous $S_Nf$ cannot follow a jump (<a class="xref" href="#prop-decay"></a>), and the overshoot of <a class="xref" href="#prop-gibbs"></a> narrows without shrinking.</p></div>
+  </div>
+</figure>
+</section>
+
+<section class="sec" id="s-spectra">
+<h2>Adjoints and spectra of operators</h2>
+
+<div class="blk prob"><p>For a matrix, $A - \lambda I$ fails to be invertible exactly when $\lambda$ is an eigenvalue (<a href="ch01_linear_maps.html#cor-square">square matrices</a>, chapter 1). For an operator, $T - \lambda I$ can be injective without being invertible (<a class="xref" href="#cex-shifts"></a>). Find what replaces the list of eigenvalues, and which operators still have an orthonormal eigenbasis.</p></div>
+
+<div class="blk def" id="def-adjoint-op" data-name="Adjoint operator">
+<p>For Hilbert spaces $H_1$, $H_2$ and $T \in B(H_1, H_2)$, the <dfn>adjoint</dfn> $T^*: H_2 \to H_1$ is the map with $\inner{Tx}{y} = \inner{x}{T^*y}$ for all $x \in H_1$, $y \in H_2$; it exists by <a class="xref" href="#prop-adjoint"></a>. The main case is $H_1 = H_2 = H$, and then, as for matrices, $T$ is <dfn>self-adjoint</dfn> if $T^* = T$, <dfn>unitary</dfn> if $T^*T = TT^* = I$, and <dfn>normal</dfn> if $T^*T = TT^*$.</p>
+</div>
+
+<div class="blk prop" id="prop-adjoint" data-name="The Hilbert-space adjoint">
+<p>Let $H_1$, $H_2$, $H_3$ be Hilbert spaces and $T \in B(H_1, H_2)$. (i) There is exactly one map $T^*: H_2 \to H_1$ with $\inner{Tx}{y} = \inner{x}{T^*y}$ for all $x$, $y$; it is linear and bounded, with $\norm{T^*} = \norm{T}$. (ii) $(T^*)^* = T$, and $(ST)^* = T^*S^*$ for $S \in B(H_2, H_3)$. (iii) $\Range(T)^\perp = \Null(T^*)$, where $\Range(T)$ is the range of $T$ and $\Null(T^*)$ the null space of $T^*$; hence $T$ has dense range if and only if $T^*$ is injective.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (i) For fixed $y$, $x \mapsto \inner{Tx}{y}$ is linear with $\abs{\inner{Tx}{y}} \le \norm{T}\norm{y}\norm{x}$, so <a class="xref" href="#thm-riesz"></a> gives exactly one vector $T^*y$ with $\inner{Tx}{y} = \inner{x}{T^*y}$ for all $x$, and $\norm{T^*y} \le \norm{T}\norm{y}$. Uniqueness makes $y \mapsto T^*y$ linear, and $\norm{T^*} \le \norm{T}$. (ii) $\inner{T^*y}{x} = \overline{\inner{x}{T^*y}} = \overline{\inner{Tx}{y}} = \inner{y}{Tx}$ for all $x$, $y$, so $(T^*)^* = T$ by uniqueness, and then $\norm{T} = \norm{(T^*)^*} \le \norm{T^*}$. Likewise $\inner{STx}{z} = \inner{Tx}{S^*z} = \inner{x}{T^*S^*z}$. (iii) $y \perp \Range(T)$ means $\inner{x}{T^*y} = \inner{Tx}{y} = 0$ for all $x$, that is $T^*y = 0$. The closure of $\Range(T)$ is a closed subspace with the same orthogonal complement, since the inner product is continuous, so by <a class="xref" href="#thm-projection"></a> it is all of $H_2$ exactly when $\Null(T^*) = \{0\}$.</p>
+</div>
+
+<div class="blk prop" id="prop-integral" data-name="Integral operators with square-integrable kernels">
+<p>Let $k$ be a measurable function on $[a,b]^2$ with $\norm{k}_2^2 = \int_a^b\!\int_a^b\abs{k(t,s)}^2\,\dd s\,\dd t &lt; \infty$. Then $(Kf)(t) = \int_a^b k(t, s)f(s)\,\dd s$ defines $K \in B(L^2[a,b])$ with $\norm{K} \le \norm{k}_2$, and its adjoint is $(K^*g)(s) = \int_a^b\overline{k(t,s)}\,g(t)\,\dd t$: transpose and conjugate the kernel.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> By Cauchy–Schwarz in $s$, $\abs{(Kf)(t)}^2 \le \int_a^b\abs{k(t,s)}^2\,\dd s\;\norm{f}^2$ for almost every $t$; integrating in $t$ gives $\norm{Kf} \le \norm{k}_2\norm{f}$. For $f, g \in L^2[a,b]$, Cauchy–Schwarz on the square gives $\iint\abs{k(t,s)f(s)g(t)}\,\dd s\,\dd t \le \norm{k}_2\norm{f}\norm{g} &lt; \infty$, so Fubini's theorem allows the exchange of the integrals in</p>
+<div class="eq">$$\inner{Kf}{g} = \int_a^b\!\!\int_a^b k(t,s)f(s)\overline{g(t)}\,\dd s\,\dd t = \int_a^b f(s)\,\overline{\int_a^b\overline{k(t,s)}\,g(t)\,\dd t}\;\dd s .$$</div>
+</div>
+
+<div class="blk ex" id="ex-adjoints" data-name="Three adjoints">
+<p>A matrix has the conjugate transpose as adjoint (<a href="ch04_svd.html#def-adjoint">chapter 4</a>). The integral operator $K$ of <a class="xref" href="#prop-integral"></a> has as adjoint the integral operator with the transposed, conjugated kernel $\overline{k(s,t)}$. The right shift $S_R(x_1, x_2, \dots) = (0, x_1, x_2, \dots)$ on $\ell^2$ has as adjoint the left shift $S_L(x_1, x_2, \dots) = (x_2, x_3, \dots)$, since $\inner{S_Rx}{y} = \sum_k x_k\overline{y_{k+1}} = \inner{x}{S_Ly}$.</p>
+</div>
+
+<div class="blk def" id="def-spectrum" data-name="Spectrum">
+<p>Let $X$ be a complex Banach space and $T \in B(X)$. The <dfn>spectrum</dfn> $\Lambda(T)$ is the set of $\lambda \in \C$ for which $T - \lambda I$ does not have a bounded inverse defined on all of $X$. The eigenvalues form the <dfn>point spectrum</dfn>.</p>
+</div>
+
+<div class="blk prop" id="prop-spectrum" data-name="Basic properties of the spectrum">
+<p>Let $X \ne \{0\}$ be a complex Banach space and $T \in B(X)$. (i) If $\dim X &lt; \infty$, $\Lambda(T)$ is exactly the set of eigenvalues of $T$. (ii) $\Lambda(T)$ is closed and contained in the disk $\abs\lambda \le \norm{T}$. (iii) $\Lambda(T)$ is nonempty, and its largest modulus, the spectral radius $\rho(T)$, satisfies Gelfand's formula $\rho(T) = \lim_{n\to\infty}\norm{T^n}^{1/n}$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof of (i) and (ii).</span> (i) In finite dimension, $T - \lambda I$ is invertible exactly when it is injective (<a href="ch01_linear_maps.html#cor-square">rank–nullity</a>, chapter 1, applied in coordinates), and every inverse is bounded by <a class="xref" href="#prop-findim"></a>. (ii) If $\abs\lambda &gt; \norm{T}$, then $T - \lambda I = -\lambda(I - T/\lambda)$ is invertible by <a class="xref" href="#thm-neumann"></a>. If $T - \lambda_0 I$ is invertible, so is $T - \lambda I$ for $\abs{\lambda - \lambda_0} &lt; 1/\norm{(T - \lambda_0I)^{-1}}$, by <a class="xref" href="#cor-perturb"></a>; so the complement of $\Lambda(T)$ is open.</p>
+</div>
+<p class="src">(iii), nonemptiness via Liouville's theorem applied to the resolvent $\lambda \mapsto (T - \lambda I)^{-1}$, and Gelfand's formula: Kreyszig, ch. 7; for matrices, <a href="ch03_eigenvalues.html#thm-gelfand">Gelfand's formula</a> is proved in chapter 3. The hypothesis $X \ne \{0\}$ is needed: on $X = \{0\}$ every $T - \lambda I$ is invertible, so the spectrum is empty.</p>
+
+<div class="blk cex" id="cex-shifts">
+<p>The shifts on $\ell^2$ break both finite-dimensional rules at once. The right shift is an isometry, $\norm{S_Rx} = \norm{x}$, hence injective, but it is not surjective: nothing maps to $e_1$. It has no eigenvalues ($S_Rx = \lambda x$ forces $x_1 = 0$, then $x_2 = 0$, and so on). Yet $\Lambda(S_R)$ is the whole closed unit disk: $S_R$ itself is not onto; for $0 &lt; \abs\lambda &lt; 1$, solving $(S_R - \lambda I)x = e_1$ forces $x_k = -\lambda^{-k}$, which is not square summable, so $S_R - \lambda I$ is not onto either; and $\Lambda(S_R)$ is closed and lies in $\abs\lambda \le \norm{S_R} = 1$ (<a class="xref" href="#prop-spectrum"></a>). The left shift is surjective but not injective, and every $\lambda$ with $\abs\lambda &lt; 1$ is an eigenvalue:</p>
+<div class="eq">$$S_L(1, \lambda, \lambda^2, \dots) = (\lambda, \lambda^2, \dots) = \lambda\,(1, \lambda, \lambda^2, \dots),\qquad \sum_k\abs{\lambda}^{2k} &lt; \infty .$$</div>
+<p>Its spectrum is also the closed unit disk, by the same closure and norm argument: $\norm{S_L} = 1$, since $S_L$ drops $x_1$ and preserves the norm of sequences with $x_1 = 0$.</p>
+</div>
+
+<div class="blk cex" id="cex-mult">
+<p>A spectrum with no eigenvalues at all: $(Mf)(t) = t\,f(t)$ on $L^2[0,1]$ is self-adjoint with $\norm{M} = 1$. If $tf(t) = \lambda f(t)$ almost everywhere, then $f = 0$ almost everywhere, so there are no eigenvalues. For $\lambda \notin [0,1]$ the inverse is multiplication by the bounded function $1/(t - \lambda)$. For $\lambda \in [0, 1]$ the unit vectors $f_n = \sqrt n\,\mathbb 1_{[\lambda, \lambda + 1/n]}$ (indicator functions, with the interval moved inside $[0,1]$ near $\lambda = 1$) satisfy $\norm{(M - \lambda I)f_n} \le 1/n$, so no bounded inverse exists, although $M - \lambda I$ is injective with dense range (its adjoint is $M - \lambda I$ itself, which is injective; <a class="xref" href="#prop-adjoint"></a>). Hence $\Lambda(M) = [0, 1]$: $M$ is the continuous analogue of a diagonal matrix, with a "diagonal" that is a whole interval.</p>
+</div>
+
+<div class="blk prop" id="prop-parts" data-name="Three parts of the spectrum">
+<p>Let $X$ be a complex Banach space, $T \in B(X)$ and $\lambda \in \Lambda(T)$. Exactly one of the following holds: (i) $T - \lambda I$ is not injective, so $\lambda$ is an eigenvalue; (ii) $T - \lambda I$ is injective with dense range, and its inverse, defined on that range, is unbounded; (iii) $T - \lambda I$ is injective and its range is not dense. These sets of $\lambda$ are the <dfn>point</dfn>, <dfn>continuous</dfn> and <dfn>residual spectrum</dfn> of $T$, and if $\dim X &lt; \infty$ only (i) occurs. If $X$ is a Hilbert space, (iii) holds exactly when $T - \lambda I$ is injective and $\bar\lambda$ is an eigenvalue of $T^*$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> The three cases are exclusive and cover every $\lambda \in \Lambda(T)$ once it is shown that in (ii) the inverse cannot be bounded. Suppose $T - \lambda I$ is injective with dense range and $\norm{x} \le c\norm{(T - \lambda I)x}$ for all $x$. If $(T - \lambda I)x_n$ converges, then $(x_n)$ is Cauchy, $x_n \to x$, and $(T - \lambda I)x_n \to (T - \lambda I)x$; so the range is closed, hence all of $X$, and the inverse is bounded and defined on all of $X$, which contradicts $\lambda \in \Lambda(T)$. In finite dimension only (i) occurs by <a class="xref" href="#prop-spectrum"></a>. In a Hilbert space, $(T - \lambda I)^* = T^* - \bar\lambda I$, so by <a class="xref" href="#prop-adjoint"></a> the range of $T - \lambda I$ is dense exactly when $\bar\lambda$ is not an eigenvalue of $T^*$.</p>
+</div>
+
+<div class="blk pattern">
+<p>Spectral points come in three kinds, and matrices only have the first (<a class="xref" href="#prop-parts"></a>).</p>
+</div>
+<div class="tbl-wrap"><table class="tbl">
+  <thead><tr><th>Part of $\Lambda(T)$</th><th>$T - \lambda I$ is</th><th>Example</th></tr></thead>
+  <tbody>
+    <tr><td>Point spectrum (eigenvalues)</td><td>not injective</td><td>every eigenvalue of a matrix; $S_L$ at $\abs\lambda &lt; 1$</td></tr>
+    <tr><td>Continuous spectrum</td><td>injective with dense range, inverse unbounded</td><td>$M$ at every $\lambda \in [0, 1]$ (<a class="xref" href="#cex-mult"></a>)</td></tr>
+    <tr><td>Residual spectrum</td><td>injective, range not dense</td><td>$S_R$ at $\abs\lambda &lt; 1$: the range of $S_R - \lambda I$ is orthogonal to the eigenvector $(1, \bar\lambda, \bar\lambda^2, \dots)$ of $S_L = S_R^*$ (<a class="xref" href="#cex-shifts"></a>, <a class="xref" href="#ex-adjoints"></a>)</td></tr>
+  </tbody>
+</table></div>
+
+<div class="blk def" id="def-compact" data-name="Compact operator">
+<p>Let $H_1$, $H_2$ be Hilbert spaces. $T \in B(H_1, H_2)$ is <dfn>compact</dfn> if it maps the unit ball of $H_1$ into a set with compact closure. Its <dfn>rank</dfn> is $\dim\Range(T)$, and $T$ has <dfn>finite rank</dfn> if this is finite.</p>
+</div>
+
+<div class="blk prop" id="prop-compact" data-name="Compact operators">
+<p>Let $H$, $H_1$, $H_2$ be Hilbert spaces. (i) $T \in B(H_1, H_2)$ is compact if and only if there are operators $T_n \in B(H_1, H_2)$ of finite rank with $\norm{T - T_n} \to 0$. (ii) The integral operator $K$ of <a class="xref" href="#prop-integral"></a> is compact. (iii) If $\dim H = \infty$, the identity of $H$ is not compact, and no compact $T \in B(H)$ has a bounded inverse.</p>
+</div>
+<details class="proof"><summary>Proof sketch</summary><p>(i) A bounded operator of finite rank maps the unit ball into a bounded subset of a finite-dimensional space, whose closure is compact (<a class="xref" href="#thm-ball"></a>), and a norm limit of compact operators is compact, because the image of the ball stays within any $\eps$ of a finite set. Conversely, if $T$ is compact, the closure of $\Range(T)$ is separable, so it has a finite or countable orthonormal basis $(e_k)$ (Gram–Schmidt applied to a countable dense subset); with $P_n$ the orthogonal projector onto $\spn(e_1, \dots, e_n)$, $\norm{T - P_nT} \to 0$, because $P_ny \to y$ uniformly for $y$ in the compact closure of the image of the ball. (ii) Approximate $k$ in the norm $\norm{\cdot}_2$ of <a class="xref" href="#prop-integral"></a> by finite sums $k_n(t,s) = \sum_{j\le n}\varphi_j(t)\psi_j(s)$, for instance step functions on rectangles; the integral operators $K_n$ with kernels $k_n$ have finite rank, and $\norm{K - K_n} \le \norm{k - k_n}_2 \to 0$. (iii) The identity maps the unit ball onto itself, which is not compact by <a class="xref" href="#thm-ball"></a>. If $T$ is compact with bounded inverse, $T^{-1}$ maps the compact closure of the image of the ball onto a compact set that contains the closed unit ball, which would make the ball compact.</p></details>
+<p class="src">Reed and Simon, <i>Methods of Modern Mathematical Physics I</i>, ch. VI; Kreyszig, ch. 8.</p>
+
+<div class="blk thm" id="thm-compact" data-name="Spectral theorem for compact self-adjoint operators">
+<p>Let $T$ be compact and self-adjoint on a Hilbert space $H$. There are real numbers $\lambda_k$, finitely many or with $\lambda_k \to 0$, and an orthonormal sequence $(q_k)$ with $Tq_k = \lambda_kq_k$, such that</p>
+<div class="eq">$$Tx = \sum_k\lambda_k\inner{x}{q_k}\,q_k\qquad\text{for every } x \in H.$$</div>
+<p>Each nonzero eigenvalue has finite multiplicity; when $\dim H = \infty$, $\Lambda(T)$ consists of the $\lambda_k$ and $0$.</p>
+</div>
+<p class="src">Idea: for self-adjoint $T$, $\norm{T}$ is the supremum of $\abs{\inner{Tx}{x}}$ over the unit sphere; compactness makes it a maximum, attained at an eigenvector with eigenvalue $\norm{T}$ or $-\norm{T}$, and one restricts to its orthogonal complement as in <a href="ch04_svd.html#thm-spectral">the spectral theorem</a> of chapter 4. M. Reed and B. Simon, <i>Methods of Modern Mathematical Physics I: Functional Analysis</i> (1980), ch. VI (the Hilbert–Schmidt theorem); Kreyszig, ch. 8–9. Since $0 \in \Lambda(T)$ when $\dim H = \infty$ by <a class="xref" href="#prop-compact"></a>, the last statement reduces to showing that every nonzero $\lambda \in \Lambda(T)$ is one of the $\lambda_k$.</p>
+
+<div class="blk prop" id="prop-svd-compact" data-name="Singular value expansion of compact operators">
+<p>Let $H_1$, $H_2$ be Hilbert spaces and $T \in B(H_1, H_2)$ compact. There are numbers $\sigma_1 \ge \sigma_2 \ge \dots &gt; 0$, finitely many or with $\sigma_k \to 0$, and orthonormal sequences $(v_k)$ in $H_1$ and $(u_k)$ in $H_2$ with</p>
+<div class="eq">$$Tx = \sum_k\sigma_k\inner{x}{v_k}\,u_k\qquad\text{for every } x \in H_1 .$$</div>
+<p>For every integer $r \ge 0$, the truncation $T_r x = \sum_{k\le r}\sigma_k\inner{x}{v_k}u_k$ satisfies</p>
+<div class="eq">$$\norm{T - T_r} = \min\{\norm{T - F} : F \in B(H_1, H_2),\ \rank F \le r\} = \sigma_{r+1},$$</div>
+<p>where $\sigma_{r+1} = 0$ if there are at most $r$ singular values $\sigma_k$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> $T^*T \in B(H_1)$ is self-adjoint, and compact because $T^*$ is continuous and maps the compact closure of the image of the ball onto a compact set. Since $\inner{T^*Tx}{x} = \norm{Tx}^2 \ge 0$, its nonzero eigenvalues are positive; by <a class="xref" href="#thm-compact"></a> write them $\sigma_1^2 \ge \sigma_2^2 \ge \dots$, with orthonormal eigenvectors $v_k$, and put $u_k = Tv_k/\sigma_k$. Then $\inner{u_j}{u_k} = \inner{T^*Tv_j}{v_k}/(\sigma_j\sigma_k) = \delta_{jk}$. For $x \in H_1$, the expansion of <a class="xref" href="#thm-compact"></a> shows that $x_0 = x - \sum_k\inner{x}{v_k}v_k$ has $T^*Tx_0 = 0$, so $\norm{Tx_0}^2 = \inner{T^*Tx_0}{x_0} = 0$, and continuity of $T$ gives the expansion of $Tx$. The terms with $k &gt; r$ make up $T - T_r$, so $\norm{(T - T_r)x}^2 = \sum_{k&gt;r}\sigma_k^2\abs{\inner{x}{v_k}}^2 \le \sigma_{r+1}^2\norm{x}^2$, with equality at $x = v_{r+1}$. If $\rank F \le r$ and $\sigma_{r+1} &gt; 0$, the restriction of $F$ to the $(r+1)$-dimensional space $\spn(v_1, \dots, v_{r+1})$ has a nontrivial null space, so some unit vector $x$ in it has $Fx = 0$ and $\norm{(T - F)x} = \norm{Tx} \ge \sigma_{r+1}$. This is the argument of <a href="ch04_svd.html#thm-ey">Eckart–Young–Mirsky</a> in chapter 4.</p>
+</div>
+<p>The Hankel singular values of <a href="ch12_robustness.html#prop-hankel">chapter 12</a> are the singular values $\sigma_k$ of such an operator, the Hankel operator of a stable minimal system, which has finite rank.</p>
+
+<div class="blk pattern">
+<p>The survival table. Every row in the right half of this table is used later in the guide.</p>
+</div>
+<div class="tbl-wrap"><table class="tbl">
+  <thead><tr><th>Fact in $\F^n$</th><th>In infinite dimension</th><th>Witness or replacement</th></tr></thead>
+  <tbody>
+    <tr><td>All norms are equivalent (<a class="xref" href="#thm-equiv"></a>)</td><td>fails</td><td>$t^n$ in $C[0,1]$ (<a class="xref" href="#s-normed"></a>)</td></tr>
+    <tr><td>Every subspace is closed (<a class="xref" href="#prop-findim"></a>)</td><td>fails</td><td>polynomials in $L^2$ (<a class="xref" href="#cex-polys"></a>)</td></tr>
+    <tr><td>Unit ball is compact</td><td>fails</td><td>orthonormal sequences (<a class="xref" href="#thm-ball"></a>); compact operators restore it</td></tr>
+    <tr><td>Linear maps are continuous (<a class="xref" href="#prop-findim"></a>)</td><td>fails</td><td>differentiation (<a class="xref" href="#cex-diff"></a>); assume boundedness</td></tr>
+    <tr><td>Injective $\Leftrightarrow$ surjective (<a href="ch01_linear_maps.html#cor-square">chapter 1</a>)</td><td>fails</td><td>the shifts (<a class="xref" href="#cex-shifts"></a>)</td></tr>
+    <tr><td>Spectrum = eigenvalues (<a class="xref" href="#prop-spectrum"></a>)</td><td>fails</td><td>multiplication by $t$ (<a class="xref" href="#cex-mult"></a>)</td></tr>
+    <tr><td>$\norm{(I-T)^{-1}} \le 1/(1 - \norm T)$</td><td>survives (needs completeness)</td><td><a class="xref" href="#thm-neumann"></a>; without completeness <a class="xref" href="#cex-neumann"></a></td></tr>
+    <tr><td>Closest point is the orthogonal projection</td><td>survives for closed subspaces of Hilbert spaces</td><td><a class="xref" href="#thm-projection"></a></td></tr>
+    <tr><td>Orthonormal expansion and Parseval</td><td>survives, with countable sums</td><td><a class="xref" href="#thm-bessel"></a>; Fourier series (<a class="xref" href="#thm-trig"></a>)</td></tr>
+    <tr><td>Every functional is $x \mapsto \inner{x}{y}$</td><td>survives for bounded functionals on Hilbert spaces</td><td><a class="xref" href="#thm-riesz"></a></td></tr>
+    <tr><td>Symmetric matrices diagonalize orthogonally</td><td>survives for compact self-adjoint operators</td><td><a class="xref" href="#thm-compact"></a></td></tr>
+    <tr><td>Minimum-norm solution from a Gram system</td><td>survives for finitely many constraints</td><td><a class="xref" href="#thm-minnorm"></a></td></tr>
+  </tbody>
+</table></div>
+</section>
+
+<section class="sec" id="s-fourier">
+<h2>Shift invariance and the Fourier basis</h2>
+
+<div class="blk prob"><p>Filters, convolutional layers and time-invariant systems all commute with shifts. Find one basis that diagonalizes every such operator at once.</p></div>
+
+<div class="blk setting"><p>Work in $\C^N$ with indices $0, \dots, N-1$ taken modulo $N$, and let $e_m$ be the $m$-th standard basis vector of $\C^N$. The <dfn>cyclic shift</dfn> $P$ is $(Px)_j = x_{j-1}$. A matrix is <dfn>circulant</dfn> if $C_{jl} = c_{(j - l) \bmod N}$ for a vector $c$, its first column; we write $C = \operatorname{circ}(c)$. Then $C = \sum_m c_mP^m$, because $(P^m)_{jl} = 1$ when $j - l \equiv m \pmod N$ and $0$ otherwise, and $Cx$ is the circular convolution $(c \circledast x)_j = \sum_l c_{j-l}\,x_l$.</p></div>
+
+<div class="blk probe">
+<p>For $N = 4$,</p>
+<div class="eq">$$\operatorname{circ}(c_0, c_1, c_2, c_3) = \begin{bmatrix}c_0 & c_3 & c_2 & c_1\\ c_1 & c_0 & c_3 & c_2\\ c_2 & c_1 & c_0 & c_3\\ c_3 & c_2 & c_1 & c_0\end{bmatrix}:$$</div>
+<p>each row is the previous one shifted right by one place. The simplest circulant is $P$ itself, and its eigenvectors are easy to guess: if $\varphi_j = e^{2\pi ijk/N}$, then $(P\varphi)_j = \varphi_{j-1} = e^{-2\pi ik/N}\varphi_j$. Every circulant is a polynomial in $P$, so it should share these eigenvectors.</p>
+</div>
+
+<div class="blk def" id="def-dft" data-name="Discrete Fourier transform">
+<p>Let $\omega = e^{-2\pi i/N}$. The <dfn>discrete Fourier transform</dfn> (DFT) of $x \in \C^N$ is $\hat x = Fx$, with the matrix $F_{jk} = \omega^{jk}$, $j, k = 0, \dots, N-1$. The <dfn>Fourier modes</dfn> $\varphi_k \in \C^N$, $(\varphi_k)_j = \omega^{-jk} = e^{2\pi ijk/N}$, are the columns of $F^*$.</p>
+</div>
+
+<div class="blk prop" id="prop-dft" data-name="The scaled DFT is unitary">
+<p>The DFT matrix satisfies $F^*F = FF^* = NI$. Hence $U = F/\sqrt N$ is unitary, $x = \frac1N F^*\hat x$ for every $x \in \C^N$, and the Fourier modes $\varphi_0, \dots, \varphi_{N-1}$ form an orthogonal basis of $\C^N$ with $\norm{\varphi_k}_2 = \sqrt N$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Orthogonality is a geometric sum: $(F^*F)_{kl} = \sum_j\omega^{j(l-k)}$ equals $N$ for $k = l$, and for $k \ne l$ it equals $(1 - \omega^{N(l-k)})/(1 - \omega^{l-k}) = 0$, because $\omega^{l-k} \ne 1$ and $\omega^N = 1$. A square matrix with a left inverse has it as a right inverse, so $FF^* = NI$ as well. The modes are the columns of $F^*$, and $(F^*)^*F^* = FF^* = NI$ gives their orthogonality and norms.</p>
+</div>
+
+<div class="blk thm" id="thm-circulant" data-name="Circulants are diagonalized by the DFT">
+<p>Let $C = \operatorname{circ}(c)$ and $\hat c = Fc$. Then $C\varphi_k = \hat c_k\,\varphi_k$ for every $k$; equivalently</p>
+<div class="eq">$$C = \tfrac1N F^*\diag(\hat c)\,F = U^*\diag(\hat c)\,U,\qquad U = F/\sqrt N \text{ unitary}.$$</div>
+<p>Here $\diag(\hat c)$ is the diagonal matrix with entries $\hat c_0, \dots, \hat c_{N-1}$, and $U$ is unitary by <a class="xref" href="#prop-dft"></a>. Consequently all $N\times N$ circulants commute, every circulant is normal, its eigenvalues are the DFT $\hat c$ of its first column, $\norm{C}_2 = \max_k\abs{\hat c_k}$, and $C$ is invertible exactly when no $\hat c_k$ vanishes.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Substituting $m = j - l$,</p>
+<div class="eq">$$(C\varphi_k)_j = \sum_l c_{j-l}\,\omega^{-lk} = \sum_m c_m\,\omega^{-(j-m)k} = \omega^{-jk}\sum_m c_m\omega^{mk} = \hat c_k\,(\varphi_k)_j .$$</div>
+<p>So $CF^* = F^*\diag(\hat c)$, and $F^*$ has inverse $F/N$ (<a class="xref" href="#prop-dft"></a>). Diagonal matrices commute, and a unitarily diagonalizable matrix is normal (<a href="ch04_svd.html#thm-normal">chapter 4</a>) with singular values $\abs{\hat c_k}$ (<a href="ch04_svd.html#thm-eigsv">eigenvalues and singular values</a>, chapter 4).</p>
+</div>
+
+<div class="blk cor" id="cor-convolution" data-name="Convolution theorem">
+<p>For $c, x \in \C^N$, $\widehat{c \circledast x} = \hat c \odot \hat x$, where $\odot$ is the entrywise product.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> $F(Cx) = \tfrac1N FF^*\diag(\hat c)Fx = \diag(\hat c)\,\hat x$, since $FF^* = NI$ (<a class="xref" href="#prop-dft"></a>).</p>
+</div>
+<p>The fast Fourier transform applies $F$ in $O(N\log N)$ operations, that is, at most a constant times $N\log N$, for $N$ a power of $2$ (J. W. Cooley and J. W. Tukey, <i>Math. Comp.</i> 19 (1965) 297–301; Golub and Van Loan, <i>Matrix Computations</i>, 4th ed., ch. 1). With the corollary, a circular convolution then costs $O(N\log N)$ operations instead of the $O(N^2)$ of a direct matrix-vector product.</p>
+
+<div class="blk cor" id="cor-real-circ" data-name="Real kernels act on real modes">
+<p>Let $c \in \R^N$ and $C = \operatorname{circ}(c)$. Then $\hat c_{N-k} = \overline{\hat c_k}$ for every $k$ (indices modulo $N$), and $C$ maps the real Fourier modes to scaled, phase-shifted copies:</p>
+<div class="eq">$$C\big(\cos(2\pi kj/N)\big)_j = \big(\abs{\hat c_k}\cos(2\pi kj/N + \arg\hat c_k)\big)_j,\qquad C\big(\sin(2\pi kj/N)\big)_j = \big(\abs{\hat c_k}\sin(2\pi kj/N + \arg\hat c_k)\big)_j,$$</div>
+<p>where $\arg\hat c_k$ is the argument (phase) of $\hat c_k$, arbitrary when $\hat c_k = 0$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> $\hat c_{N-k} = \sum_m c_m\omega^{m(N-k)} = \sum_m c_m\omega^{-mk} = \overline{\hat c_k}$, because $c$ is real and $\omega^N = 1$. The cosine and sine vectors are $\Re\varphi_k$ and $\Im\varphi_k$, the entrywise real and imaginary parts. Since $C$ is real, $C\,\Re\varphi_k = \Re(C\varphi_k) = \Re(\hat c_k\varphi_k)$ by <a class="xref" href="#thm-circulant"></a>, and $\hat c_k(\varphi_k)_j = \abs{\hat c_k}\,e^{i(2\pi kj/N + \arg\hat c_k)}$; likewise for the imaginary part.</p>
+</div>
+
+<div class="blk prop" id="prop-circ-equiv" data-name="Four descriptions of circulants">
+<p>For $C \in \C^{N\times N}$ the following are equivalent: (i) $C$ is circulant; (ii) $CP = PC$; (iii) $C$ is a polynomial in $P$, and then $C = \sum_{m=0}^{N-1}c_mP^m$ with $c$ the first column of $C$; (iv) every Fourier mode $\varphi_k$ is an eigenvector of $C$, that is, $C = \frac1N F^*DF$ for a diagonal matrix $D$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (i) $\Rightarrow$ (iii): $(\sum_m c_mP^m)_{jl} = c_{(j-l)\bmod N} = C_{jl}$, as in the setting. (iii) $\Rightarrow$ (ii): polynomials in $P$ commute with $P$. (ii) $\Rightarrow$ (i): $(CP)_{jl} = C_{j,l+1}$ and $(PC)_{jl} = C_{j-1,l}$, so $C_{j,l+1} = C_{j-1,l}$ for all $j$, $l$: $C$ is constant along cyclic diagonals. (i) $\Rightarrow$ (iv) is <a class="xref" href="#thm-circulant"></a>. (iv) $\Rightarrow$ (ii): $P = \operatorname{circ}(e_1)$ is itself of the form $\frac1N F^*D'F$ by <a class="xref" href="#thm-circulant"></a>, and $\frac1N F^*DF$ commutes with it because $D$ and $D'$ commute and $FF^* = NI$. In (iii), a polynomial in $P$ reduces to degree below $N$ since $P^N = I$, and its coefficients are its first column because $P^me_0 = e_m$.</p>
+</div>
+
+<div class="blk pattern">
+<p>Equivalences and the invariant behind them (<a class="xref" href="#prop-circ-equiv"></a>). Shift invariance is the symmetry; the Fourier modes are its eigenvectors, and every operator with the symmetry is a multiplier $\hat c_k$ on them. Familiar filters read off at once: the shift has $\abs{\hat c_k} = 1$ (all-pass, a pure phase $\omega^k$); the moving average $c = \frac13(e_{-1} + e_0 + e_1)$ has $\hat c_k = \frac13(1 + 2\cos(2\pi k/N))$ (low-pass); the first difference $c = e_0 - e_1$ has $\abs{\hat c_k} = 2\abs{\sin(\pi k/N)}$ (high-pass, zero at $k = 0$).</p>
+</div>
+
+<div class="blk thm" id="thm-szego" data-name="Szegő, for Hermitian Toeplitz matrices">
+<p>Let $t_m$, $m \in \Z$, be absolutely summable with $t_{-m} = \overline{t_m}$, so that the symbol $f(\theta) = \sum_m t_me^{im\theta}$ is real and continuous. Let $T_N = [t_{j-l}]_{j,l=0}^{N-1}$ be the Toeplitz matrix, the non-cyclic analogue of a circulant, with eigenvalues $\lambda_1(T_N), \dots, \lambda_N(T_N)$. Then every eigenvalue of $T_N$ lies in $[\min f, \max f]$, and for every continuous function $g$ on $[\min f, \max f]$,</p>
+<div class="eq">$$\lim_{N\to\infty}\frac1N\sum_{k=1}^N g\big(\lambda_k(T_N)\big) = \frac{1}{2\pi}\int_0^{2\pi}g\big(f(\theta)\big)\,\dd\theta .$$</div>
+</div>
+<details class="proof"><summary>Proof sketch</summary><p>For $x \in \C^N$ and $X(\theta) = \sum_l x_le^{il\theta}$, expanding the products gives $x^*T_Nx = \frac{1}{2\pi}\int_0^{2\pi}f(\theta)\abs{X(\theta)}^2\,\dd\theta$ and $\norm{x}_2^2 = \frac{1}{2\pi}\int_0^{2\pi}\abs{X(\theta)}^2\,\dd\theta$. So every Rayleigh quotient of the Hermitian matrix $T_N$, and hence every eigenvalue, lies in $[\min f, \max f]$. For the limit, the boundary rows make $T_N$ differ from a circulant by a matrix whose effect on the eigenvalue distribution vanishes as $N \to \infty$; by the Weierstrass approximation theorem on $[\min f, \max f]$ it suffices to treat $g(\lambda) = \lambda^s$ for integers $s \ge 0$, that is, to show $\frac1N\tr(T_N^s) \to \frac{1}{2\pi}\int_0^{2\pi}f^s\,\dd\theta$, with $\tr$ the trace.</p></details>
+<p class="src">R. M. Gray, <i>Toeplitz and Circulant Matrices: A Review</i>, chapters on circulant and Toeplitz matrices (free PDF).</p>
+
+<div class="blk cex" id="cex-toeplitz">
+<p>Without the Hermitian structure, boundaries can change the spectrum completely. The Toeplitz matrix with ones on the superdiagonal is the Jordan block $J_N(0)$, whose only eigenvalue is $0$ for every $N$; the circulant with the same diagonals is the cyclic shift $P^\T$, whose eigenvalues are the $N$-th roots of unity. <a href="ch06_nonnormality.html#prop-psa-jordan">Chapter 6</a> shows that for $\eps &gt; 0$ the $\eps$-pseudospectrum of $J_N(0)$, the set of $z$ with $\norm{(zI - J_N(0))^{-1}}_2 &gt; 1/\eps$, is a disk about $0$ of radius at least $\eps^{1/N}$. Its radius is at most $1 + \eps$, because $\norm{(zI - J_N(0))^{-1}}_2 \le 1/(\abs z - 1)$ for $\abs z &gt; 1 \ge \norm{J_N(0)}_2$ (<a class="xref" href="#thm-neumann"></a>). Since $\eps^{1/N} \to 1$, for fixed $\eps$ the pseudospectra, not the eigenvalues, fill out the unit disk as $N$ grows.</p>
+</div>
+
+<div class="blk prop" id="prop-lti" data-name="Exponentials are eigenfunctions of convolutions">
+<p>Let $(Tu)(t) = \int_{-\infty}^{\infty}h(\tau)\,u(t - \tau)\,\dd\tau$ with an impulse response $h$, and let $s \in \C$ be such that $\int\abs{h(\tau)}e^{-\Re(s)\,\tau}\,\dd\tau &lt; \infty$. Then</p>
+<div class="eq">$$T\,e^{st} = H(s)\,e^{st},\qquad H(s) = \int_{-\infty}^{\infty}h(\tau)\,e^{-s\tau}\,\dd\tau .$$</div>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> $\int h(\tau)e^{s(t-\tau)}\dd\tau = e^{st}\int h(\tau)e^{-s\tau}\dd\tau$, and the hypothesis makes the integral converge.</p>
+</div>
+<p>For a causal $h$ ($h(\tau) = 0$ for $\tau &lt; 0$), $H$ is the Laplace transform of $h$, and on the imaginary axis $H(i\omega)$, at the real angular frequency $\omega$ (not the root of unity of the DFT), is the frequency response: by <a class="xref" href="#prop-lti"></a> with $s = i\omega$, which needs $\int\abs{h} &lt; \infty$, a time-invariant system multiplies $e^{i\omega t}$ by the complex gain $H(i\omega)$, as a circulant multiplies $\varphi_k$ by $\hat c_k$. Like the "eigenvectors" of the multiplication operator in <a class="xref" href="#cex-mult"></a>, $e^{st}$ is not square integrable on $\R$: an eigenfunction in a generalized sense. <a href="ch08_input_output.html#thm-tf">Chapter 8</a> computes $H(s) = C(sI - A)^{-1}B + D$ for the state-space system $\dot x = Ax + Bu$, $y = Cx + Du$, with state $x$, input $u$, output $y$ and matrices $A$, $B$, $C$, $D$ (this $C$ is not a circulant).</p>
+
+<figure class="viz" id="viz-circ">
+  <figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">Circulant matrices act on Fourier modes by multiplication</span><span class="viz-sub">A kernel $h$ with taps $h_{-1}, h_0, h_1, h_2$ defines the $32\times 32$ circulant $C = \operatorname{circ}(h)$ (left; red positive, blue negative). Middle: $C$ applied to the real Fourier mode $x_j = \cos(2\pi kj/N)$, or to a random input. Right: the gain $\abs{\hat h_k}$ at every frequency.</span></figcaption>
+  <div class="viz-plots">
+    <div class="plot" id="circ-mat"><div class="plot-cap">The circulant $C$: each row is the previous one shifted by one place</div></div>
+    <div class="plot" id="circ-sig"><div class="plot-cap">Input $x$ (violet) and output $Cx$ (green); dashed: the prediction $\abs{\hat h_k}\cos(2\pi kj/N + \arg\hat h_k)$</div></div>
+    <div class="plot" id="circ-spec"><div class="plot-cap">Gains $\abs{\hat h_k}$, $k = 0, \dots, 31$; the selected $k$ and $N - k$ in yellow</div></div>
+  </div>
+  <div class="viz-controls" id="circ-controls"></div>
+  <div class="viz-notes">
+    <div><h5>Try this</h5><ol>
+      <li>Choose <i>Moving average</i> and move $k$. Low frequencies pass with gain near $1$, high ones are damped, and the output is always a cosine of the input's frequency (<a class="xref" href="#cor-real-circ"></a>).</li>
+      <li>Choose <i>Delay by one</i>. Every gain is $1$ and only the phase moves, by $-2\pi k/N$: a delay is an all-pass filter.</li>
+      <li>Choose <i>First difference</i> and set $k = 0$. The gain is $0$: constants lie in the null space.</li>
+      <li>Switch on <i>Random input</i>. The output is no longer a multiple of the input: the input mixes many modes, and each mode is scaled by its own $\hat h_k$.</li>
+    </ol></div>
+    <div><h5>What to notice</h5><p>Each Fourier mode is an eigenvector (<a class="xref" href="#thm-circulant"></a>), so $C$ changes only its amplitude and phase, and for the real kernels here it maps the cosine mode to the dashed prediction (<a class="xref" href="#cor-real-circ"></a>); the residual in the readout is at rounding level. The gains are the moduli of the eigenvalues, $\abs{\hat h_{N-k}} = \abs{\hat h_k}$ for a real kernel, and the spectral norm computed from the SVD equals the largest gain, because a circulant is normal (<a class="xref" href="#thm-circulant"></a>).</p></div>
+  </div>
+</figure>
+</section>
+
+<section class="sec" id="s-minnorm">
+<h2>Minimum-norm problems and minimum-energy control</h2>
+
+<div class="blk prob"><p>Among all $x$ in a Hilbert space that satisfy finitely many linear constraints $\inner{x}{y_i} = c_i$, find the one of smallest norm. In control the same question reads: among all inputs that steer a system to a target, find the one of least energy.</p></div>
+
+<div class="blk thm" id="thm-minnorm" data-name="Minimum norm under linear constraints">
+<p>Let $y_1, \dots, y_n \in H$ be linearly independent and $c \in \F^n$. The problem</p>
+<div class="eq">$$\text{minimize } \norm{x}\quad\text{subject to}\quad\inner{x}{y_i} = c_i,\ \ i = 1, \dots, n,$$</div>
+<p>has exactly one solution $x^* = \sum_{j=1}^n\alpha_jy_j$, where $\alpha$ solves the Gram system $G\alpha = c$ with $G_{ij} = \inner{y_j}{y_i}$, and $\norm{x^*}^2 = c^*G^{-1}c$.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> $G$ is positive definite, since $\alpha^*G\alpha = \norm{\sum_j\alpha_jy_j}^2 &gt; 0$ for $\alpha \ne 0$; so $\alpha = G^{-1}c$ exists, and $x^* = \sum_j\alpha_jy_j$ satisfies $\inner{x^*}{y_i} = \sum_j\alpha_j\inner{y_j}{y_i} = (G\alpha)_i = c_i$. If $x$ is any feasible point, $z = x - x^*$ has $\inner{z}{y_i} = 0$ for all $i$, so $z \perp x^*$ and</p>
+<div class="eq">$$\norm{x}^2 = \norm{x^*}^2 + \norm{z}^2 \ge \norm{x^*}^2,$$</div>
+<p>with equality only for $z = 0$. Finally, using that $G$ is Hermitian,</p>
+<div class="eq">$$\norm{x^*}^2 = \Big\langle x^*,\, \sum_i\alpha_iy_i\Big\rangle = \sum_i\bar\alpha_ic_i = \alpha^*c = c^*G^{-1}c .$$</div>
+</div>
+
+<figure class="wide" aria-label="Geometry of the minimum-norm problem">
+<svg viewBox="0 0 760 290" role="img" aria-label="The feasible set is a line perpendicular to y; the shortest feasible point is the multiple of y where the line crosses span of y; any other feasible point differs from it by a vector perpendicular to y" style="width:100%;height:auto;max-width:860px;display:block;margin:6px 0 4px">
+  <defs><marker id="mn-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--ink-2)"/></marker>
+  <marker id="mn-arrow-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--c3)"/></marker>
+  <marker id="mn-arrow-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--c1)"/></marker></defs>
+  <path d="M167.5 266.8 L350.7 48.5" fill="none" stroke="var(--c1)" stroke-width="1.25" stroke-dasharray="3 4" opacity="0.8"/>
+  <text x="356" y="54" font-family="var(--font-body)" font-style="italic" font-size="14" fill="var(--ink-2)">span(y)</text>
+  <path d="M151 37.6 L403.8 249.7" fill="none" stroke="var(--c3)" stroke-width="2"/>
+  <text x="198" y="50" font-family="var(--font-body)" font-style="italic" font-size="15" fill="var(--ink)">⟨x, y⟩ = c</text>
+  <path d="M190 240 L227 196" fill="none" stroke="var(--c1)" stroke-width="2.5" marker-end="url(#mn-arrow-b)"/>
+  <text x="200" y="214" text-anchor="end" font-family="var(--font-body)" font-style="italic" font-size="15" fill="var(--ink)">y</text>
+  <path d="M190 240 L271 143" fill="none" stroke="var(--c3)" stroke-width="2.5" marker-end="url(#mn-arrow-g)"/>
+  <circle cx="273.6" cy="140.4" r="4.5" fill="var(--c3)"/>
+  <text x="286" y="128" font-family="var(--font-body)" font-style="italic" font-size="15" fill="var(--ink)">x* = αy</text>
+  <path d="M190 240 L362 219" fill="none" stroke="var(--ink-2)" stroke-width="1.75" stroke-dasharray="6 4" marker-end="url(#mn-arrow)"/>
+  <circle cx="365.5" cy="217.5" r="4" fill="var(--ink-2)"/>
+  <text x="376" y="214" font-family="var(--font-body)" font-style="italic" font-size="15" fill="var(--ink)">x</text>
+  <path d="M273.6 140.4 L365.5 217.5" fill="none" stroke="var(--c8)" stroke-width="2" stroke-dasharray="5 4"/>
+  <text x="331" y="166" font-family="var(--font-body)" font-style="italic" font-size="15" fill="var(--ink)">z ⟂ y</text>
+  <path d="M267.2 148.1 L274.9 154.5 L281.3 146.8" fill="none" stroke="var(--muted)" stroke-width="1.25"/>
+  <circle cx="190" cy="240" r="3.5" fill="var(--ink)"/>
+  <text x="178" y="256" font-family="var(--font-body)" font-size="15" fill="var(--ink)">0</text>
+  <text x="470" y="70" font-family="var(--font-body)" font-size="14" fill="var(--ink-2)">Feasible set {x : ⟨x, y⟩ = c}:</text>
+  <text x="470" y="92" font-family="var(--font-body)" font-size="14" fill="var(--ink-2)">a line parallel to y⟂.</text>
+  <text x="470" y="126" font-family="var(--font-body)" font-size="14" fill="var(--ink-2)">Shortest feasible point x* = αy,</text>
+  <text x="470" y="148" font-family="var(--font-body)" font-size="14" fill="var(--ink-2)">with α = c / ‖y‖².</text>
+  <text x="470" y="182" font-family="var(--font-body)" font-size="14" fill="var(--ink-2)">Any feasible x = x* + z with z ⟂ y,</text>
+  <text x="470" y="204" font-family="var(--font-body)" font-size="14" fill="var(--ink-2)">so ‖x‖² = ‖x*‖² + ‖z‖² ≥ ‖x*‖².</text>
+  <text x="380" y="282" text-anchor="middle" font-family="var(--font-ui)" font-size="12" fill="var(--muted)">With n constraints, x* lies in span(y₁, …, yₙ) and its coefficients solve the Gram system Gα = c.</text>
+</svg>
+</figure>
+
+<div class="blk probe">
+<p>In $H = \R^m$ with the rows $y_1^\T, \dots, y_n^\T$ of a full-row-rank $A \in \R^{n\times m}$ as constraint vectors, $G = AA^\T$ and $x^* = A^\T(AA^\T)^{-1}c$: <a href="ch02_least_squares.html#thm-minnorm">the minimum-norm solution</a> of chapter 2. Two extreme cases: if the $y_i$ are orthonormal, $G = I$ and $x^* = \sum_ic_iy_i$; if two of them become nearly parallel, the constraints can nearly contradict each other, and then $\norm{x^*}$ blows up. For instance, in $\R^2$ the constraints $y_1 = (1, 0)$, $y_2 = (\cos\theta, \sin\theta)$ with $c = (1, 0)$ force $x^* = (1, -\cot\theta)$, with $\norm{x^*} = 1/\abs{\sin\theta} \to \infty$ as $\theta \to 0$.</p>
+</div>
+
+<div class="blk ex" id="ex-minenergy" data-name="Minimum-energy steering of a scalar system">
+<p>Consider $\dot x = ax + bu$ with real $a$, $b \ne 0$, $x(0) = 0$, and the target $x(t_f) = x_f$ at the horizon $t_f &gt; 0$. Inputs live in $L^2[0, t_f]$ with $\inner{u}{v} = \int_0^{t_f}u(t)v(t)\,\dd t$, and the energy of $u$ is $\norm{u}^2$. Since $\frac{\dd}{\dd t}\big(e^{-at}x\big) = e^{-at}bu$,</p>
+<div class="eq">$$x(t_f) = \int_0^{t_f}e^{a(t_f - t)}\,b\,u(t)\,\dd t = \inner{u}{y},\qquad y(t) = b\,e^{a(t_f - t)}.$$</div>
+<p>This is one constraint, so <a class="xref" href="#thm-minnorm"></a> with $n = 1$ gives $u^* = (x_f/\norm{y}^2)\,y$:</p>
+<div class="eq">$$u^*(t) = \frac{x_f}{W_c(t_f)}\,b\,e^{a(t_f - t)},\qquad E^* = \norm{u^*}^2 = \frac{x_f^2}{W_c(t_f)},\qquad W_c(t_f) = \int_0^{t_f}b^2e^{2a\tau}\,\dd\tau = \begin{cases}b^2\,\dfrac{e^{2at_f} - 1}{2a}, &amp; a \ne 0,\\[4pt] b^2t_f, &amp; a = 0.\end{cases}$$</div>
+<p>$W_c(t_f) = \norm{y}^2$ is the controllability Gramian of the scalar system (<a href="ch09_controllability.html#thm-minenergy">chapter 9</a>); from $x(0) = x_0 \ne 0$, replace $x_f$ by $x_f - e^{at_f}x_0$.</p>
+</div>
+
+<div class="blk probe">
+<p>Read the formula in extreme cases. Short horizon: $W_c \approx b^2t_f$ and $E^* \approx x_f^2/(b^2t_f) \to \infty$; fast steering is expensive. Stable $a &lt; 0$: $W_c$ increases to $b^2/(2\abs a)$, so $E^* \ge 2\abs{a}x_f^2/b^2$ however long the horizon, and $u^* \propto e^{-\abs a(t_f - t)}$ pushes late, because early pushes decay before $t_f$. Unstable $a &gt; 0$: $W_c$ grows like $e^{2at_f}$ and $E^* \to 0$; $u^*$ pushes early and lets the instability do the work. And $b \to 0$ makes $W_c \to 0$: the target becomes unreachable.</p>
+</div>
+
+<div class="blk pattern">
+<p>Minimum norm, orthogonal projection and the Gram system are one structure, and it recurs through the guide: least squares and the pseudoinverse (<a href="ch02_least_squares.html#thm-minnorm">chapter 2</a> and <a href="ch04_svd.html#prop-pinv">chapter 4</a>); minimum-energy control of $\dot x = Ax + Bu$ with $x(t) \in \R^n$ and $(A, B)$ controllable, where the $n$ constraints are the components of $x(t_f)$ and the Gram matrix is the Gramian $W_c(t_f) = \int_0^{t_f}e^{At}BB^\T e^{A^\T t}\dd t$, giving $u^*(t) = B^\T e^{A^\T(t_f - t)}W_c(t_f)^{-1}x_f$ from $x(0) = 0$ (<a href="ch09_controllability.html#thm-minenergy">chapter 9</a>); and the Kalman filter of chapter 11, whose estimate is an affine function of the data with an error that has mean zero and is uncorrelated with the data (the proof of <a href="ch11_lqr_kalman.html#lem-gauss">the Gaussian-conditioning lemma</a>). In the Hilbert space of square-integrable random variables with $\inner{\xi}{\eta} = \mathbb E[\xi\eta]$, $\mathbb E$ the expectation, this is the orthogonality condition of <a class="xref" href="#thm-projection"></a>: each component of the estimate is the orthogonal projection of the corresponding state component onto the span of the constants and the data. Here $B^\T e^{A^\T(t_f-t)}$ is the matrix analogue of $y(t) = b\,e^{a(t_f-t)}$: the adjoint of the input-to-state map (<a href="ch09_controllability.html#lem-range">chapter 9</a>).</p>
+</div>
+</section>
+
+<section class="selfcheck" id="s-selfcheck">
+<h2>Self-check</h2>
+<ol>
+<li><p>For $A = \begin{bmatrix}1 & 2\\ 3 & 4\end{bmatrix}$, compute $\norm{A}_1$, $\norm{A}_2$, $\norm{A}_\infty$ and $\rho(A)$, and order them.</p>
+<details><summary>Answer</summary><p>$\norm{A}_1 = 6$ (second column), $\norm{A}_\infty = 7$ (second row), $\norm{A}_2 = \sqrt{15 + \sqrt{221}} \approx 5.465$ (eigenvalues of $A^\T A$ are $15 \pm\sqrt{221}$), and $\rho(A) = (5 + \sqrt{33})/2 \approx 5.372$. So $\rho(A) &lt; \norm{A}_2 &lt; \norm{A}_1 &lt; \norm{A}_\infty$, consistent with <a class="xref" href="#prop-rho"></a>.</p></details></li>
+<li><p>Is the subspace of finitely supported sequences closed in $\ell^2$?</p>
+<details><summary>Answer</summary><p>No. $x = (1, \frac12, \frac13, \dots)$ lies in $\ell^2$ because $\sum_k 1/k^2 &lt; \infty$, and its truncations are finitely supported and converge to $x$ in $\ell^2$, but $x$ itself is not finitely supported. The subspace is dense, like the polynomials in $L^2$ (<a class="xref" href="#cex-polys"></a>).</p></details></li>
+<li><p>Show that $\norm{S_L} = 1$ and that $(1, \lambda, \lambda^2, \dots)$ is an eigenvector of $S_L$ for $\abs\lambda &lt; 1$. Is any $\lambda$ with $\abs\lambda = 1$ an eigenvalue? Is it in the spectrum?</p>
+<details><summary>Answer</summary><p>$\norm{S_Lx} \le \norm{x}$ with equality when $x_1 = 0$, so $\norm{S_L} = 1$. The eigenvector equation $x_{k+1} = \lambda x_k$ forces $x = x_1(1, \lambda, \lambda^2, \dots)$, which is square summable exactly when $\abs\lambda &lt; 1$. So no $\lambda$ on the unit circle is an eigenvalue, but each lies in the spectrum, which is closed and contains the open disk (<a class="xref" href="#prop-spectrum"></a>).</p></details></li>
+<li><p>Find the eigenvalues and the spectral norm of the periodic second-difference matrix $C = \operatorname{circ}(2, -1, 0, \dots, 0, -1) \in \R^{N\times N}$.</p>
+<details><summary>Answer</summary><p>By <a class="xref" href="#thm-circulant"></a>, $\hat c_k = 2 - \omega^k - \omega^{-k}$, that is $\hat c_k = 2 - 2\cos(2\pi k/N) = 4\sin^2(\pi k/N)$ for $k = 0, \dots, N-1$. They lie in $[0, 4]$ and $C$ is real symmetric, so $C \succeq 0$ (positive semidefinite), with $\hat c_0 = 0$ (constants are in the null space) and $\norm{C}_2 = \max_k\hat c_k$, which equals $4$ when $N$ is even.</p></details></li>
+<li><p>Steer $\dot x = -x + u$ from $x(0) = 0$ to $x(1) = 1$ with the least energy. Give $u^*$ and $E^*$.</p>
+<details><summary>Answer</summary><p>Here $a = -1$ and $b = 1$, so $W_c(1) = \int_0^1e^{-2\tau}\dd\tau$, which is $(1 - e^{-2})/2 \approx 0.4323$; $u^*(t) = e^{-(1-t)}/W_c(1)$, rising toward the end of the interval, and $E^* = 1/W_c(1) \approx 2.313$ (<a class="xref" href="#ex-minenergy"></a>).</p></details></li>
+</ol>
+</section>
+
+<section class="refs" id="s-refs">
+<h2>Sources and further reading</h2>
+<ul>
+<li>D. G. Luenberger, <i>Optimization by Vector Space Methods</i> (Wiley, 1969), ch. 2 (normed and Banach spaces), ch. 3 (Hilbert space, the projection theorem, minimum-norm problems, Fourier series) and ch. 6 (linear operators and adjoints, with control examples). The most direct source for <a class="xref" href="#s-minnorm"></a>.</li>
+<li>E. Kreyszig, <i>Introductory Functional Analysis with Applications</i> (Wiley, 1978), ch. 1–3 (metric, normed and Hilbert spaces; equivalence of norms; Riesz representation; adjoints), ch. 7 (spectral theory, Neumann series, spectral radius) and ch. 8–9 (compact and self-adjoint operators).</li>
+<li>M. Reed and B. Simon, <i>Methods of Modern Mathematical Physics I: Functional Analysis</i>, revised ed. (Academic Press, 1980), ch. VI (bounded and compact operators, the Hilbert–Schmidt theorem).</li>
+<li>G. B. Folland, <i>Real Analysis: Modern Techniques and Their Applications</i>, 2nd ed. (Wiley, 1999), ch. 6 ($L^p$ spaces), ch. 7 (Radon measures; density of continuous functions in $L^p$) and ch. 8 (Fourier analysis).</li>
+<li>R. M. Gray, <i>Toeplitz and Circulant Matrices: A Review</i> (Now Publishers, 2006), chapters on circulant and Toeplitz matrices, Szegő's theorem. <a href="https://ee.stanford.edu/~gray/toeplitz.pdf">PDF</a><span class="free">Free</span></li>
+<li>A. V. Oppenheim and A. S. Willsky, <i>Signals and Systems</i>, 2nd ed. (Prentice Hall, 1997), ch. 3: complex exponentials as eigenfunctions of linear time-invariant systems, Fourier series, the Gibbs phenomenon.</li>
+<li>L. N. Trefethen and M. Embree, <i>Spectra and Pseudospectra</i> (Princeton, 2005), the part on Toeplitz matrices: how far the spectra of non-normal Toeplitz matrices are from their symbols (optional).</li>
+<li>R. A. Horn and C. R. Johnson, <i>Matrix Analysis</i>, 2nd ed. (Cambridge, 2013), ch. 5: vector and matrix norms, induced norms and the spectral radius.</li>
+<li>S. Boyd, EE263 course reader (Stanford), lectures on least-norm solutions and on controllability and minimum-energy inputs. <a href="https://web.stanford.edu/class/archive/ee/ee263/ee263.1082/notes/ee263coursereader.pdf">PDF</a><span class="free">Free</span></li>
+<li>E. Hewitt and R. E. Hewitt, "The Gibbs–Wilbraham phenomenon: an episode in Fourier analysis", <i>Arch. Hist. Exact Sci.</i> 21 (1979) 129–160.</li>
+</ul>
+</section>
+
+</div>
+</main>
+</div>
+<script>LT.page.init();</script>
+<script>
+(function () {
+  'use strict';
+  const { Plot, ui, mat: M, fmt, fmtSig } = LT;
+  const PI = Math.PI;
+
+  /* ---------------- Visual 5.1: unit balls and induced norms ---------------- */
+  (function () {
+    const st = { a1: [1.2, -0.4], a2: [0.5, 0.9] };
+    const presets = { generic: [[1.2, 0.5], [-0.4, 0.9]], diagonal: [[2, 0], [0, 0.5]], rotation: M.rot(PI / 4), heavy: [[1.5, 0.2], [1.0, 0.3]],
+      heavyT: [[1.5, 1.0], [0.2, 0.3]], nilpotent: [[0, 2], [0, 0]], rankone: [[1.0, 0.8], [0.5, 0.4]] };
+    const kinds = [{ sel: '#balls-1', p: 1, name: '1' }, { sel: '#balls-2', p: 2, name: '2' }, { sel: '#balls-inf', p: Infinity, name: '∞' }];
+    const pnorm = (v, p) => (p === 1 ? Math.abs(v[0]) + Math.abs(v[1]) : p === 2 ? Math.hypot(v[0], v[1]) : Math.max(Math.abs(v[0]), Math.abs(v[1])));
+    const ball = (p, r) => {
+      const pts = [];
+      if (p === 2) { for (let k = 0; k < 720; k++) { const t = 2 * PI * k / 720; pts.push([r * Math.cos(t), r * Math.sin(t)]); } return pts; }
+      const V = p === 1 ? [[r, 0], [0, r], [-r, 0], [0, -r]] : [[r, r], [-r, r], [-r, -r], [r, -r]];
+      for (let e = 0; e < 4; e++) { const a = V[e], b = V[(e + 1) % 4]; for (let k = 0; k < 180; k++) { const s = k / 180; pts.push([a[0] + s * (b[0] - a[0]), a[1] + s * (b[1] - a[1])]); } }
+      return pts;
+    };
+    const Amat = () => [[st.a1[0], st.a2[0]], [st.a1[1], st.a2[1]]];
+    function analyse() {
+      const A = Amat(), out = {};
+      kinds.forEach(K => { let best = -1, xb = [1, 0]; ball(K.p, 1).forEach(x => { const v = pnorm(M.mv(A, x), K.p); if (v > best + 1e-12) { best = v; xb = x; } }); out[K.name] = { val: best, x: xb }; });
+      return { A, out };
+    }
+    const panel = ui.panel('#balls-controls');
+    const plots = kinds.map(K => {
+      const pl = new Plot(K.sel, { xlim: [-3, 3], ylim: [-3, 3], equal: true, maxH: 340, label: `Unit ball of the ${K.name}-norm, its image under A and the smallest ${K.name}-norm ball containing the image` });
+      pl.el.insertBefore(pl.canvas, pl.el.firstChild);
+      pl.draw = g => {
+        const R = analyse(), A = R.A, r = R.out[K.name];
+        g.poly(ball(K.p, 1), { fill: 'ink-2', fillAlpha: 0.08, color: 'ink-2', width: 1.5 });
+        g.poly(ball(K.p, 1).map(x => M.mv(A, x)), { fill: 'c3', fillAlpha: 0.2, color: 'c3', width: 2 });
+        if (r.val > 1e-9) g.poly(ball(K.p, r.val), { color: 'ink', width: 1.5, dash: [6, 4] });
+        g.arrow([0, 0], st.a1, { color: 'c1', width: 2.25, label: 'Ae₁' });
+        g.arrow([0, 0], st.a2, { color: 'c2', width: 2.25, label: 'Ae₂' });
+        g.arrow([0, 0], M.mv(A, r.x), { color: 'c7', width: 2, head: 9 });
+        g.dot(r.x, { color: 'c7', r: 4.5 });
+      };
+      pl.after = g => {
+        const r = analyse().out[K.name];
+        g.text([12, 16], `‖A‖${K.p === 1 ? '₁' : K.p === 2 ? '₂' : '∞'} = ${fmt(r.val, 3)}`, { px: true, font: 'ui', italic: false, size: 13, color: 'ink' });
+      };
+      pl.addHandle({ get: () => st.a1, set: (x, y) => { st.a1 = [x, y]; sel.set('custom'); update(); }, color: 'c1', snap: 0.05 });
+      pl.addHandle({ get: () => st.a2, set: (x, y) => { st.a2 = [x, y]; sel.set('custom'); update(); }, color: 'c2', snap: 0.05 });
+      return pl;
+    });
+    const sel = panel.select({ id: 'balls-preset', label: 'Preset', value: 'generic', options: [['generic', 'Generic'], ['diagonal', 'Diagonal'], ['rotation', 'Rotation by 45°'],
+      ['heavy', 'Heavy first column'], ['heavyT', 'Its transpose'], ['nilpotent', 'Nilpotent'], ['rankone', 'Rank one'], ['custom', 'Drag the columns']],
+      onChange: v => { const A = presets[v]; if (!A) return; st.a1 = [A[0][0], A[1][0]]; st.a2 = [A[0][1], A[1][1]]; update(); } });
+    panel.note(ui.legend([{ color: 'ink-2', label: 'unit ball', kind: 'area' }, { color: 'c3', label: 'its image under A', kind: 'area' }, { color: 'ink', label: 'ball of radius ‖A‖ₚ', kind: 'dash' }, { color: 'c7', label: 'maximizer x* and Ax*', kind: 'dot' }]));
+    const out = panel.readout({});
+    function update() {
+      const R = analyse(), A = R.A, s = M.norm2(A), rho = M.spectralRadius(A);
+      out.set(`${ui.mat(A, 2, { name: 'A' })}` +
+        `<span>‖<i>A</i>‖<sub>1</sub> picture <span class="num">${fmt(R.out['1'].val, 4)}</span>, max column sum <span class="num">${fmt(M.norm1(A), 4)}</span></span>` +
+        `<span>‖<i>A</i>‖<sub>2</sub> picture <span class="num">${fmt(R.out['2'].val, 4)}</span>, σ<sub>1</sub> <span class="num">${fmt(s, 4)}</span></span>` +
+        `<span>‖<i>A</i>‖<sub>∞</sub> picture <span class="num">${fmt(R.out['∞'].val, 4)}</span>, max row sum <span class="num">${fmt(M.normInf(A), 4)}</span></span>` +
+        `<span>ρ(<i>A</i>) <span class="num">${fmt(rho, 4)}</span> ≤ all three</span>`);
+      plots.forEach(p => p.redraw());
+    }
+    update();
+  })();
+
+  /* ---------------- Visual 5.2: Fourier partial sums as projections ---------------- */
+  (function () {
+    const K = 60, T = 1024, MS = 256, st = { fn: 'square', N: 9 };
+    const tg = Float64Array.from({ length: T }, (_, j) => -PI + 2 * PI * (j + 0.5) / T);
+    const samples = new Float64Array(MS);
+    const exact = {
+      square: { f: t => (t > 0 ? 1 : t < 0 ? -1 : 0), a: k => 0, b: k => (k % 2 ? 4 / (PI * k) : 0), a0: 0, jump: 2 },
+      saw: { f: t => t / PI, a: k => 0, b: k => 2 / PI * (k % 2 ? 1 : -1) / k, a0: 0, jump: 2 },
+      tri: { f: t => 1 - 2 * Math.abs(t) / PI, a: k => (k % 2 ? 8 / (PI * PI * k * k) : 0), b: k => 0, a0: 0, jump: 0 },
+      abssin: { f: t => Math.abs(Math.sin(t)), a: k => (k % 2 ? 0 : -4 / (PI * (k * k - 1))), b: k => 0, a0: 2 / PI, jump: 0 }
+    };
+    const cellOf = t => Math.max(0, Math.min(MS - 1, Math.floor((t + PI) / (2 * PI) * MS)));
+    let data = null;
+    function compute() {
+      const a = new Float64Array(K + 1), b = new Float64Array(K + 1), fv = new Float64Array(T); let jump = 0;
+      if (st.fn === 'draw') {
+        let s0 = 0; for (let j = 0; j < MS; j++) s0 += samples[j]; a[0] = s0 / MS;
+        for (let k = 1; k <= K; k++) { let sa = 0, sb = 0; for (let j = 0; j < MS; j++) { const t0 = -PI + 2 * PI * j / MS, t1 = t0 + 2 * PI / MS; sa += samples[j] * (Math.sin(k * t1) - Math.sin(k * t0)); sb += samples[j] * (Math.cos(k * t0) - Math.cos(k * t1)); } a[k] = sa / (PI * k); b[k] = sb / (PI * k); }
+        for (let j = 0; j < T; j++) fv[j] = samples[cellOf(tg[j])];
+      } else {
+        const E = exact[st.fn]; a[0] = E.a0; jump = E.jump;
+        for (let k = 1; k <= K; k++) { a[k] = E.a(k); b[k] = E.b(k); }
+        for (let j = 0; j < T; j++) fv[j] = E.f(tg[j]);
+      }
+      const S = new Float64Array(T).fill(a[0]), l2 = [], sup = []; let SN = null;
+      for (let k = 1; k <= K; k++) {
+        if (a[k] !== 0 || b[k] !== 0) for (let j = 0; j < T; j++) S[j] += a[k] * Math.cos(k * tg[j]) + b[k] * Math.sin(k * tg[j]);
+        let e2 = 0, em = 0; for (let j = 0; j < T; j++) { const e = fv[j] - S[j]; e2 += e * e; em = Math.max(em, Math.abs(e)); }
+        l2.push(Math.sqrt(e2 / T)); sup.push(em);
+        if (k === st.N) SN = S.slice();
+      }
+      let ov = null;
+      if (jump > 0) { let mx = -Infinity, jm = 0; for (let j = 0; j < T; j++) if (SN[j] > mx) { mx = SN[j]; jm = j; } ov = { val: mx - fv[jm], t: tg[jm], y: mx }; }
+      data = { a, b, fv, SN, l2, sup, ov, jump };
+    }
+    const main = new Plot('#four-main', { xlim: [-PI, PI], ylim: [-1.6, 1.6], frame: true, aspect: 0.62, maxH: 400, xlabel: 't', label: 'A periodic function and its Fourier partial sum' });
+    const err = new Plot('#four-err', { xlim: [1, 60], ylim: [1e-4, 3], logx: true, logy: true, frame: true, aspect: 0.95, maxH: 400, xlabel: 'N', label: 'L2 error and sup error of the partial sums against N on log-log axes' });
+    main.el.insertBefore(main.canvas, main.el.firstChild); err.el.insertBefore(err.canvas, err.el.firstChild);
+    const panel = ui.panel('#four-controls');
+    panel.select({ id: 'four-fn', label: 'Function', value: st.fn, options: [['square', 'Square wave sign(t)'], ['saw', 'Sawtooth t/π'], ['tri', 'Triangle wave'], ['abssin', '|sin t|'], ['draw', 'Draw your own']],
+      onChange: v => { if (v === 'draw') { const src = exact[st.fn] ? exact[st.fn].f : null; for (let j = 0; j < MS; j++) { const t = -PI + 2 * PI * (j + 0.5) / MS; samples[j] = src ? src(t) : samples[j]; } } st.fn = v; main.captureTouch = v === 'draw'; note.style.display = v === 'draw' ? '' : 'none'; refresh(); } });
+    panel.slider({ id: 'four-N', label: 'Degree $N$', min: 1, max: 60, step: 1, value: st.N, fmt: v => fmt(v, 0), onInput: v => { st.N = Math.round(v); refresh(); } });
+    const note = panel.note('Drawing mode: press and drag across the left panel to redraw f.'); note.style.display = 'none';
+    panel.note(ui.legend([{ color: 'ink-2', label: 'f' }, { color: 'c1', label: '<i>S</i><sub>N</sub><i>f</i> and its L² error' }, { color: 'c8', label: 'sup error; overshoot', kind: 'dot' }]));
+    const out = panel.readout({});
+    main.draw = g => {
+      if (!data) return;
+      const pts = (arr) => Array.from(tg, (t, j) => [t, arr[j]]);
+      if (st.fn === 'square') { g.line(-PI, -1, 0, -1, { color: 'ink-2', width: 2 }); g.line(0, 1, PI, 1, { color: 'ink-2', width: 2 }); }
+      else g.path(pts(data.fv), { color: 'ink-2', width: 2 });
+      g.path(pts(data.SN), { color: 'c1', width: 2 });
+      if (data.ov) { g.dot([data.ov.t, data.ov.y], { color: 'c8', r: 4.5 }); g.text([data.ov.t, data.ov.y], 'overshoot', { font: 'ui', italic: false, size: 12, color: 'ink-2', align: data.ov.t > PI / 2 ? 'right' : 'left', dx: data.ov.t > PI / 2 ? -8 : 8, dy: -12 }); }
+    };
+    let last = null;
+    const paint = LT.throttle(() => { compute(); report(); main.redraw(); err.redraw(); });
+    const drawAt = (x, y) => {
+      const j = cellOf(x), v = Math.max(-1.5, Math.min(1.5, y));
+      if (last == null) samples[j] = v; else { const j0 = last.j, v0 = last.v, n = Math.abs(j - j0); for (let s = 0; s <= n; s++) { const jj = j0 + Math.sign(j - j0) * s; samples[jj] = n ? v0 + (v - v0) * s / n : v; } }
+      last = { j, v }; paint();
+    };
+    main.onClick = (x, y) => { if (st.fn !== 'draw') return; last = null; drawAt(x, y); };
+    main.onHover = (x, y, e) => { if (st.fn !== 'draw') return; if (e && e.buttons & 1) drawAt(x, y); else last = null; };
+    err.draw = g => {
+      if (!data) return;
+      const ns = data.l2.map((_, i) => i + 1), lo = err.ylim[0] * 1.01;
+      g.path(ns.map((n, i) => [n, Math.max(lo, data.l2[i])]), { color: 'c1', width: 2 });
+      g.path(ns.map((n, i) => [n, Math.max(lo, data.sup[i])]), { color: 'c8', width: 2 });
+      g.dot([st.N, Math.max(lo, data.l2[st.N - 1])], { color: 'c1', r: 5 });
+      g.dot([st.N, Math.max(lo, data.sup[st.N - 1])], { color: 'c8', r: 5 });
+    };
+    function report() {
+      const i = st.N - 1, ov = data.ov;
+      out.set(`<span><i>N</i> <span class="num">${st.N}</span></span>` +
+        `<span>‖<i>f</i> − <i>S</i><sub>N</sub><i>f</i>‖<sub>2</sub> <span class="num">${fmtSig(data.l2[i], 3)}</span></span>` +
+        `<span>sup |<i>f</i> − <i>S</i><sub>N</sub><i>f</i>| <span class="num">${fmtSig(data.sup[i], 3)}</span></span>` +
+        (ov ? `<span>overshoot above <i>f</i> at the peak <span class="num">${fmt(ov.val, 4)}</span> = <span class="num">${fmt(100 * ov.val / data.jump, 2)}%</span> of the jump (limit 8.95%)</span>` :
+          st.fn === 'draw' ? '' : '<span class="tag good">no jump: uniform convergence</span>'));
+    }
+    function refresh() { compute(); report(); main.redraw(); err.redraw(); }
+    refresh();
+  })();
+
+  /* ---------------- Visual 5.3: circulant matrices and Fourier modes ---------------- */
+  (function () {
+    const N = 32, st = { hm1: 1 / 3, h0: 1 / 3, h1: 1 / 3, h2: 0, k: 3, rnd: false };
+    const presets = { avg: [1 / 3, 1 / 3, 1 / 3, 0], delay: [0, 0, 1, 0], diff: [0, 1, -1, 0], lap: [-1, 2, -1, 0], smooth: [0, 0, 0.5, 0.5] };
+    const g0 = M.randn(11), rnd = Float64Array.from({ length: N }, () => g0());
+    let D = null;
+    function compute() {
+      const c = new Array(N).fill(0); c[0] = st.h0; c[1] = st.h1; c[2] = st.h2; c[N - 1] = st.hm1;
+      const C = M.zeros(N, N); for (let j = 0; j < N; j++) for (let l = 0; l < N; l++) C[j][l] = c[((j - l) % N + N) % N];
+      const hat = []; for (let k = 0; k < N; k++) { let re = 0, im = 0; for (let m = 0; m < N; m++) { re += c[m] * Math.cos(2 * PI * m * k / N); im -= c[m] * Math.sin(2 * PI * m * k / N); } hat.push({ re, im }); }
+      D = { c, C, hat, n2: M.norm2(C) };
+    }
+    const mat = new Plot('#circ-mat', { xlim: [0, N], ylim: [0, N], equal: true, axes: false, maxH: 330, label: 'Heat map of the circulant matrix' });
+    const sig = new Plot('#circ-sig', { xlim: [-0.5, N - 0.5], ylim: [-1.2, 1.2], frame: true, aspect: 0.9, maxH: 330, xlabel: 'index j', label: 'Input vector and output vector of the circulant' });
+    const spec = new Plot('#circ-spec', { xlim: [-0.5, N - 0.5], ylim: [0, 1.2], frame: true, aspect: 0.9, maxH: 330, xlabel: 'frequency k', label: 'Gains of the circulant at every frequency' });
+    [mat, sig, spec].forEach(p => p.el.insertBefore(p.canvas, p.el.firstChild));
+    const panel = ui.panel('#circ-controls');
+    const sel = panel.select({ id: 'circ-preset', label: 'Kernel', value: 'avg', options: [['avg', 'Moving average'], ['delay', 'Delay by one'], ['diff', 'First difference'], ['lap', 'Second difference'], ['smooth', 'Smooth and delay'], ['custom', 'Custom']],
+      onChange: v => { const P = presets[v]; if (!P) return; [st.hm1, st.h0, st.h1, st.h2] = P; sl.forEach((s, i) => s.set(P[i])); update(true); } });
+    const keys = ['hm1', 'h0', 'h1', 'h2'], labs = ['$h_{-1}$', '$h_0$', '$h_1$', '$h_2$'];
+    const sl = keys.map((key, i) => panel.slider({ id: 'circ-' + key, label: labs[i], min: -1.5, max: 1.5, step: 0.01, value: st[key], onInput: LT.throttle(v => { st[key] = v; sel.set('custom'); update(true); }) }));
+    panel.slider({ id: 'circ-k', label: 'Mode $k$', min: 0, max: 16, step: 1, value: st.k, fmt: v => fmt(v, 0), onInput: v => { st.k = Math.round(v); update(false); } });
+    panel.toggle({ id: 'circ-rnd', label: 'Random input', value: st.rnd, onChange: v => { st.rnd = v; update(false); } });
+    panel.note(ui.legend([{ color: 'c7', label: 'input x', kind: 'dot' }, { color: 'c3', label: 'output Cx', kind: 'dot' }, { color: 'ink-2', label: 'predicted ĥₖ-scaled mode', kind: 'dash' }, { color: 'c1', label: 'gains |ĥₖ|', kind: 'dot' }, { color: 'c4', label: 'selected k, N − k', kind: 'dot' }]));
+    const out = panel.readout({});
+    const off = document.createElement('canvas'); off.width = N; off.height = N; const octx = off.getContext('2d');
+    mat.draw = g => {
+      const id = octx.createImageData(N, N), R = Math.max(1e-9, ...D.c.map(Math.abs));
+      for (let j = 0; j < N; j++) for (let l = 0; l < N; l++) { const rgb = LT.cmap('div', 0.5 + 0.5 * D.C[j][l] / R), o = 4 * (j * N + l); id.data[o] = rgb[0]; id.data[o + 1] = rgb[1]; id.data[o + 2] = rgb[2]; id.data[o + 3] = 255; }
+      octx.putImageData(id, 0, 0);
+      g.ctx.fillStyle = LT.color('plot-bg'); g.ctx.fillRect(0, 0, mat.W, mat.H);
+      const x0 = mat.X(0), y0 = mat.Y(N); g.ctx.save(); g.ctx.imageSmoothingEnabled = false; g.ctx.drawImage(off, x0, y0, mat.X(N) - x0, mat.Y(0) - y0); g.ctx.restore();
+      g.poly([[0, 0], [N, 0], [N, N], [0, N]], { color: 'rule-strong', width: 1 });
+    };
+    const inputVec = () => (st.rnd ? Array.from(rnd) : Array.from({ length: N }, (_, j) => Math.cos(2 * PI * st.k * j / N)));
+    sig.draw = g => {
+      const x = inputVec(), y = M.mv(D.C, x), h = D.hat[st.k], gain = Math.hypot(h.re, h.im), ph = Math.atan2(h.im, h.re);
+      if (!st.rnd) g.curve(s => [s, gain * Math.cos(2 * PI * st.k * s / N + ph)], -0.5, N - 0.5, { color: 'ink-2', width: 1.25, dash: [5, 4] }, 400);
+      g.path(x.map((v, j) => [j, v]), { color: 'c7', width: 1, alpha: 0.6 });
+      g.path(y.map((v, j) => [j, v]), { color: 'c3', width: 1, alpha: 0.6 });
+      x.forEach((v, j) => g.dot([j, v], { color: 'c7', r: 3.2, ring: false }));
+      y.forEach((v, j) => g.dot([j, v], { color: 'c3', r: 3.2, ring: false }));
+    };
+    spec.draw = g => {
+      D.hat.forEach((h, k) => { const a = Math.hypot(h.re, h.im), on = k === st.k || k === (N - st.k) % N; g.line(k, 0, k, a, { color: on ? 'c4' : 'c1', width: on ? 2.5 : 1.5 }); g.dot([k, a], { color: on ? 'c4' : 'c1', r: on ? 5 : 3.2 }); });
+    };
+    function update(taps) {
+      if (taps || !D) compute();
+      const x = inputVec(), y = M.mv(D.C, x), amax = Math.max(...x.map(Math.abs), ...y.map(Math.abs), 0.2) * 1.15;
+      sig.setLimits(null, [-amax, amax]);
+      const gmax = Math.max(...D.hat.map(h => Math.hypot(h.re, h.im)), 0.2);
+      spec.setLimits(null, [0, gmax * 1.15]);
+      const h = D.hat[st.k], gain = Math.hypot(h.re, h.im), phase = Math.atan2(h.im, h.re) * 180 / PI;
+      let res = 0; for (let j = 0; j < N; j++) { let re = 0, im = 0; for (let l = 0; l < N; l++) { const t = 2 * PI * st.k * l / N; re += D.C[j][l] * Math.cos(t); im += D.C[j][l] * Math.sin(t); } const t = 2 * PI * st.k * j / N, pr = h.re * Math.cos(t) - h.im * Math.sin(t), pi = h.re * Math.sin(t) + h.im * Math.cos(t); res += (re - pr) * (re - pr) + (im - pi) * (im - pi); }
+      let extra;
+      if (st.rnd) { const a = M.dot(x, y) / M.dot(x, x), r = Math.sqrt(y.reduce((s, v, j) => s + (v - a * x[j]) * (v - a * x[j]), 0)) / Math.max(1e-12, M.vnorm(y)); extra = `<span>best multiple α<i>x</i>: relative residual <span class="num">${fmt(r, 3)}</span></span><span class="tag bad">not an eigenvector</span>`; }
+      else extra = `<span>‖<i>C</i>φ<sub>k</sub> − ĥ<sub>k</sub>φ<sub>k</sub>‖ <span class="num">${fmtSig(Math.sqrt(res), 2)}</span></span><span class="tag good">Fourier mode: eigenvector</span>`;
+      out.set(`<span>ĥ<sub>k</sub> <span class="num">${LT.fmtC(h, 3)}</span></span><span>gain |ĥ<sub>k</sub>| <span class="num">${fmt(gain, 3)}</span>, phase <span class="num">${fmt(phase, 1)}°</span></span>` +
+        `<span>‖<i>C</i>‖<sub>2</sub> by SVD <span class="num">${fmt(D.n2, 4)}</span> = max |ĥ<sub>k</sub>| <span class="num">${fmt(gmax, 4)}</span></span>${extra}`);
+      mat.redraw(); sig.redraw(); spec.redraw();
+    }
+    update(true);
+  })();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,840 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>10 Feedback and observers · Linear Theory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap">
+<link rel="stylesheet" href="assets/lt.css">
+<script src="assets/toc.js"></script>
+<script src="assets/lt.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+</head>
+<body>
+<div class="topbar"><button class="btn" id="lt-menu" type="button" aria-controls="lt-side" aria-expanded="false">Contents</button><span class="topbar-title">10 · Feedback: state feedback, observers and the loop</span></div>
+<div class="shell">
+<nav class="side" id="lt-side" aria-label="Chapters"></nav>
+<main class="page" id="main" data-chapter="10">
+<div class="content">
+
+<header class="ch-head">
+  <div class="eyebrow">Part IV · Control · Chapter 10</div>
+  <h1 class="ch-title">Feedback: state feedback, observers and the loop</h1>
+  <p class="ch-lead">Feedback replaces the open-loop matrix $A$ by a closed-loop matrix of the designer's choosing, within limits set by controllability and observability. This chapter makes those limits exact, prices the redesign in input size, transients and noise, and then turns to the loop view, where a handful of closed-loop transfer functions record what every feedback law gains and gives up.</p>
+  <p class="ch-meta"><span><b>Prerequisites</b> chapters 7–9 (stability, transfer functions, controllability and observability)</span><span><b>Leads to</b> chapters 11, 12 and 13</span><span><b>Visuals</b> 3</span></p>
+  <ol class="core-q">
+    <li>Which closed-loop spectra can state feedback produce, and which eigenvalues can no feedback move?</li>
+    <li>What does fast feedback cost in input size, transient peaking and sensitivity to noise?</li>
+    <li>When only outputs are measured, how do estimation and control combine, and what does the transfer-function view of the loop add to the state-space picture?</li>
+  </ol>
+  <details class="notation">
+    <summary>Notation introduced in this chapter</summary>
+    <div class="tbl-wrap"><table class="tbl">
+      <thead><tr><th>Symbol</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td>$x \in \R^n$, $u \in \R^m$, $y \in \R^p$</td><td>state, input and output of $\dot x = Ax + Bu$, $y = Cx$</td></tr>
+        <tr><td>$K \in \R^{m\times n}$</td><td>state-feedback gain: $u = -Kx + r$ with a new external input (reference) $r$</td></tr>
+        <tr><td>$a_1, \dots, a_n$</td><td>coefficients of the open-loop characteristic polynomial $\det(sI - A) = s^n + a_1 s^{n-1} + \dots + a_n$</td></tr>
+        <tr><td>$\chi(s)$, $\alpha_1,\dots,\alpha_n$</td><td>desired closed-loop characteristic polynomial $s^n + \alpha_1 s^{n-1} + \dots + \alpha_n$, real coefficients</td></tr>
+        <tr><td>$\mathcal C$, $\mathcal O$</td><td>controllability matrix $[B,\ AB,\ \dots,\ A^{n-1}B]$; observability matrix with block rows $C, CA, \dots, CA^{n-1}$</td></tr>
+        <tr><td>$\mathcal C_k$</td><td>partial controllability matrix $[B,\ AB,\ \dots,\ A^{k-1}B]$, so $\mathcal C = \mathcal C_n$</td></tr>
+        <tr><td>$M_\psi$, $\theta(s)$</td><td>companion matrix of a monic polynomial $\psi$; the vector $(s^{n-1}, \dots, s, 1)^\T$</td></tr>
+        <tr><td>$A_c$, $b_c$</td><td>controllable canonical (companion) form of a single-input pair</td></tr>
+        <tr><td>$\hat x$, $\tilde x = x - \hat x$</td><td>state estimate produced by an observer; estimation error</td></tr>
+        <tr><td>$L \in \R^{n\times p}$</td><td>observer gain (a constant matrix)</td></tr>
+        <tr><td>$\mathbb E$, $\delta$, $\Sigma(t)$</td><td>expectation, Dirac delta, second-moment matrix $\mathbb E[z(t)z(t)^\T]$ of a system driven by white noise</td></tr>
+        <tr><td>$G(s)$, $K(s)$</td><td>plant and controller transfer functions of the feedback loop (<a class="xref" href="#s-loop"></a>)</td></tr>
+        <tr><td>$L(s) = G(s)K(s)$</td><td>loop transfer function; the argument $s$ distinguishes it from the observer gain $L$</td></tr>
+        <tr><td>$S$, $T$</td><td>sensitivity $1/(1+L)$ and complementary sensitivity $L/(1+L)$</td></tr>
+        <tr><td>$d$, $v$, $w$</td><td>load disturbance at the plant input, measurement noise, process noise</td></tr>
+        <tr><td>$\phi(s)$</td><td>closed-loop characteristic polynomial of the loop</td></tr>
+        <tr><td>$k_p$, $k_i$, $k_d$</td><td>proportional, integral and derivative gains</td></tr>
+      </tbody>
+    </table></div>
+  </details>
+</header>
+
+<section class="sec" id="s-place">
+<h2>State feedback and pole placement</h2>
+
+<div class="blk prob"><p>Given $\dot x = Ax + Bu$ with the whole state measured, choose a linear law $u = -Kx$ so that the closed-loop system $\dot x = (A - BK)x$ has prescribed eigenvalues. Which spectra can be reached, and which cannot?</p></div>
+
+<div class="blk setting"><p>$A \in \R^{n\times n}$ and $B \in \R^{n\times m}$ are real, the state $x(t) \in \R^n$ is available, and the gain $K \in \R^{m\times n}$ must be real. A real closed-loop matrix has a characteristic polynomial with real coefficients, so its spectrum is closed under complex conjugation, with multiplicities (<a href="ch03_eigenvalues.html#thm-charpoly">the characteristic-polynomial theorem</a>, chapter 3). The target is therefore a conjugation-closed list $\lambda_1, \dots, \lambda_n$, equivalently a monic polynomial $\chi(s) = \prod_i (s - \lambda_i) = s^n + \alpha_1 s^{n-1} + \dots + \alpha_n$ with real coefficients. Write $\det(sI - A) = s^n + a_1 s^{n-1} + \dots + a_n$ and $\mathcal C = [B,\ AB,\ \dots,\ A^{n-1}B]$ for the controllability matrix of chapter 9. With an external input $r$, the law $u = -Kx + r$ gives $\dot x = (A - BK)x + Br$.</p></div>
+
+<div class="blk probe"><p>Three small cases. A scalar plant $\dot x = ax + bu$ with $u = -kx$ has the closed-loop pole $a - bk$: any real number $\lambda$ if $b \neq 0$, by $k = (a - \lambda)/b$, and $a$ for every $k$ if $b = 0$. The double integrator $\ddot q = u$ with state $x = (q, \dot q)$ has $A = \begin{bmatrix}0 & 1\\ 0 & 0\end{bmatrix}$, $B = \begin{bmatrix}0\\ 1\end{bmatrix}$, and $K = [k_1\ \ k_2]$ gives $A - BK = \begin{bmatrix}0 & 1\\ -k_1 & -k_2\end{bmatrix}$ with characteristic polynomial $s^2 + k_2 s + k_1$: every monic real quadratic, each from exactly one gain. The diagonal plant $A = \diag(1, -2)$ with $B = e_1 = (1, 0)^\T$ gives $A - BK = \begin{bmatrix}1 - k_1 & -k_2\\ 0 & -2\end{bmatrix}$: the eigenvalue $-2$ survives every gain, because no input reaches the second coordinate.</p></div>
+
+<div class="blk conj"><p>Every conjugation-closed spectrum can be produced by some $K$ exactly when $(A, B)$ is controllable, and an uncontrollable eigenvalue stays where it is under every feedback. <a class="xref" href="#thm-wonham"></a> and <a class="xref" href="#prop-fixed"></a> confirm both halves.</p></div>
+
+<p>For a single input the proof goes through a coordinate system in which the feedback acts on one row only and every closed-loop matrix is a companion matrix, whose structure is explicit.</p>
+
+<div class="blk lem" id="lem-companion" data-name="Companion matrices">
+<p>Let $\psi(s) = s^n + \psi_1 s^{n-1} + \dots + \psi_n$ have real coefficients, and let its <dfn>companion matrix</dfn> $M_\psi \in \R^{n\times n}$ have first row $(-\psi_1, \dots, -\psi_n)$, ones on the subdiagonal and zeros elsewhere. Put $\theta(s) = (s^{n-1}, \dots, s, 1)^\T$, and let $e_1$ be the first standard basis vector. Then:</p>
+<ol>
+<li>$(sI - M_\psi)\,\theta(s) = \psi(s)\,e_1$ for every $s \in \C$, so $(sI - M_\psi)^{-1}e_1 = \theta(s)/\psi(s)$ whenever $\psi(s) \neq 0$;</li>
+<li>$\det(sI - M_\psi) = \psi(s)$;</li>
+<li>$\rank(\lambda I - M_\psi) \ge n - 1$ for every $\lambda \in \C$; hence every eigenvalue $\lambda$ of $M_\psi$ has geometric multiplicity one (a one-dimensional eigenspace), spanned by $\theta(\lambda)$.</li>
+</ol>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> (1) Row 1 of $(sI - M_\psi)\,\theta(s)$ is $(s + \psi_1)s^{n-1} + \psi_2 s^{n-2} + \dots + \psi_n = \psi(s)$, and row $l \ge 2$ is $-s^{n-l+1} + s\cdot s^{n-l} = 0$. (2) Deleting the first row and the last column of $sI - M_\psi$ leaves an upper triangular matrix with every diagonal entry equal to $-1$. Adding $s^{n-j}$ times column $j$ to column $n$, for $j = 1, \dots, n - 1$, does not change the determinant and, by (1), turns column $n$ into $\psi(s)\,e_1$; expanding along that column gives $\det(sI - M_\psi) = (-1)^{n+1}\psi(s)\,(-1)^{n-1} = \psi(s)$. (3) The same triangular submatrix, at $s = \lambda$, is invertible, so $\rank(\lambda I - M_\psi) \ge n - 1$. If $\psi(\lambda) = 0$, then (1) puts $\theta(\lambda)$, which is nonzero because its last entry is 1, in the null space of $\lambda I - M_\psi$, and that null space has dimension at most one.</p>
+</div>
+
+<div class="blk lem" id="lem-ccf" data-name="Controllable canonical form">
+<p>Let $b \in \R^n$ and let $(A, b)$ be controllable. Then $T = \mathcal C_c \mathcal C^{-1}$ is invertible, and $TAT^{-1} = A_c$, $Tb = b_c$, where</p>
+<div class="eq">$$A_c = \begin{bmatrix} -a_1 & -a_2 & \cdots & -a_{n-1} & -a_n\\ 1 & 0 & \cdots & 0 & 0\\ 0 & 1 & \cdots & 0 & 0\\ \vdots & & \ddots & & \vdots\\ 0 & 0 & \cdots & 1 & 0\end{bmatrix}, \qquad b_c = e_1 .$$</div>
+</div>
+<dl class="where">
+  <dt>$a_1,\dots,a_n$</dt><dd>the coefficients of $\det(sI - A)$; $A_c$ is the companion matrix of $\det(sI - A)$, so $\det(sI - A_c) = \det(sI - A)$ by <a class="xref" href="#lem-companion"></a></dd>
+  <dt>$e_1$</dt><dd>the first standard basis vector</dd>
+  <dt>$\mathcal C$, $\mathcal C_c$</dt><dd>the controllability matrices $[b,\ Ab,\ \dots,\ A^{n-1}b]$ and $[b_c,\ A_c b_c,\ \dots,\ A_c^{n-1}b_c]$</dd>
+</dl>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Each multiplication by $A_c$ moves the last nonzero entry of $A_c^k e_1$ down by one position and leaves a 1 there, so $\mathcal C_c$ is upper triangular with unit diagonal and invertible. By the Cayley–Hamilton theorem (<a href="ch03_eigenvalues.html#thm-ch">chapter 3</a>), $A^n b = -a_1 A^{n-1}b - \dots - a_n b$, hence $A\mathcal C = \mathcal C F$, where $F$ has ones on the subdiagonal, last column $(-a_n, \dots, -a_1)^\T$ and zeros elsewhere. The pair $(A_c, b_c)$ has the same characteristic polynomial (<a class="xref" href="#lem-companion"></a>), so $A_c\mathcal C_c = \mathcal C_c F$ with the same $F$. Therefore $TAT^{-1} = \mathcal C_c \mathcal C^{-1} A \mathcal C \mathcal C_c^{-1} = \mathcal C_c F \mathcal C_c^{-1} = A_c$ and $Tb = \mathcal C_c \mathcal C^{-1} b = \mathcal C_c e_1 = b_c$.</p>
+</div>
+
+<div class="blk thm" id="thm-place" data-name="Pole placement, single input">
+<p>Let $b \in \R^n$ and let $(A, b)$ be controllable. For every monic real polynomial $\chi$ of degree $n$ there is exactly one $K \in \R^{1\times n}$ with $\det(sI - A + bK) = \chi(s)$. It is given by Ackermann's formula</p>
+<div class="eq">$$K = e_n^\T\, \mathcal C^{-1}\, \chi(A).$$</div>
+</div>
+<dl class="where">
+  <dt>$\chi(A)$</dt><dd>the matrix $A^n + \alpha_1 A^{n-1} + \dots + \alpha_n I$</dd>
+  <dt>$e_n$</dt><dd>the last standard basis vector, so $e_n^\T M$ is the last row of a matrix $M$</dd>
+</dl>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> In the coordinates of <a class="xref" href="#lem-ccf"></a>, a gain $K_c = [k_1\ \cdots\ k_n]$ changes only the first row: $A_c - b_c K_c$ is again a companion matrix, with first row $-(a_1 + k_1), \dots, -(a_n + k_n)$ and hence, by <a class="xref" href="#lem-companion"></a>, characteristic polynomial $s^n + \sum_i (a_i + k_i) s^{n-i}$. This equals $\chi$ if and only if $k_i = \alpha_i - a_i$ for every $i$. Since $A - bK = T^{-1}(A_c - b_c K T^{-1})T$, the admissible gains for $(A, b)$ are exactly $K = K_c T$; this proves existence and uniqueness.</p>
+<p>For the formula, put $A_K = A - bK$. Induction on $j$ gives $A_K^j = A^j - \sum_{i=0}^{j-1} A^i b\, K A_K^{j-1-i}$. The characteristic polynomial of $A_K$ is $\chi$, so the Cayley–Hamilton theorem gives $\chi(A_K) = 0$; substituting the expansion yields $\chi(A) = \sum_{i=0}^{n-1} A^i b\, z_i = \mathcal C Z$, where the row vectors $z_i$ are stacked into $Z$. The term $A^{n-1}b$ arises only from the leading power $A_K^n$, with coefficient $z_{n-1} = K$. Hence $Z = \mathcal C^{-1}\chi(A)$, and $K$ is its last row.</p>
+</div>
+
+<div class="blk thm" id="thm-wonham" data-name="Pole placement, several inputs">
+<p>$(A, B)$ is controllable if and only if for every conjugation-closed list $\lambda_1, \dots, \lambda_n$ there is a real $K \in \R^{m\times n}$ such that $A - BK$ has exactly these eigenvalues, counted with multiplicity. For $m > 1$ the gain is in general not unique.</p>
+</div>
+<p class="src">Idea: by Heymann's lemma, for controllable $(A, B)$ and any vector $Bg \neq 0$ there is $F$ such that $(A - BF, Bg)$ is controllable; single-input placement for that pair finishes the construction. The necessity half is <a class="xref" href="#prop-fixed"></a>. Source: W. M. Wonham, "On pole assignment in multi-input controllable linear systems", <i>IEEE Trans. Autom. Control</i> 12 (1967) 660–665; Sontag, <i>Mathematical Control Theory</i>, ch. 5.</p>
+
+<div class="blk prop" id="prop-fixed" data-name="Uncontrollable modes are fixed">
+<p>Let $w \in \C^n$ be nonzero with $w^* A = \lambda w^*$ and $w^* B = 0$, where $w^*$ is the conjugate transpose: $w$ is a left eigenvector of $A$ orthogonal to every column of $B$. Then $w^*(A - BK) = \lambda w^*$ for every $K$, so $\lambda \in \Lambda(A - BK)$, the spectrum of $A - BK$; and every solution of $\dot x = Ax + Bu$ satisfies $w^*x(t) = e^{\lambda t}\,w^*x(0)$, whatever the input. More completely, in coordinates where</p>
+<div class="eq">$$A = \begin{bmatrix} A_{11} & A_{12}\\ 0 & A_{22}\end{bmatrix},\quad B = \begin{bmatrix} B_1\\ 0\end{bmatrix},\quad K = [K_1\ \ K_2] \quad\Longrightarrow\quad A - BK = \begin{bmatrix} A_{11} - B_1K_1 & A_{12} - B_1 K_2\\ 0 & A_{22}\end{bmatrix},$$</div>
+<p>with $(A_{11}, B_1)$ controllable (the decomposition of <a href="ch09_controllability.html#thm-kalman-dec">chapter 9</a>, reachable subspace first), the eigenvalues of $A_{22}$ are fixed and those of $A_{11} - B_1 K_1$ can be assigned freely.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> $w^*(A - BK) = w^*A - (w^*B)K = \lambda w^*$, so $w^*\bigl(\lambda I - (A - BK)\bigr) = 0$ with $w \neq 0$ and $\lambda I - (A - BK)$ is singular. Along solutions, $\frac{\dd}{\dd t}\,w^*x = w^*Ax + w^*Bu = \lambda\,w^*x$. The block formula is direct multiplication. For square blocks $P$ and $R$, $\begin{bmatrix}P & Q\\ 0 & R\end{bmatrix} = \begin{bmatrix}I & 0\\ 0 & R\end{bmatrix}\begin{bmatrix}P & Q\\ 0 & I\end{bmatrix}$, and expanding the two factors along their identity rows gives the determinants $\det R$ and $\det P$; by multiplicativity of the determinant (<a href="ch01_linear_maps.html#thm-det">chapter 1</a>), applied to $sI - (A - BK)$, the characteristic polynomial of $A - BK$ is $\det(sI - A_{11} + B_1K_1)\,\det(sI - A_{22})$. Finally <a class="xref" href="#thm-wonham"></a> applies to $(A_{11}, B_1)$.</p>
+</div>
+<p>A left eigenvector orthogonal to every column of $B$ is thus a mode that no input can reach.</p>
+
+<div class="blk def" id="def-stabilizable" data-name="Stabilizable">
+<p>$(A, B)$ is <dfn>stabilizable</dfn> if there is $K$ such that $A - BK$ is Hurwitz, that is, every eigenvalue has negative real part.</p>
+</div>
+<div class="blk cor" id="cor-stabilizable" data-name="Tests for stabilizability">
+<p>$(A, B)$ is stabilizable if and only if every uncontrollable eigenvalue (every eigenvalue of $A_{22}$ in <a class="xref" href="#prop-fixed"></a>) has negative real part, if and only if $\rank[\lambda I - A,\ \ B] = n$ for every $\lambda$ with $\Re\lambda \ge 0$, which is the Popov–Belevitch–Hautus (PBH) test of <a href="ch09_controllability.html#thm-pbh">chapter 9</a> restricted to the closed right half-plane.</p>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> Work in the coordinates of <a class="xref" href="#prop-fixed"></a>; a change of coordinates changes neither the spectra nor the rank, since $[\lambda I - TAT^{-1},\ TB] = T\,[\lambda I - A,\ B]\,\diag(T^{-1}, I)$. A row vector $(w_1^*,\ w_2^*)$ annihilates</p>
+<div class="eq">$$[\lambda I - A,\ \ B] = \begin{bmatrix}\lambda I - A_{11} & -A_{12} & B_1\\ 0 & \lambda I - A_{22} & 0\end{bmatrix}$$</div>
+<p>only if $w_1^*(\lambda I - A_{11}) = 0$ and $w_1^*B_1 = 0$, which forces $w_1 = 0$ by the PBH test for the controllable pair $(A_{11}, B_1)$, and then $w_2^*(\lambda I - A_{22}) = 0$; conversely, $(0,\ w_2^*)$ annihilates it whenever $w_2$ is a left eigenvector of $A_{22}$ for $\lambda$. So the rank drops exactly at the eigenvalues of $A_{22}$: these are the uncontrollable eigenvalues, and the second and third conditions agree. If they hold, choose $K_1$ with $A_{11} - B_1K_1$ Hurwitz (<a class="xref" href="#thm-wonham"></a>) and $K_2 = 0$; then $\Lambda(A - BK) = \Lambda(A_{11} - B_1K_1) \cup \Lambda(A_{22})$ lies in the open left half-plane. Conversely, the eigenvalues of $A_{22}$ belong to $\Lambda(A - BK)$ for every $K$, so no $K$ makes $A - BK$ Hurwitz when one of them has $\Re\lambda \ge 0$.</p>
+</div>
+
+<div class="blk pattern">
+<p>State feedback acts on pairs: $(A, B) \mapsto (A - BK, B)$, together with coordinate changes $(TAT^{-1}, TB)$ and input changes $B \mapsto BV$ with invertible $V$. Its invariants say what feedback cannot do. Feedback leaves the controllable subspace and each partial range $\Range[B,\ AB,\ \dots,\ A^{k-1}B]$ unchanged (<a class="xref" href="#prop-feedback-inv"></a>); the ranks of these partial ranges survive all three operations, and for controllable pairs they are complete invariants (<a class="xref" href="#prop-brunovsky"></a>). With one input and one output a second invariant appears: the zeros (<a class="xref" href="#prop-zeros"></a>).</p>
+</div>
+
+<div class="blk prop" id="prop-feedback-inv" data-name="Invariants of state feedback">
+<p>Let $A \in \R^{n\times n}$, $B \in \R^{n\times m}$ and $K \in \R^{m\times n}$, and write $\mathcal C_k(A, B) = [B,\ AB,\ \dots,\ A^{k-1}B]$ for $k \ge 1$, so that $\mathcal C = \mathcal C_n$. Then $\Range\,\mathcal C_k(A - BK, B) = \Range\,\mathcal C_k(A, B)$ for every $k$. In particular state feedback changes neither the reachable subspace $\Range\,\mathcal C$ nor controllability, and the ranks $\rank\mathcal C_k$, $k = 1, \dots, n$, are unchanged by state feedback, by coordinate changes $(TAT^{-1}, TB)$ and by input changes $B \mapsto BV$ with $V$ invertible.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> By induction on $j$, the columns of $(A - BK)^jB$ lie in $\Range\,\mathcal C_{j+1}(A, B)$: for $j \ge 1$,</p>
+<div class="eq">$$(A - BK)^jB = A\,(A - BK)^{j-1}B - B\,K(A - BK)^{j-1}B,$$</div>
+<p>and $A$ maps $\Range\,\mathcal C_j(A, B)$ into $\Range\,\mathcal C_{j+1}(A, B)$. This gives $\subseteq$; the reverse inclusion is the same statement for the pair $(A - BK, B)$ and the gain $-K$, since $(A - BK) - B(-K) = A$. A coordinate change replaces $\mathcal C_k$ by $T\mathcal C_k$, and an input change replaces it by $\mathcal C_k\,\diag(V, \dots, V)$; neither changes the rank. Chapter 9 proves the invariance of controllability by a trajectory argument (<a href="ch09_controllability.html#prop-ctrb-invariance">its invariance proposition</a>).</p></div>
+
+<div class="blk prop" id="prop-brunovsky" data-name="Brunovský's classification">
+<p>Let $(A, B)$ and $(A', B')$ be controllable pairs with $A, A' \in \R^{n\times n}$ and $B, B' \in \R^{n\times m}$. There are $K \in \R^{m\times n}$ and invertible $T \in \R^{n\times n}$, $V \in \R^{m\times m}$ with $A' = T(A - BK)T^{-1}$ and $B' = TBV$ if and only if $\rank\mathcal C_k(A, B) = \rank\mathcal C_k(A', B')$ for $k = 1, \dots, n$.</p>
+</div>
+<p class="src">The "only if" half is <a class="xref" href="#prop-feedback-inv"></a>. For the converse, these operations bring every controllable pair to a canonical form of decoupled chains of integrators whose lengths, the controllability indices, are fixed by the ranks: the number of chains of length at least $k$ is $\rank\mathcal C_k - \rank\mathcal C_{k-1}$, with $\rank\mathcal C_0 = 0$. Source: P. Brunovský, "A classification of linear controllable systems", <i>Kybernetika</i> 6 (1970) 173–188.</p>
+
+<div class="blk prop" id="prop-zeros" data-name="State feedback does not move zeros">
+<p>Let $(A, b)$ be controllable with $b \in \R^n$, and let $c \in \R^{1\times n}$. There is a polynomial $\beta$ of degree at most $n - 1$ such that for every $K$</p>
+<div class="eq">$$c(sI - A)^{-1}b = \frac{\beta(s)}{\det(sI - A)}, \qquad c(sI - A + bK)^{-1}b = \frac{\beta(s)}{\det(sI - A + bK)}.$$</div>
+</div>
+<div class="proof">
+<p><span class="proof-label">Proof.</span> In the coordinates of <a class="xref" href="#lem-ccf"></a>, write $cT^{-1} = [\beta_1\ \cdots\ \beta_n]$ and $\beta(s) = \beta_1 s^{n-1} + \dots + \beta_n = cT^{-1}\theta(s)$. For every companion matrix $M$, <a class="xref" href="#lem-companion"></a> gives $(sI - M)^{-1}e_1 = \theta(s)/\det(sI - M)$. Since $c(sI - A)^{-1}b = cT^{-1}(sI - A_c)^{-1}Tb$ and $Tb = e_1$, the open-loop transfer function is $\beta(s)/\det(sI - A_c) = \beta(s)/\det(sI - A)$. Feedback replaces $A_c$ by another companion matrix, that of $\det(sI - A + bK)$, and leaves $b_c$ and $cT^{-1}$ unchanged.</p>
+</div>
+
+<div class="blk cor" id="cor-cancel" data-name="Cancellation destroys observability">
+<p>In the setting of <a class="xref" href="#prop-zeros"></a>, fix $K$ and let $\chi(s) = \det(sI - A + bK)$. The pair $(A - bK, b)$ is controllable, and $(c, A - bK)$ is observable if and only if $\chi$ and $\beta$ have no common root. At a common root $z$, the eigenvectors of $A - bK$ for $z$ lie in $\Null(c)$, the null space of $c$: an initial state along one of them produces the output $y = cx \equiv 0$.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> Controllability is <a class="xref" href="#prop-feedback-inv"></a>. In the coordinates of <a class="xref" href="#lem-ccf"></a>, $A - bK$ becomes the companion matrix of $\chi$, whose eigenvectors for a root $\lambda$ of $\chi$ are the nonzero multiples of $\theta(\lambda)$ (<a class="xref" href="#lem-companion"></a>). So the eigenvectors of $A - bK$ are the nonzero multiples of $T^{-1}\theta(\lambda)$, and $cT^{-1}\theta(\lambda) = \beta(\lambda)$. By the eigenvector form of the observability test (<a href="ch09_controllability.html#thm-obs">chapter 9</a>: observable if and only if no eigenvector lies in the null space of the output matrix), $(c, A - bK)$ fails to be observable exactly when $\beta(\lambda) = 0$ at some root $\lambda$ of $\chi$. An initial state $x_0$ in $\Null(c)$ that is an eigenvector for $z$ gives $x(t) = e^{zt}x_0$ and $y \equiv 0$.</p></div>
+<p>Placing a closed-loop pole on a root of $\beta$ therefore cancels it from the closed-loop transfer function and hides its mode from the output: feedback preserves controllability but can destroy observability.</p>
+</section>
+
+<section class="sec" id="s-cost">
+<h2>What fast poles cost</h2>
+
+<div class="blk prob"><p><a class="xref" href="#thm-place"></a> promises any spectrum and says nothing about the size of $K$, of the input $u$, or of the state on its way to zero. Find how these scale with the speed of the requested poles.</p></div>
+
+<div class="blk probe"><p>The scalar plant $\dot x = ax + bu$, $b \neq 0$, with $u = -kx$ and closed-loop pole $\lambda = a - bk &lt; 0$ has $x(t) = e^{\lambda t}x_0$ and $u(t) = -k e^{\lambda t}x_0$, so</p>
+<div class="eq">$$\abs{u(0)} = \frac{\abs{a - \lambda}}{\abs b}\abs{x_0}, \qquad \int_0^\infty u(t)^2\,\dd t = \frac{(a - \lambda)^2}{2 b^2 \abs\lambda}\, x_0^2 .$$</div>
+<p>Both grow linearly in $\abs\lambda$ as $\lambda \to -\infty$. For an unstable plant ($a &gt; 0$) the energy, as a function of $\mu = -\lambda &gt; 0$, is $(a+\mu)^2 x_0^2/(2b^2\mu)$, minimized at $\mu = a$ with value $2a x_0^2/b^2$: among static gains, stabilization has a minimum price, and the cheapest pole is the mirror image $-a$ of the unstable one. Chapter 11 recovers this as the limit of expensive optimal control (<a href="ch11_lqr_kalman.html#prop-limits">its proposition on cheap and expensive control</a>).</p></div>
+
+<div class="blk probe"><p>Scaling. For the double integrator, requesting the poles $c\lambda_1, c\lambda_2$ instead of $\lambda_1, \lambda_2$ (with $c &gt; 0$) gives $\chi(s) = s^2 - c(\lambda_1 + \lambda_2)s + c^2\lambda_1\lambda_2$, hence $k_1 = c^2\lambda_1\lambda_2$ and $k_2 = -c(\lambda_1 + \lambda_2)$. The closed loop is the old one with time sped up by $c$: from an initial state at rest, $q(t)$ becomes $q(ct)$, the velocity gains a factor $c$, the input a factor $c^2$. For the chain of $n$ integrators, $q^{(n)} = u$ with state $(q, \dot q, \dots, q^{(n-1)})$, the gain on the first state is the constant coefficient of the closed-loop characteristic polynomial; scaling the poles by $c$ multiplies the coefficient $\alpha_j$ by $c^j$, so this gain grows like $c^n$. The rate is the same for every controllable single-input plant (<a class="xref" href="#prop-scaling"></a>).</p></div>
+
+<div class="blk prop" id="prop-scaling" data-name="Gain growth under pole scaling">
+<p>Let $(A, b)$ be controllable with $b \in \R^n$, let $\lambda_1, \dots, \lambda_n$ be a conjugation-closed list of nonzero numbers with $\chi(s) = \prod_i (s - \lambda_i) = s^n + \alpha_1 s^{n-1} + \dots + \alpha_n$, put $\alpha_0 = 1$, and for $c &gt; 0$ let $K(c)$ be the gain of <a class="xref" href="#thm-place"></a> that places $c\lambda_1, \dots, c\lambda_n$. Then</p>
+<div class="eq">$$K(c) = \sum_{j=0}^{n} c^j\alpha_j\; e_n^\T\,\mathcal C^{-1}A^{n-j},$$</div>
+<p>a polynomial in $c$ of degree $n$ with leading coefficient $\alpha_n e_n^\T\mathcal C^{-1} \neq 0$. Hence $\norm{K(c)}/c^n \to \abs{\alpha_n}\,\norm{e_n^\T\mathcal C^{-1}} &gt; 0$ as $c \to \infty$, with $\norm{\cdot}$ the Euclidean norm, and the initial input $u(0) = -K(c)x_0$ grows like $c^n$ for every initial state $x_0$ with $e_n^\T\mathcal C^{-1}x_0 \neq 0$.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> The scaled polynomial is $\prod_i (s - c\lambda_i) = c^n\chi(s/c) = \sum_{j=0}^n c^j\alpha_j s^{n-j}$; insert $A$ into Ackermann's formula. The coefficient of $c^n$ is $\alpha_n e_n^\T\mathcal C^{-1}$, which is nonzero because $\alpha_n = \chi(0) = \prod_i(-\lambda_i) \neq 0$ and $\mathcal C^{-1}$ is invertible; multiplied by $x_0$, it is the leading coefficient of $K(c)x_0$.</p></div>
+
+<div class="blk ex" id="ex-peaking" data-name="Peaking">
+<p>Double integrator, both poles at $-c$, initial state $x(0) = (1, 0)$. Then $\chi(s) = (s + c)^2$, $K = [c^2\ \ 2c]$, and</p>
+<div class="eq">$$q(t) = (1 + ct)e^{-ct}, \qquad \dot q(t) = -c^2 t\, e^{-ct}, \qquad u(t) = c^2 (ct - 1)e^{-ct}.$$</div>
+<p>The position converges faster as $c$ grows, but $\max_t\abs{\dot q(t)} = c/e$ (at $t = 1/c$, with $e$ Euler's number) and $\max_t \abs{u(t)} = \abs{u(0)} = c^2$. The velocity peaks in proportion to $c$ and the input in proportion to $c^2$: the peaking phenomenon. An actuator with a bounded range therefore saturates once $c$ is large enough, and for nonlinear systems H. J. Sussmann and P. V. Kokotović (<i>IEEE Trans. Autom. Control</i> 36 (1991) 424–440) analysed the consequences of peaking for global stabilization by high-gain feedback.</p>
+</div>
+
+<div class="blk cex" id="cex-eigvec">
+<p>"The eigenvalues are the design" can fail as soon as there are two inputs. Take $A = 0 \in \R^{2\times 2}$ and $B = I_2$, for which $A - BK = -K$ can be any matrix. For each $w \in \R$ the gain $K_w = \begin{bmatrix}1 & -w\\ 0 & 2\end{bmatrix}$ gives</p>
+<div class="eq">$$A - BK_w = \begin{bmatrix}-1 & w\\ 0 & -2\end{bmatrix}, \qquad e^{(A - BK_w)t} = \begin{bmatrix} e^{-t} & w(e^{-t} - e^{-2t})\\ 0 & e^{-2t}\end{bmatrix}.$$</div>
+<p>The spectrum is $\{-1, -2\}$ for every $w$, yet at $t = \ln 2$ the off-diagonal entry is $w/4$, so in the spectral norm $\norm{e^{(A - BK_w)t}} \ge \abs w/4$, and $\norm{K_w} \ge \abs w$. Same eigenvalues, unbounded transient amplification and gain: $K_w$ keeps the eigenvector $e_1$ for $-1$ and turns the eigenvector for $-2$, a multiple of $(w, -1)^\T$, toward it as $\abs w$ grows. The spare freedom in a multi-input gain is the freedom to choose eigenvectors (<a class="xref" href="#prop-eigvec"></a>), and chapter 6 explains with this very matrix (<a href="ch06_nonnormality.html#ex-transient">its transient-growth example</a>) why non-normal choices amplify.</p>
+</div>
+
+<div class="blk prop" id="prop-eigvec" data-name="Assignable eigenvectors">
+<p>Let $A \in \R^{n\times n}$ and $B \in \R^{n\times m}$, let $\lambda_1, \dots, \lambda_n$ be distinct and closed under conjugation, and let $v_1, \dots, v_n \in \C^n$ be linearly independent, with $v_j = \bar v_i$ whenever $\lambda_j = \bar\lambda_i$, the bar denoting complex conjugation (so $v_i$ is real when $\lambda_i$ is real). There is $K \in \R^{m\times n}$ with $(A - BK)v_i = \lambda_i v_i$ for every $i$ if and only if $(A - \lambda_i I)v_i \in \{Bg : g \in \C^m\}$ for every $i$. Such a $K$ gives $A - BK = V\diag(\lambda_1, \dots, \lambda_n)V^{-1}$ with $V = [v_1\ \cdots\ v_n]$, and it is unique when $B$ has full column rank.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> Necessity: $(A - \lambda_iI)v_i = BKv_i$. Sufficiency: choose $g_i \in \C^m$ with $Bg_i = (A - \lambda_iI)v_i$, real when $\lambda_i$ is real (the real part of a solution is a solution) and with $g_j = \bar g_i$ when $\lambda_j = \bar\lambda_i \neq \lambda_i$ (conjugate the equation). With the invertible $V$ and $N = [g_1\ \cdots\ g_n]$, put $K = NV^{-1}$; then $BKv_i = Bg_i = (A - \lambda_iI)v_i$. Conjugation permutes the columns of $V$ and of $N$ in the same way, $\bar V = VP$ and $\bar N = NP$ with a permutation matrix $P$, so $\bar K = NP(VP)^{-1} = K$ is real. Finally, $(A - BK)V = V\diag(\lambda_1, \dots, \lambda_n)$ fixes $A - BK$, hence $BK$, and $BK$ determines $K$ when the columns of $B$ are independent.</p></div>
+<p class="src">B. C. Moore, "On the flexibility offered by state feedback in multivariable systems beyond closed loop eigenvalue assignment", <i>IEEE Trans. Autom. Control</i> 21 (1976) 689–692.</p>
+
+<p>With a single input and $(A, b)$ controllable there is no such freedom: the gain, and hence the closed-loop matrix, is determined by the poles (<a class="xref" href="#thm-place"></a>), and so are its eigenvectors.</p>
+
+<div class="blk prop" id="prop-single-eigvec" data-name="One input fixes the eigenvectors">
+<p>Let $(A, b)$ be controllable with $b \in \R^n$, let $K \in \R^{1\times n}$, and let $T$ be the change of coordinates of <a class="xref" href="#lem-ccf"></a>.</p>
+<ol>
+<li>Every eigenvalue $\lambda$ of $A - bK$ has geometric multiplicity one, and its eigenvectors are the nonzero multiples of $T^{-1}\theta(\lambda)$, with $\theta(\lambda) = (\lambda^{n-1}, \dots, \lambda, 1)^\T$.</li>
+<li>If $\det(sI - A + bK)$ has a repeated root, $A - bK$ is not diagonalizable.</li>
+<li>If conjugation-closed lists of requested poles converge to a list with a repeated entry, the gains of <a class="xref" href="#thm-place"></a> converge, and the closed-loop matrices converge to a matrix that is not diagonalizable.</li>
+</ol>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> (1) $T(A - bK)T^{-1} = A_c - b_cKT^{-1}$ is the companion matrix of $\det(sI - A + bK)$ (proof of <a class="xref" href="#thm-place"></a>); apply <a class="xref" href="#lem-companion"></a> and map the eigenvectors back with $T^{-1}$. (2) A repeated root has algebraic multiplicity at least two but geometric multiplicity one, so the eigenvectors do not span $\C^n$ (<a href="ch03_eigenvalues.html#thm-diag">the diagonalizability criteria</a>, chapter 3). (3) The coefficients of $\chi$ are polynomials in the requested poles and Ackermann's formula is affine in these coefficients, so $K$, and with it $A - bK$, depends continuously on the poles; the limit matrix places the limit list, and (2) applies.</p></div>
+
+<div class="blk rem"><p>In canonical coordinates the eigenvector matrix for distinct poles is the Vandermonde matrix $[\theta(\lambda_1)\ \cdots\ \theta(\lambda_n)]$, whose columns become parallel as two poles approach each other, and by item 3 of <a class="xref" href="#prop-single-eigvec"></a> the closed loop then approaches a matrix that is not diagonalizable, in any coordinates. The double pole of <a class="xref" href="#ex-peaking"></a> is the limiting case: the closed loop is similar to the Jordan block $\begin{bmatrix}-c & 1\\ 0 & -c\end{bmatrix}$, which shows in the factor $1 + ct$ of $q(t)$. How far from normal ($MM^\T = M^\T M$) the closed loop is for nearby but distinct poles also depends on the coordinates: for $A = \diag(-1, -1 - \eps)$ and $b = (1, 1)^\T$ with small $\eps \neq 0$, the gain $K = 0$ places the poles $-1$ and $-1 - \eps$, and the closed loop $A$ is normal. Item 3 does not apply here, because this plant changes with $\eps$ and loses controllability as $\eps \to 0$.</p></div>
+
+<div class="blk pattern"><p>Pole speed is paid for in three currencies: gain and initial input, which with one input grow like the $n$-th power of the speed factor (<a class="xref" href="#prop-scaling"></a>); transient peaking of the states between input and output (<a class="xref" href="#ex-peaking"></a>); and, once measurements are noisy, noise amplification (<a class="xref" href="#s-observer"></a>). The eigenvalues fix the asymptotic decay rate: as $t \to \infty$, $t^{-1}\log\norm{e^{(A - BK)t}}$ tends to the largest real part of an eigenvalue of $A - BK$ (<a href="ch06_nonnormality.html#thm-envelope">the envelope theorem</a>, chapter 6). By themselves they bound neither the input nor the transient (<a class="xref" href="#cex-eigvec"></a>), which is why chapter 11 replaces "choose the poles" by "choose a cost".</p></div>
+
+<figure class="viz" id="viz-place">
+  <figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">Pole placement and its price</span><span class="viz-sub">Drag the desired closed-loop poles (violet handles) in the complex plane; the gain comes from Ackermann's formula. Drag the initial state $x_0$ in the phase plane. The rings are the eigenvalues of $A - BK$ computed numerically.</span></figcaption>
+  <div class="viz-plots cols-2">
+    <div class="plot" id="place-s"><div class="plot-cap">Complex plane: open-loop poles (crosses), desired poles (handles), computed eigenvalues of $A - BK$ (rings)</div></div>
+    <div class="plot" id="place-phase"><div class="plot-cap">Phase plane $(x_1, x_2)$, velocity against position: closed-loop trajectory from $x_0$</div></div>
+  </div>
+  <div class="viz-plots cols-2" style="margin-top:14px">
+    <div class="plot" id="place-x"><div class="plot-cap">States: position $x_1$ (blue) and velocity $x_2$ (orange) against time $t$</div></div>
+    <div class="plot" id="place-u"><div class="plot-cap">Input $u(t) = -Kx(t)$</div></div>
+  </div>
+  <div class="viz-controls" id="place-controls"></div>
+  <div class="viz-notes">
+    <div><h5>Try this</h5><ol>
+      <li>With the double integrator and $x_0$ on the horizontal axis, press <i>Double speed</i> twice. The response is the same curve played four times faster; the peak velocity grows fourfold and the peak input sixteenfold.</li>
+      <li>Switch to <i>two real poles</i>, drag them close together near $-1$, then double the speed twice. The velocity peak grows in proportion to the speed: peaking, as in <a class="xref" href="#ex-peaking"></a>.</li>
+      <li>Choose <i>Uncontrollable mode</i>. One closed-loop eigenvalue stays at $-2$ whatever you do; only the controllable mode moves.</li>
+      <li>Choose the oscillator and drag the poles onto its open-loop poles $\pm i$: the gain becomes zero, the only gain that keeps the open-loop spectrum (<a class="xref" href="#thm-place"></a>).</li>
+    </ol></div>
+    <div><h5>What to notice</h5><p>The rings always sit on the handles: placement is exact (<a class="xref" href="#thm-place"></a>), and the fixed eigenvalue is <a class="xref" href="#prop-fixed"></a> at work. The price never shows in the complex plane. It appears in the readout and the input plot, where the gain grows like the square of the speed factor for this second-order plant (<a class="xref" href="#prop-scaling"></a> with $n = 2$).</p></div>
+  </div>
+</figure>
+</section>
+
+<section class="sec" id="s-observer">
+<h2>Observers</h2>
+
+<div class="blk prob"><p>Only $y = Cx$ with $C \in \R^{p\times n}$ is measured. Reconstruct $x(t)$ online from the records of $u$ and $y$, with an error that decays at a rate of our choosing.</p></div>
+
+<div class="blk probe"><p>Two naive estimators fail in opposite ways. Simulating the model, $\dot{\hat x} = A\hat x + Bu$, gives the error equation $\dot{\tilde x} = A\tilde x$ for $\tilde x = x - \hat x$: nothing is ever corrected, so the error decays from every initial error only if $A$ is Hurwitz (<a href="ch07_autonomous_systems.html#thm-ct-stability">chapter 7</a>), and then only at the plant's own rate; for an oscillator or an unstable plant it is useless. Differentiating the output is exact in principle, since for $u = 0$ the stacked derivatives $(y, \dot y, \dots, y^{(n-1)})$ equal $\mathcal O x$, with $\mathcal O$ the observability matrix, which has rank $n$ when $(C, A)$ is observable (<a href="ch09_controllability.html#thm-obs">chapter 9</a>), so that they determine $x$; but it amplifies measurement noise without bound, because differentiation multiplies a sinusoid of frequency $\omega$ by $\omega$. An observer simulates and corrects.</p></div>
+
+<div class="blk def" id="def-observer" data-name="Luenberger observer">
+<p>For the plant $\dot x = Ax + Bu$, $y = Cx$, the <dfn>observer</dfn> with gain $L \in \R^{n\times p}$ is the system</p>
+<div class="eq">$$\dot{\hat x} = A\hat x + Bu + L\,(y - C\hat x).$$</div>
+<p>It runs a copy of the model and corrects it in proportion to the output prediction error $y - C\hat x$.</p>
+</div>
+<p class="src">D. G. Luenberger, "Observing the state of a linear system", <i>IEEE Trans. Mil. Electron.</i> 8 (1964) 74–80.</p>
+
+<div class="blk prop" id="prop-error" data-name="Error dynamics">
+<p>For every input signal $u$, the estimation error $\tilde x = x - \hat x$ satisfies $\dot{\tilde x} = (A - LC)\tilde x$, so $\tilde x(t) = e^{(A - LC)t}\tilde x(0)$.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> Subtract: $\dot x - \dot{\hat x} = A(x - \hat x) - L(Cx - C\hat x)$; the input terms $Bu$ cancel.</p></div>
+
+<div class="blk thm" id="thm-obs-place" data-name="Observer pole placement by duality">
+<p>$(A - LC)^\T = A^\T - C^\T L^\T$ is the closed-loop matrix of the state-feedback problem for the pair $(A^\T, C^\T)$ with gain $L^\T$, and the controllability matrix of that pair is $\mathcal O^\T$. Consequently:</p>
+<ol>
+<li>the eigenvalues of $A - LC$ can be assigned to every conjugation-closed list if and only if $(C, A)$ is observable;</li>
+<li>for one output ($p = 1$) and observable $(C, A)$, the gain with $\det(sI - A + LC) = \chi(s)$ is unique and equals $L = \chi(A)\,\mathcal O^{-1}e_n$;</li>
+<li>if $Av = \lambda v$ and $Cv = 0$ with $v \neq 0$, then $(A - LC)v = \lambda v$ for every $L$: unobservable modes are fixed.</li>
+</ol>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> A matrix and its transpose have the same characteristic polynomial, since $\det(sI - M^\T) = \det\bigl((sI - M)^\T\bigr)$ and transposition preserves determinants (<a href="ch01_linear_maps.html#thm-det">chapter 1</a>); the controllability matrix of $(A^\T, C^\T)$ is $\mathcal O^\T$ by <a href="ch09_controllability.html#thm-duality">duality</a> (chapter 9). Apply <a class="xref" href="#thm-wonham"></a> and <a class="xref" href="#thm-place"></a> to $(A^\T, C^\T)$; transposing Ackermann's formula $L^\T = e_n^\T (\mathcal O^\T)^{-1}\chi(A^\T)$ gives item 2. Item 3 is $(A - LC)v = Av - L(Cv)$.</p></div>
+
+<div class="blk def" id="def-detectable" data-name="Detectable">
+<p>$(C, A)$ is <dfn>detectable</dfn> if some $L$ makes $A - LC$ Hurwitz.</p>
+</div>
+
+<div class="blk cor" id="cor-detectable" data-name="Tests for detectability">
+<p>$(C, A)$ is detectable if and only if every unobservable eigenvalue of $A$, that is, every $\lambda$ with $Av = \lambda v$ and $Cv = 0$ for some nonzero $v \in \C^n$, has negative real part, if and only if $\rank\begin{bmatrix}\lambda I - A\\ C\end{bmatrix} = n$ for every $\lambda$ with $\Re\lambda \ge 0$.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> $A - LC$ and $(A - LC)^\T = A^\T - C^\T L^\T$ have the same eigenvalues, so $(C, A)$ is detectable exactly when $(A^\T, C^\T)$ is stabilizable. Transposition maps $\begin{bmatrix}\lambda I - A\\ C\end{bmatrix}$ to $[\lambda I - A^\T,\ C^\T]$, of the same rank, and turns $w^*A^\T = \lambda w^*$, $w^*C^\T = 0$ into $A\bar w = \lambda\bar w$, $C\bar w = 0$; so the uncontrollable eigenvalues of $(A^\T, C^\T)$ are the unobservable eigenvalues of $(C, A)$. Now apply <a class="xref" href="#cor-stabilizable"></a> to $(A^\T, C^\T)$.</p></div>
+
+<p>Chapter 9 takes the eigenvalue conditions as the definitions (<a href="ch09_controllability.html#def-stabilizable">its definition of stabilizability and detectability</a>); by <a class="xref" href="#cor-stabilizable"></a> and <a class="xref" href="#cor-detectable"></a> they agree with the feedback definitions used here.</p>
+
+<div class="blk pattern"><p>Transposition turns each statement about the spectrum of $A - BK$ into one about the spectrum of $A - LC$ (<a class="xref" href="#thm-obs-place"></a>). The dictionary, whose last row is an analogy rather than a transposition:</p></div>
+<div class="tbl-wrap"><table class="tbl">
+  <thead><tr><th>Question</th><th>State feedback</th><th>Observer</th></tr></thead>
+  <tbody>
+    <tr><td>Closed-loop matrix</td><td>$A - BK$</td><td>$A - LC$, with transpose $A^\T - C^\T L^\T$</td></tr>
+    <tr><td>Every spectrum reachable if and only if</td><td>$(A, B)$ controllable (<a class="xref" href="#thm-wonham"></a>)</td><td>$(C, A)$ observable (<a class="xref" href="#thm-obs-place"></a>)</td></tr>
+    <tr><td>Some stable choice exists if and only if</td><td>$(A, B)$ stabilizable</td><td>$(C, A)$ detectable</td></tr>
+    <tr><td>Single-channel formula</td><td>$K = e_n^\T\mathcal C^{-1}\chi(A)$ (<a class="xref" href="#thm-place"></a>)</td><td>$L = \chi(A)\mathcal O^{-1}e_n$ (<a class="xref" href="#thm-obs-place"></a>)</td></tr>
+    <tr><td>Modes no gain can move</td><td>left eigenvectors with $w^*B = 0$ (<a class="xref" href="#prop-fixed"></a>)</td><td>right eigenvectors with $Cv = 0$ (<a class="xref" href="#thm-obs-place"></a>)</td></tr>
+    <tr><td>Price of speed (analogy)</td><td>input size and peaking (<a class="xref" href="#prop-scaling"></a>, <a class="xref" href="#ex-peaking"></a>)</td><td>amplification of measurement noise (<a class="xref" href="#ex-scalar-obs"></a>)</td></tr>
+  </tbody>
+</table></div>
+
+<p>The last row needs a noise model. With process noise $w$ and measurement noise $v$, $\dot x = Ax + Bu + w$ and $y = Cx + v$, the error obeys $\dot{\tilde x} = (A - LC)\tilde x + w - Lv$. Faster observer poles make the homogeneous part decay faster, but with one output the gain that places them grows like the $n$-th power of the speed factor (<a class="xref" href="#prop-scaling"></a> applied to $(A^\T, C^\T)$), and the term $-Lv$ injects the measurement noise with that gain. How much noise reaches the error follows from the second moments of a stable linear system driven by white noise.</p>
+
+<div class="blk lem" id="lem-white" data-name="Stationary covariance under white noise">
+<p>Let $F \in \R^{n\times n}$ be Hurwitz, and let $\xi$ be white noise, independent of the initial state $z(0)$, with zero mean and intensity $Q \succeq 0$ (positive semidefinite), that is, $\mathbb E[\xi(t)\xi(t')^\T] = Q\,\delta(t - t')$, where $\mathbb E$ is expectation and $\delta$ the Dirac delta. The solution of $\dot z = Fz + \xi$ has the second-moment matrix</p>
+<div class="eq">$$\Sigma(t) = \mathbb E\bigl[z(t)z(t)^\T\bigr] = e^{Ft}\,\Sigma(0)\,e^{F^\T t} + \int_0^t e^{F\tau}Qe^{F^\T\tau}\,\dd\tau ,$$</div>
+<p>which converges as $t \to \infty$ to the unique solution $\Sigma_\infty$ of $F\Sigma + \Sigma F^\T + Q = 0$. In the scalar case $F = -\gamma$ with $\gamma &gt; 0$ and $Q = q$, $\Sigma_\infty = q/(2\gamma)$.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> By variation of constants (<a href="ch08_input_output.html#thm-voc">chapter 8</a>), $z(t) = e^{Ft}z(0) + \int_0^t e^{F(t - \tau)}\xi(\tau)\,\dd\tau$. The cross terms have zero mean, by independence and $\mathbb E\,\xi = 0$, and the rule $\mathbb E[\xi(\tau)\xi(\tau')^\T] = Q\,\delta(\tau - \tau')$ collapses the double integral of the noise term to $\int_0^t e^{F(t-\tau)}Qe^{F^\T(t - \tau)}\,\dd\tau$, the integral above after the substitution $\tau \mapsto t - \tau$. (Rigorously, $\xi\,\dd t$ is the increment of a Brownian motion, and this step is the Itô isometry.) Since $F$ is Hurwitz, $\norm{e^{Ft}} \le Me^{-\beta t}$ for some $M, \beta &gt; 0$ (<a href="ch07_autonomous_systems.html#thm-ct-stability">chapter 7</a>), so the first term tends to zero and the integral converges to $\Sigma_\infty = \int_0^\infty e^{F\tau}Qe^{F^\T\tau}\,\dd\tau$. Then $F\Sigma_\infty + \Sigma_\infty F^\T = \int_0^\infty \frac{\dd}{\dd\tau}\bigl(e^{F\tau}Qe^{F^\T\tau}\bigr)\,\dd\tau = -Q$, and the solution is unique because the map $X \mapsto FX + XF^\T$ has the eigenvalues $\lambda_i + \lambda_j \neq 0$, sums of eigenvalues of $F$ (<a href="ch07_autonomous_systems.html#prop-lyap-op">the Lyapunov operator</a> of chapter 7, for $F^\T$).</p></div>
+
+<div class="blk ex" id="ex-scalar-obs" data-name="The best observer speed for a scalar plant">
+<p>Take $\dot x = ax + w$, $y = x + v$ with independent zero-mean white noises of intensities $W, V &gt; 0$: $\mathbb E[w(t)w(t')] = W\,\delta(t - t')$ and $\mathbb E[v(t)v(t')] = V\,\delta(t - t')$. A gain $\ell &gt; a$ gives $\dot{\tilde x} = -(\ell - a)\tilde x + w - \ell v$, a stable scalar system driven by white noise of intensity $W + \ell^2 V$, since the intensities of independent noises add. By <a class="xref" href="#lem-white"></a> with $\gamma = \ell - a$ and $q = W + \ell^2 V$, the stationary error variance is</p>
+<div class="eq">$$\sigma^2(\ell) = \lim_{t\to\infty}\mathbb E\bigl[\tilde x(t)^2\bigr] = \frac{W + \ell^2 V}{2(\ell - a)} .$$</div>
+<p>It blows up as $\ell \downarrow a$, where the correction is too slow and process noise accumulates, and grows like $\ell V/2$ as $\ell \to \infty$, where measurement noise is injected at full gain. Setting $\dd\sigma^2/\dd\ell = 0$ gives $V\ell^2 - 2aV\ell - W = 0$, whose root above $a$ is the best gain:</p>
+<div class="eq">$$\ell^\star = a + \sqrt{a^2 + W/V}, \qquad \sigma^2(\ell^\star) = V\ell^\star .$$</div>
+<p>The optimal observer speed $\ell^\star - a = \sqrt{a^2 + W/V}$ is set by the ratio of process to measurement noise. The steady-state Kalman–Bucy gain of <a href="ch11_lqr_kalman.html#s-kalman">chapter 11</a> is exactly $\ell^\star$.</p>
+</div>
+</section>
+
+<section class="sec" id="s-separation">
+<h2>Output feedback and the separation principle</h2>
+
+<div class="blk setting"><p>Feed back the estimate instead of the state: $u = -K\hat x + r$. The closed loop has state $(x, \hat x) \in \R^{2n}$, and the controller is now a dynamic system from $y$ (and $r$) to $u$: the observer followed by the gain $K$.</p></div>
+
+<div class="blk thm" id="thm-separation" data-name="Separation of the closed-loop spectrum">
+<p>For the plant $\dot x = Ax + Bu$, $y = Cx$, the observer of <a class="xref" href="#def-observer"></a> and $u = -K\hat x + r$, the coordinates $(x, \tilde x)$ give</p>
+<div class="eq">$$\frac{\dd}{\dd t}\begin{bmatrix} x\\ \tilde x\end{bmatrix} = \begin{bmatrix} A - BK & BK\\ 0 & A - LC\end{bmatrix}\begin{bmatrix} x\\ \tilde x\end{bmatrix} + \begin{bmatrix} B\\ 0\end{bmatrix} r .$$</div>
+<p>Hence the closed-loop characteristic polynomial is $\det(sI - A + BK)\,\det(sI - A + LC)$, and the closed-loop spectrum is $\Lambda(A - BK) \cup \Lambda(A - LC)$, with multiplicities.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> $\dot x = Ax - BK\hat x + Br = Ax - BK(x - \tilde x) + Br$, and <a class="xref" href="#prop-error"></a> holds for every input. The change of coordinates $(x, \hat x) \mapsto (x, x - \hat x)$ is invertible and so preserves the spectrum (<a href="ch03_eigenvalues.html#prop-similar">chapter 3</a>), and the determinant of a block triangular matrix is the product of the determinants of its diagonal blocks (proof of <a class="xref" href="#prop-fixed"></a>).</p></div>
+
+<div class="blk cor" id="cor-output-fb" data-name="Observer-based stabilization">
+<p>If $(A, B)$ is stabilizable and $(C, A)$ is detectable, then any $K$ with $A - BK$ Hurwitz and any $L$ with $A - LC$ Hurwitz, chosen independently, give an asymptotically stable closed loop. With $r = 0$ the controller is $u = -K_{\rm ob}(s)\, y$, where</p>
+<div class="eq">$$K_{\rm ob}(s) = K\,(sI - A + BK + LC)^{-1}L .$$</div>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> Stability is <a class="xref" href="#thm-separation"></a>. Substituting $u = -K\hat x$ into the observer gives $\dot{\hat x} = (A - BK - LC)\hat x + Ly$; take Laplace transforms with zero initial state.</p></div>
+
+<div class="blk prop" id="prop-invisible" data-name="The observer is invisible from the reference">
+<p>In the loop of <a class="xref" href="#thm-separation"></a>: (i) with zero initial conditions, the transfer function from $r$ to $y$ is $C(sI - A + BK)^{-1}B$, the same as with full state feedback; (ii) every eigenvalue of $A - LC$ is an uncontrollable eigenvalue of the closed loop with input $r$.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> (i) The input $r$ does not enter the equation for $\tilde x$, so $\tilde x(0) = 0$ forces $\tilde x \equiv 0$, and then $\dot x = (A - BK)x + Br$. (ii) If $w_2^*(A - LC) = \mu w_2^*$ with $w_2 \neq 0$, then $(0,\ w_2^*)$ is a left eigenvector for $\mu$ of the closed-loop matrix in the coordinates $(x, \tilde x)$, and it annihilates the input matrix $\begin{bmatrix}B\\ 0\end{bmatrix}$. So the rank test of chapter 9 fails at $\mu$ in these coordinates, and hence, as in the proof of <a class="xref" href="#cor-stabilizable"></a>, in the coordinates $(x, \hat x)$ as well.</p></div>
+
+<div class="blk rem"><p>What is not separated. The modes of $A - LC$ are uncontrollable from $r$ (<a class="xref" href="#prop-invisible"></a>), which is why they vanish from the reference response, but everything the observer does not know excites them. A load disturbance at the plant input, $\dot x = Ax + B(u + d)$, gives $\dot{\tilde x} = (A - LC)\tilde x + Bd$, and measurement noise gives $\dot{\tilde x} = (A - LC)\tilde x - Lv$. Robustness is not separated either. Broken at the plant input, the state-feedback loop has the loop transfer function $K(sI - A)^{-1}B$, while the observer-based loop has $K_{\rm ob}(s)\,C(sI - A)^{-1}B$. The two can differ greatly: <a href="ch12_robustness.html#ex-doyle">chapter 12</a> presents Doyle's 1978 example, in which the second has arbitrarily small stability margins although the first is a linear quadratic regulator loop of chapter 11, which has large guaranteed margins (<a href="ch11_lqr_kalman.html#cor-margins">its margin corollary</a>).</p></div>
+
+<figure class="viz" id="viz-observer">
+  <figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">An observer for an oscillator measured in position</span><span class="viz-sub">Plant $\ddot q = -q + u$ with measurement $y = q + v$; the observer poles are $\omega_o(-1 \pm i)/\sqrt 2$, so $\omega_o$ sets their speed. The velocity is never measured. With feedback on, $u = -K\hat x$, where $K$ places the controller poles at $-1 \pm i$.</span></figcaption>
+  <div class="viz-plots cols-2">
+    <div class="plot" id="obs-pos"><div class="plot-cap">Position: true $x_1$ (blue), estimate $\hat x_1$ (orange), noisy measurements $y$ (grey dots)</div></div>
+    <div class="plot" id="obs-vel"><div class="plot-cap">Velocity: true $x_2$ (blue) and estimate $\hat x_2$ (orange), reconstructed from position alone</div></div>
+  </div>
+  <div class="viz-plots cols-2" style="margin-top:14px">
+    <div class="plot" id="obs-err"><div class="plot-cap">Estimation error $\norm{\tilde x(t)}$ on a log scale (red); dashed: the same run without noise</div></div>
+    <div class="plot" id="obs-spec"><div class="plot-cap">$\Lambda(A - BK)$ (green dots), $\Lambda(A - LC)$ (orange dots), eigenvalues of the full $4\times 4$ closed loop (rings)</div></div>
+  </div>
+  <div class="viz-controls" id="obs-controls"></div>
+  <div class="viz-notes">
+    <div><h5>Try this</h5><ol>
+      <li>Set the noise to zero and vary $\omega_o$. The dashed error follows the line $e^{-\omega_o t/\sqrt2}$ on the log scale, whose slope is set by the real part of the observer poles, with ripples whose period is set by their imaginary part. The ripples come from the non-normality of $A - LC$: a normal matrix $M$ with these eigenvalues has $\norm{e^{tM}} = e^{-\omega_o t/\sqrt2}$ exactly (<a href="ch06_nonnormality.html#prop-growth">chapter 6</a>), so for it the error norm could never rise above that line.</li>
+      <li>Raise the noise and push $\omega_o$ up: the velocity estimate turns jagged and the steady-state error in the readout grows. Slow the observer down: the estimate is smooth but takes long to converge. The best compromise lies in between, as in <a class="xref" href="#ex-scalar-obs"></a>.</li>
+      <li>Toggle the feedback and vary $\omega_o$: the rings of the full closed loop always sit on the union of the two spectra (<a class="xref" href="#thm-separation"></a>).</li>
+      <li>Make the observer slower than the controller ($\omega_o$ below 1): the position now settles only as fast as the estimate converges, because the slow observer modes, excited by the initial estimation error, are part of the closed loop.</li>
+    </ol></div>
+    <div><h5>What to notice</h5><p>The spectrum separates exactly (<a class="xref" href="#thm-separation"></a>), and the observer gain can be designed without looking at $K$ (<a class="xref" href="#cor-output-fb"></a>). Performance does not separate: the quality of the estimate, and so of the control, depends on $L$ through the noise it injects. The velocity is recovered from position measurements because $(C, A)$ is observable (<a class="xref" href="#thm-obs-place"></a>).</p></div>
+  </div>
+</figure>
+</section>
+
+<section class="sec" id="s-loop">
+<h2>The loop in transfer-function form</h2>
+
+<div class="blk setting"><p>A single-input single-output plant with proper rational transfer function $G(s)$ is in negative feedback with a proper rational controller $K(s)$. The external signals are the reference $r$, a load disturbance $d$ added at the plant input and measurement noise $v$ added to the measured output, so $y = G(u + d)$ and $u = K(r - y - v)$. The loop transfer function is $L(s) = G(s)K(s)$. Two warnings on notation: $K(s)$ is a transfer function and $K$ alone the state-feedback gain (the observer-based controller of <a class="xref" href="#cor-output-fb"></a> is $K(s) = K_{\rm ob}(s)$), and $L(s)$ is not the observer gain $L$. The loop is <dfn>well posed</dfn> if $1 + L(\infty) \neq 0$, which holds automatically when $G$ is strictly proper, because then $L(\infty) = 0$. On the imaginary axis we write $L(i\omega)$ with $i^2 = -1$; engineering texts write $j$ for the imaginary unit.</p></div>
+
+<figure class="wide" aria-label="Feedback loop with reference, load disturbance and measurement noise">
+<svg viewBox="0 0 760 250" role="img" aria-label="Reference r enters a summing junction, then the controller K(s) produces u; the load disturbance d is added; the plant G(s) produces y; measurement noise v is added to y and the sum is fed back with a minus sign" style="width:100%;height:auto;max-width:860px;display:block;margin:6px 0 4px">
+  <defs><marker id="fb-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--ink-2)"/></marker></defs>
+  <text x="26" y="86" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="18" fill="var(--ink)">r</text>
+  <path d="M40 80 H94" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#fb-arrow)"/>
+  <circle cx="110" cy="80" r="14" fill="none" stroke="var(--ink-2)" stroke-width="1.5"/>
+  <text x="88" y="66" text-anchor="middle" font-family="var(--font-ui)" font-size="14" fill="var(--ink-2)">+</text>
+  <text x="96" y="114" text-anchor="middle" font-family="var(--font-ui)" font-size="16" fill="var(--ink-2)">−</text>
+  <path d="M124 80 H168" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#fb-arrow)"/>
+  <rect x="170" y="52" width="110" height="56" rx="4" fill="var(--tint-def)" stroke="var(--c1)" stroke-width="1.5"/>
+  <text x="225" y="80" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="18" fill="var(--ink)">K(s)</text>
+  <text x="225" y="99" text-anchor="middle" font-family="var(--font-ui)" font-size="11.5" fill="var(--muted)">controller</text>
+  <path d="M280 80 H334" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#fb-arrow)"/>
+  <text x="305" y="70" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="16" fill="var(--ink)">u</text>
+  <circle cx="350" cy="80" r="14" fill="none" stroke="var(--ink-2)" stroke-width="1.5"/>
+  <path d="M350 24 V64" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#fb-arrow)"/>
+  <text x="350" y="16" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="17" fill="var(--ink)">d</text>
+  <text x="362" y="40" font-family="var(--font-ui)" font-size="11.5" fill="var(--muted)">load disturbance</text>
+  <path d="M364 80 H408" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#fb-arrow)"/>
+  <rect x="410" y="52" width="110" height="56" rx="4" fill="var(--tint-def)" stroke="var(--c1)" stroke-width="1.5"/>
+  <text x="465" y="80" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="18" fill="var(--ink)">G(s)</text>
+  <text x="465" y="99" text-anchor="middle" font-family="var(--font-ui)" font-size="11.5" fill="var(--muted)">plant</text>
+  <path d="M520 80 H696" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#fb-arrow)"/>
+  <text x="714" y="86" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="18" fill="var(--ink)">y</text>
+  <circle cx="600" cy="80" r="3.5" fill="var(--ink-2)"/>
+  <path d="M600 80 V164" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#fb-arrow)"/>
+  <circle cx="600" cy="180" r="14" fill="none" stroke="var(--ink-2)" stroke-width="1.5"/>
+  <path d="M682 180 H616" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#fb-arrow)"/>
+  <text x="696" y="186" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="17" fill="var(--ink)">v</text>
+  <text x="652" y="206" text-anchor="middle" font-family="var(--font-ui)" font-size="11.5" fill="var(--muted)">measurement noise</text>
+  <path d="M586 180 H110 V96" fill="none" stroke="var(--ink-2)" stroke-width="1.5" marker-end="url(#fb-arrow)"/>
+  <text x="350" y="170" text-anchor="middle" font-family="var(--font-body)" font-style="italic" font-size="15" fill="var(--ink)">y + v</text>
+  <text x="380" y="240" text-anchor="middle" font-family="var(--font-ui)" font-size="12" fill="var(--muted)">Every signal in the loop responds to r, d and v through S, T, GS and KS.</text>
+</svg>
+</figure>
+
+<div class="blk prop" id="prop-gang" data-name="Closed-loop maps">
+<p>For the single-input single-output loop above, with zero initial conditions, the Laplace transforms of the signals satisfy</p>
+<div class="eq">$$y = T\,r + GS\,d - T\,v, \qquad u = KS\,(r - v) - T\,d, \qquad e = r - y = S\,r - GS\,d + T\,v,$$</div>
+<p>with the sensitivity function $S = 1/(1 + L)$ and the complementary sensitivity function $T = L/(1 + L)$. In particular $S + T = 1$. These are identities between rational functions, $1 + L$ being nonzero by well-posedness, and they hold whether or not the loop is stable.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> Substituting $u$ into $y = G(u + d)$ gives $(1 + GK)\,y = GK\,r + G\,d - GK\,v$. Then $r - y - v = S\,r - GS\,d - S\,v$, so $u = KS\,r - KGS\,d - KS\,v$ with $KGS = LS = T$, because scalar transfer functions commute.</p></div>
+
+<p>Åström and Murray call $S$, $T$, $GS$ and $KS$ the gang of four. By <a class="xref" href="#prop-gang"></a> each carries one group of external signals and so answers one design question; the last column lists design goals, not facts:</p>
+<div class="tbl-wrap"><table class="tbl">
+  <thead><tr><th>Closed-loop map</th><th>Carries</th><th>Wanted small where</th></tr></thead>
+  <tbody>
+    <tr><td>$S = \dfrac{1}{1 + L}$</td><td>reference to tracking error $e$</td><td>low frequencies: tracking and disturbance rejection</td></tr>
+    <tr><td>$T = \dfrac{L}{1 + L}$</td><td>reference to output; measurement noise to output</td><td>high frequencies: noise rejection, robustness to model error (chapter 12)</td></tr>
+    <tr><td>$GS = \dfrac{G}{1 + L}$</td><td>load disturbance to output</td><td>low frequencies</td></tr>
+    <tr><td>$KS = \dfrac{K}{1 + L}$</td><td>reference and noise to the control input</td><td>high frequencies: actuator effort, noise fed to the actuator</td></tr>
+  </tbody>
+</table></div>
+
+<div class="blk pattern"><p>Since $S + T = 1$, $S$ and $T$ cannot both be small at the same frequency, and disturbance rejection and noise rejection must happen in different frequency bands: a large loop gain $\abs{L(i\omega)}$ makes $S$ small and $T$ close to 1, a small one the reverse (<a class="xref" href="#cor-st"></a>). Chapter 12 adds a constraint across frequencies. For an internally stable loop (<a class="xref" href="#def-intstab"></a>) in which $L$ has no poles on the imaginary axis and relative degree (denominator degree minus numerator degree) at least 2, Bode's sensitivity integral (<a href="ch12_robustness.html#thm-bode">chapter 12</a>) gives $\int_0^\infty \ln\abs{S(i\omega)}\,\dd\omega = \pi\sum_i \Re p_i \ge 0$, summed over the poles $p_i$ of $L$ in the open right half-plane, counted with multiplicity (zero if there are none), so pushing $\abs{S}$ below 1 in one band forces it above 1 in another.</p></div>
+
+<div class="blk cor" id="cor-st" data-name="S and T cannot both be small">
+<p>In the setting of <a class="xref" href="#prop-gang"></a>, let $\omega \in \R$ be such that $i\omega$ is not a pole of $L$ and $1 + L(i\omega) \neq 0$.</p>
+<ol>
+<li>$\abs{S(i\omega)} + \abs{T(i\omega)} \ge 1$, so $\max\bigl(\abs{S(i\omega)}, \abs{T(i\omega)}\bigr) \ge 1/2$.</li>
+<li>If $\abs{L(i\omega)} &gt; 1$, then $\abs{S(i\omega)} \le 1/\bigl(\abs{L(i\omega)} - 1\bigr)$ and $\abs{T(i\omega) - 1} = \abs{S(i\omega)}$. If $\abs{L(i\omega)} &lt; 1$, then $\abs{T(i\omega)} \le \abs{L(i\omega)}/\bigl(1 - \abs{L(i\omega)}\bigr)$ and $\abs{S(i\omega) - 1} = \abs{T(i\omega)}$.</li>
+</ol>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> (1) The triangle inequality applied to $S + T = 1$, and $\abs S + \abs T \le 2\max(\abs S, \abs T)$. (2) $\abs{1 + L} \ge \abs L - 1$ and $\abs{1 + L} \ge 1 - \abs L$, while $T - 1 = -S$ and $S - 1 = -T$.</p></div>
+
+<div class="blk def" id="def-intstab" data-name="Internal stability">
+<p>The well-posed loop is <dfn>internally stable</dfn> if the four transfer functions $S$, $T$, $GS$ and $KS$ are stable, that is, proper with all poles in the open left half-plane. By <a class="xref" href="#prop-gang"></a> they are, up to sign, the transfer functions from $(r, d, v)$ to $(y, u, e)$, so every signal in the loop then responds stably to every external signal.</p>
+</div>
+
+<div class="blk thm" id="thm-intstab" data-name="Internal stability and the characteristic polynomial">
+<p>Let the single-input single-output loop of this section be well posed, and write $G = n_G/d_G$ and $K = n_K/d_K$ with each pair of polynomials coprime (no common root). The loop is internally stable if and only if every root of</p>
+<div class="eq">$$\phi(s) = d_G(s)\,d_K(s) + n_G(s)\,n_K(s)$$</div>
+<p>lies in the open left half-plane. Equivalently, $1 + L$ has no zeros in $\Re s \ge 0$ and forming the product $GK$ cancels no pole against a zero in $\Re s \ge 0$.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> Clearing denominators, $S = d_Gd_K/\phi$, $T = n_Gn_K/\phi$, $GS = n_Gd_K/\phi$ and $KS = n_Kd_G/\phi$, and well-posedness gives $\deg\phi = \deg(d_Gd_K)$, so all four are proper. If $\phi$ has all roots in the open left half-plane, all four are stable. Conversely, let $\phi(s_0) = 0$ with $\Re s_0 \ge 0$. If $d_K(s_0) \neq 0$, the numerators of $S$ and $GS$ both vanish at $s_0$ only if $d_G(s_0) = n_G(s_0) = 0$, which coprimeness excludes. If $d_K(s_0) = 0$, then $n_K(s_0) \neq 0$, and the numerators of $KS$ and $T$ both vanish only if again $d_G(s_0) = n_G(s_0) = 0$. So one of the four has a numerator that is nonzero at $s_0$, hence a pole there. For the cancellation form: a root of $\phi$ in $\Re s \ge 0$ is either a zero of $1 + L = \phi/(d_Gd_K)$ or a common root of $d_G$ and $n_K$ (or of $d_K$ and $n_G$), that is, a cancellation.</p></div>
+<p class="src">Doyle, Francis and Tannenbaum, <i>Feedback Control Theory</i>, ch. 3 (well-posedness and internal stability), free.</p>
+
+<div class="blk cex" id="cex-cancel">
+<p>A stable $T$ does not make a loop stable. Let $G(s) = \dfrac{1}{s - 1}$ and $K(s) = \dfrac{s - 1}{s + 1}$, so the controller zero cancels the unstable plant pole and $L = \dfrac{1}{s + 1}$. Then</p>
+<div class="eq">$$S = \frac{s + 1}{s + 2}, \quad T = \frac{1}{s + 2}, \quad KS = \frac{s - 1}{s + 2}, \quad\text{but}\quad GS = \frac{s + 1}{(s - 1)(s + 2)},$$</div>
+<p>and $\phi = (s - 1)(s + 1) + (s - 1) = (s - 1)(s + 2)$. A unit step load disturbance gives $y(t) = -\tfrac12 + \tfrac23 e^{t} - \tfrac16 e^{-2t}$. The reference never excites the cancelled mode, but the plant's own input does: the hidden unstable mode of <a href="ch08_input_output.html#cex-hidden">chapter 8</a> and chapter 9, now inside a loop.</p>
+</div>
+</section>
+
+<section class="sec" id="s-integral">
+<h2>Integral action and the internal model principle</h2>
+
+<div class="blk prob"><p>Track a constant reference and reject a constant load disturbance exactly, for a plant whose parameters are known only approximately.</p></div>
+
+<div class="blk probe"><p>Proportional control of a first-order plant. Let $\dot y = -ay + b(u + d)$ with real $a$ and $b &gt; 0$, and $u = k_p(r - y)$ with gain $k_p$. The closed loop $\dot y = -(a + bk_p)y + b(k_p r + d)$ is stable if and only if $a + bk_p &gt; 0$, and then, for constant $r$ and $d$,</p>
+<div class="eq">$$e_\infty = \lim_{t\to\infty}\bigl(r - y(t)\bigr) = \frac{ar - bd}{a + bk_p}.$$</div>
+<p>Unless $ar = bd$, the error is small only for large $k_p$, and its value depends on the uncertain $a$ and $b$.</p></div>
+
+<p>Add an integrator: $\dot z = r - y$ and $u = k_p(r - y) + k_i z$ with integral gain $k_i$. At any equilibrium $\dot z = 0$, that is $y = r$, whatever $a$, $b$ and $d$. The integrator settles where $k_i z_\infty = ar/b - d$, exactly the input that cancels the disturbance and holds $y = r$. The closed loop has characteristic polynomial $s^2 + (a + bk_p)s + bk_i$, which has both roots in the open left half-plane if and only if $a + bk_p &gt; 0$ and $bk_i &gt; 0$: the roots have sum $-(a + bk_p)$ and product $bk_i$, two real roots are both negative exactly when their sum is negative and their product positive, and a complex pair has real part $-(a + bk_p)/2$ and a positive product.</p>
+
+<div class="blk thm" id="thm-integral" data-name="Robust zero steady-state error">
+<p>Suppose the single-input single-output loop of <a class="xref" href="#s-loop"></a> is internally stable and $K(s)$ has a pole at $s = 0$. Let $r(t) = r_0$ and $d(t) = d_0$ for $t \ge 0$, $v = 0$, and start from rest. Then the error $e(t) = r_0 - y(t)$ tends to zero exponentially. The conclusion holds for every plant $G$ for which the loop remains internally stable.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> By <a class="xref" href="#prop-gang"></a> and the factorization in the proof of <a class="xref" href="#thm-intstab"></a>,</p>
+<div class="eq">$$E(s) = \frac{S(s)\,r_0 - (GS)(s)\,d_0}{s} = \frac{\bigl(d_G(s)\,r_0 - n_G(s)\,d_0\bigr)\,d_K(s)}{s\,\phi(s)} .$$</div>
+<p>A pole of $K$ at $0$ means $d_K(s) = s\,\tilde d_K(s)$ for a polynomial $\tilde d_K$, so $E = (d_G r_0 - n_G d_0)\tilde d_K/\phi$. This is strictly proper (count degrees) and its poles are roots of $\phi$, which lie in the open left half-plane. Hence $e(t)$ is a sum of decaying exponentials times polynomials. Equivalently, the final value theorem (for rational $F$ such that $sF(s)$ has all poles in the open left half-plane, $f(t) \to \lim_{s\to 0} sF(s)$, by the same partial-fraction expansion) gives $e(t) \to \lim_{s\to 0} sE(s) = 0$.</p></div>
+
+<p>The proof uses only that $s$, the denominator of the transforms $r_0/s$ and $d_0/s$, divides $d_K$, so it extends to every signal whose transform has a denominator dividing $d_K$ (<a class="xref" href="#prop-reject"></a>).</p>
+
+<div class="blk prop" id="prop-reject" data-name="Rejection of modelled signals">
+<p>Suppose the single-input single-output loop of <a class="xref" href="#s-loop"></a> is internally stable, $v = 0$, and the loop starts from rest. Let the Laplace transforms of $r$ and $d$ be strictly proper rational functions $n_r/g$ and $n_d/g$ whose common denominator, the polynomial $g$, divides $d_K$. Then $e(t) \to 0$ exponentially. For example, if $K$ has poles at $\pm i\omega_0$, then $g(s) = s^2 + \omega_0^2$ divides $d_K$, and the error tends to zero for all $r$ and $d$ that are linear combinations of $\cos(\omega_0 t)$ and $\sin(\omega_0 t)$.</p>
+</div>
+<div class="proof"><p><span class="proof-label">Proof.</span> As in the proof of <a class="xref" href="#thm-integral"></a>, $E = S\,n_r/g - GS\,n_d/g = (d_Gn_r - n_Gn_d)\,d_K/(\phi\,g)$, and since $g$ divides $d_K$, $E = (d_Gn_r - n_Gn_d)\,(d_K/g)/\phi$. Because $G$ is proper, $\deg n_r, \deg n_d &lt; \deg g$ and $\deg\phi = \deg(d_Gd_K)$, the numerator has degree at most $\deg d_G + \deg g - 1 + \deg d_K - \deg g = \deg\phi - 1$. So $E$ is strictly proper with poles among the roots of $\phi$, all in the open left half-plane, and $e(t)$ is a sum of decaying exponentials times polynomials.</p></div>
+
+<p>A controller thus rejects the signals whose generator it contains. For one fixed plant the converse fails, because the plant itself can block a signal.</p>
+
+<div class="blk cex" id="cex-plant-zeros" data-name="Rejection without an internal model">
+<p>Let $G(s) = \dfrac{s^2 + 1}{s\,(s^2 + 2s + 3)}$ and $K(s) = 1$. Then $\phi(s) = s\,(s^2 + 2s + 3) + s^2 + 1 = (s + 1)^3$, so the loop is internally stable (<a class="xref" href="#thm-intstab"></a>). With $r = v = 0$ and the load disturbance $d(t) = \sin t$, whose transform is $1/(s^2 + 1)$, <a class="xref" href="#prop-gang"></a> and the factorization in the proof of <a class="xref" href="#thm-intstab"></a> give</p>
+<div class="eq">$$E(s) = -\frac{n_G(s)\,d_K(s)}{\phi(s)\,(s^2 + 1)} = -\frac{1}{(s + 1)^3},$$</div>
+<p>so $e(t) = -\tfrac12 t^2e^{-t} \to 0$, although $K$ has no poles at $\pm i$: the plant zeros at $\pm i$ cancel the generator $s^2 + 1$ of the disturbance, as the controller poles do in <a class="xref" href="#prop-reject"></a>.</p>
+</div>
+
+<p>The converse holds for rejection that survives perturbations of the plant:</p>
+
+<div class="blk thm" id="thm-imp" data-name="Internal model principle, informal statement">
+<p>Let the references and disturbances be generated by an autonomous linear system, the exosystem: $\dot\eta = 0$ for constants, $\ddot\eta = -\omega_0^2\eta$ for sinusoids of frequency $\omega_0$. A linear controller that keeps the loop internally stable, drives the error to zero for every such signal, and continues to do so under every sufficiently small perturbation of the plant, must contain a copy of the exosystem's dynamics driven by the error: an integrator for constants, an oscillator at $\omega_0$ for sinusoids.</p>
+</div>
+<p class="src">Precise statement and proof: B. A. Francis and W. M. Wonham, "The internal model principle of control theory", <i>Automatica</i> 12 (1976) 457–465. <a class="xref" href="#thm-integral"></a> and <a class="xref" href="#prop-reject"></a> are the sufficiency half for single-loop systems.</p>
+
+<div class="blk why"><p>Robust perfect adaptation. When <i>Escherichia coli</i> is exposed to a step of attractant, its tumbling frequency changes and then returns exactly to the prestimulus value, and this precision is robust to large changes in protein levels (predicted in the model of N. Barkai and S. Leibler, <i>Nature</i> 387 (1997) 913–917, and observed by U. Alon, M. G. Surette, N. Barkai and S. Leibler, <i>Nature</i> 397 (1999) 168–171). T.-M. Yi, Y. Huang, M. I. Simon and J. Doyle (<i>PNAS</i> 97 (2000) 4649–4653) showed that integral feedback is structurally inherent in the Barkai–Leibler model of the chemotaxis network, with the receptor methylation level acting as the integral of the deviation of receptor activity from its adapted value, and argued that integral control in some form is necessary for perfect adaptation to be robust. Read this way, the methylation level is the cell's memory of the stimulus: like $z_\infty$ above, it settles exactly where the disturbance is cancelled.</p></div>
+
+<div class="blk rem"><p>Proportional–integral–derivative control, $K(s) = k_p + k_i/s + k_d s$, is the engineering default built on these ideas. The derivative term is not proper: its gain $\abs{k_d\,i\omega} = \abs{k_d}\,\omega$ grows without bound, so it amplifies high-frequency noise, and it is implemented filtered, as $k_d s/(1 + sT_f)$ with a small time constant $T_f &gt; 0$, whose gain $\abs{k_d}\,\omega/\sqrt{1 + \omega^2T_f^2}$ stays below $\abs{k_d}/T_f$. The resulting $K$ is proper, and for $k_i \neq 0$ it has a pole at $0$: the integral term is the internal model of constants, and every internally stable loop with this controller has zero steady-state error to constant references and load disturbances (<a class="xref" href="#thm-integral"></a>). As a rule of thumb, the proportional term sets the loop gain and speed, and the derivative term, whose phase is $+90^\circ$ at every frequency before filtering, adds phase lead and damping. When the actuator saturates, the integrator keeps integrating an error it cannot remove (integrator windup) and needs anti-windup logic (Åström and Murray, ch. 11).</p></div>
+
+<figure class="viz" id="viz-integral">
+  <figcaption class="viz-head"><span class="viz-label">Visual</span><span class="viz-title">Integral feedback and perfect adaptation</span><span class="viz-sub">Plant $\dot y = -ay + b(u + d)$ with uncertain $a$ and $b$; reference $r = 1$ from $t = 0$ and a step load disturbance $d = d_0$ from $t = 10$. Proportional control $u = k_p(r - y)$ and proportional–integral control $u = k_p(r - y) + k_i\int_0^t (r - y)\,\dd\tau$ run side by side.</span></figcaption>
+  <div class="viz-plots cols-2">
+    <div class="plot" id="int-y"><div class="plot-cap">Output $y(t)$: proportional (orange), proportional–integral (green), reference $r$ (dashed)</div></div>
+    <div class="plot" id="int-u"><div class="plot-cap">Input $u(t)$ for both controllers; dashed: the input $ar/b - d(t)$ that holds $y = r$ exactly</div></div>
+  </div>
+  <div class="viz-controls" id="int-controls"></div>
+  <div class="viz-notes">
+    <div><h5>Try this</h5><ol>
+      <li>At the defaults the proportional loop settles with the offset predicted by $e_\infty = (ar - bd_0)/(a + bk_p)$ (readout); the integral loop returns exactly to $r$ after the disturbance.</li>
+      <li>Move $a$ and $b$: the proportional offset changes with them, while the integral loop's final error stays at zero as long as its poles are stable.</li>
+      <li>Choose <i>Unstable plant</i> and lower $k_p$ until $a + bk_p &lt; 0$: both loops diverge. Integral action gives exactness within the set of stabilized plants, not stability.</li>
+      <li>Watch the input plot: after the disturbance the green input settles on the dashed level $ar/b - d_0$. The integrator has computed the disturbance without measuring it.</li>
+    </ol></div>
+    <div><h5>What to notice</h5><p>Exact adaptation needs no knowledge of $a$, $b$ or $d_0$; it follows from the integrator and internal stability alone (<a class="xref" href="#thm-integral"></a>). The transient does depend on the parameters: only the final value is protected. This is the structure found in bacterial chemotaxis, where the output returns to baseline while the integrator stores the stimulus.</p></div>
+  </div>
+</figure>
+</section>
+
+<section class="selfcheck" id="s-selfcheck">
+<h2>Self-check</h2>
+<ol>
+<li><p>For the double integrator $\ddot q = u$, find the gain that puts both closed-loop poles at $-2$, and the initial input from $x(0) = (1, 0)$.</p>
+<details><summary>Answer</summary><p>$\chi(s) = (s + 2)^2 = s^2 + 4s + 4$ and $\det(sI - A + BK) = s^2 + k_2 s + k_1$, so $K = [4\ \ 4]$ and $u(0) = -Kx(0) = -4$. Doubling the pole speed would make it $-16$.</p></details></li>
+<li><p>Let $A = I_2$ and let $b \in \R^2$ be any single input. Show that $1 \in \Lambda(A - bK)$ for every $K$, and say which test fails.</p>
+<details><summary>Answer</summary><p>$K \in \R^{1\times 2}$ has a nonzero null vector $x$, and $(I - bK)x = x$. The other eigenvalue is $1 - Kb$ (the trace is $2 - Kb$). The PBH test fails at $\lambda = 1$: $\rank[\lambda I - A,\ b] = \rank[0,\ b] = 1 &lt; 2$. Every $w \perp b$ is a left eigenvector orthogonal to the input.</p></details></li>
+<li><p>Why does the observer not appear in the transfer function from $r$ to $y$ of an observer-based controller, and why does that not make it irrelevant?</p>
+<details><summary>Answer</summary><p>In $(x, \tilde x)$ coordinates the error dynamics are not driven by $r$, so the observer modes are uncontrollable from $r$ (<a class="xref" href="#prop-invisible"></a>). They are driven by initial estimation errors, load disturbances ($Bd$) and measurement noise ($-Lv$), and the loop transfer function at the plant input changes from $K(sI - A)^{-1}B$ to $K_{\rm ob}(s)\,C(sI - A)^{-1}B$, which governs robustness (<a href="ch12_robustness.html#ex-doyle">chapter 12</a>).</p></details></li>
+<li><p>Show that $\max\bigl(\abs{S(i\omega)}, \abs{T(i\omega)}\bigr) \ge 1/2$ at every frequency. In <a class="xref" href="#cex-cancel"></a>, which of the four closed-loop maps reveals the instability?</p>
+<details><summary>Answer</summary><p>As in <a class="xref" href="#cor-st"></a>, $1 = \abs{S + T} \le \abs S + \abs T \le 2\max(\abs S, \abs T)$. The map $GS = (s + 1)/\bigl((s - 1)(s + 2)\bigr)$ from load disturbance to output has the pole at $1$; $S$, $T$ and $KS$ are stable.</p></details></li>
+<li><p>The plant $G(s) = s/(s + 1)$ has a zero at the origin. Is the loop with $K(s) = k_i/s$, $k_i &gt; 0$, internally stable?</p>
+<details><summary>Answer</summary><p>No. $\phi = (s + 1)s + s\,k_i = s(s + 1 + k_i)$ has a root at $0$: the integrator cancels the plant zero. $S$, $T$ and $GS$ are stable, but $KS = k_i(s + 1)/\bigl(s(s + 1 + k_i)\bigr)$ has a pole at $0$, so a constant measurement offset makes the input ramp without bound while the output looks fine. By <a class="xref" href="#thm-intstab"></a>, an integrator in $K$ is compatible with internal stability only if $G$ has no zero at the origin, that is, $n_G(0) \neq 0$.</p></details></li>
+</ol>
+</section>
+
+<section class="refs" id="s-refs">
+<h2>Sources and further reading</h2>
+<ul>
+<li>K. J. Åström and R. M. Murray, <i>Feedback Systems</i>, 2nd ed. (Princeton, 2021): ch. 7 (state feedback), ch. 8 (output feedback, observers, separation), ch. 11 (proportional–integral–derivative control, windup), ch. 12 (the gang of four and loop shaping). <a href="https://www.cds.caltech.edu/~murray/amwiki/Second_Edition.html">book site</a><span class="free">Free</span></li>
+<li>J. C. Doyle, B. A. Francis and A. R. Tannenbaum, <i>Feedback Control Theory</i> (Macmillan, 1992), ch. 3: well-posedness, internal stability, asymptotic tracking. <a href="https://www.control.utoronto.ca/people/profs/francis/dft.pdf">PDF</a><span class="free">Free</span></li>
+<li>E. D. Sontag, <i>Mathematical Control Theory</i>, 2nd ed. (Springer, 1998), ch. 5 (feedback and pole shifting) and ch. 7 (observers and dynamic feedback). <a href="https://stuff.mit.edu/afs/athena.mit.edu/user/e/s/esontag/www/mct.html">author page</a><span class="free">Free</span></li>
+<li>C.-T. Chen, <i>Linear System Theory and Design</i>, 4th ed. (Oxford, 2013), ch. 8: state feedback and state estimators. J. P. Hespanha, <i>Linear Systems Theory</i>, 2nd ed. (Princeton, 2018), lectures on state feedback, observers and output feedback.</li>
+<li>W. M. Wonham, "On pole assignment in multi-input controllable linear systems", <i>IEEE Trans. Autom. Control</i> 12 (1967) 660–665. B. C. Moore, "On the flexibility offered by state feedback in multivariable systems beyond closed loop eigenvalue assignment", <i>IEEE Trans. Autom. Control</i> 21 (1976) 689–692. P. Brunovský, "A classification of linear controllable systems", <i>Kybernetika</i> 6 (1970) 173–188. D. G. Luenberger, "Observing the state of a linear system", <i>IEEE Trans. Mil. Electron.</i> 8 (1964) 74–80. H. J. Sussmann and P. V. Kokotović, "The peaking phenomenon and the global stabilization of nonlinear systems", <i>IEEE Trans. Autom. Control</i> 36 (1991) 424–440.</li>
+<li>B. A. Francis and W. M. Wonham, "The internal model principle of control theory", <i>Automatica</i> 12 (1976) 457–465.</li>
+<li>T.-M. Yi, Y. Huang, M. I. Simon and J. Doyle, "Robust perfect adaptation in bacterial chemotaxis through integral feedback control", <i>PNAS</i> 97 (2000) 4649–4653; N. Barkai and S. Leibler, "Robustness in simple biochemical networks", <i>Nature</i> 387 (1997) 913–917; U. Alon, M. G. Surette, N. Barkai and S. Leibler, "Robustness in bacterial chemotaxis", <i>Nature</i> 397 (1999) 168–171.</li>
+</ul>
+</section>
+
+</div>
+</main>
+</div>
+<script>LT.page.init();</script>
+<script>
+(function () {
+  'use strict';
+  const { Plot, ui, mat: M, sys: S, fmt, fmtC } = LT;
+  const capFirst = p => p.el.insertBefore(p.canvas, p.el.firstChild);
+  const finite = a => a.filter(Number.isFinite);
+  const absMax = (a, floor) => finite(a).reduce((m, v) => Math.max(m, Math.abs(v)), floor || 0);
+
+  /* ---------------- Visual 10.1: pole placement and its price ---------------- */
+  (function () {
+    const plants = {
+      dint: { A: [[0, 1], [0, 0]], B: [[0], [1]] },
+      unst: { A: [[0, 1], [1, 0]], B: [[0], [1]] },
+      osc: { A: [[0, 1], [-1, 0]], B: [[0], [1]] },
+      fixed: { A: [[1, 0], [0, -2]], B: [[1], [0]], fixed: -2 }
+    };
+    const st = { plant: 'dint', mode: 'pair', pair: [-1, 1], reals: [-1, -2], x0: [1, 0], msg: '' };
+    const T = 8, h = 0.02, N = Math.round(T / h);
+    const XL = [-6.4, 2.4], YL = 4.4;
+    const sp = new Plot('#place-s', { xlim: [-6.5, 2.5], ylim: [-4.5, 4.5], equal: true, maxH: 360, label: 'Complex plane with open-loop poles, desired closed-loop poles and computed eigenvalues of A minus BK' });
+    const ph = new Plot('#place-phase', { xlim: [-2.7, 2.7], ylim: [-2.7, 2.7], equal: true, maxH: 360, clip: true, xlabel: 'x₁', ylabel: 'x₂', label: 'Phase plane with the closed-loop trajectory from x0' });
+    const px = new Plot('#place-x', { xlim: [0, T], ylim: [-1.5, 1.5], frame: true, aspect: 0.5, minH: 200, xlabel: 't', label: 'Position and velocity against time' });
+    const pu = new Plot('#place-u', { xlim: [0, T], ylim: [-3, 3], frame: true, aspect: 0.5, minH: 200, xlabel: 't', label: 'Input against time' });
+    [sp, ph, px, pu].forEach(capFirst);
+    const isFixed = () => plants[st.plant].fixed != null;
+    const real = () => isFixed() || st.mode === 'real';
+    const poles = () => {
+      if (isFixed()) return [{ re: st.reals[0], im: 0 }, { re: plants[st.plant].fixed, im: 0 }];
+      if (st.mode === 'pair') return [{ re: st.pair[0], im: st.pair[1] }, { re: st.pair[0], im: -st.pair[1] }];
+      return [{ re: st.reals[0], im: 0 }, { re: st.reals[1], im: 0 }];
+    };
+    const gain = () => (isFixed() ? [[1 - st.reals[0], 0]] : S.place(plants[st.plant].A, plants[st.plant].B, poles()));
+    let sim = null;
+    function compute() {
+      const P = plants[st.plant], K = gain(), Acl = M.sub(P.A, M.mul(P.B, K)), E = M.expm(M.scale(Acl, h));
+      const xs = [st.x0.slice()], us = [-M.dot(K[0], st.x0)];
+      let x = st.x0.slice(), blown = false;
+      for (let k = 0; k < N; k++) {
+        x = M.mv(E, x);
+        if (!blown && Math.hypot(x[0], x[1]) > 1e3) blown = true;
+        if (blown) { xs.push([NaN, NaN]); us.push(NaN); } else { xs.push(x.slice()); us.push(-M.dot(K[0], x)); }
+      }
+      sim = { K, Acl, xs, us, blown, ev: M.eig2(Acl).values };
+    }
+    sp.draw = g => {
+      g.poly([[0, -20], [20, -20], [20, 20], [0, 20]], { fill: 'c8', fillAlpha: 0.06, stroke: false });
+      g.vline(0, { color: 'axis', width: 1.5 });
+      g.text([0.15, 4.1], 'unstable', { font: 'ui', italic: false, size: 11.5, color: 'muted' });
+      M.eig2(plants[st.plant].A).values.forEach(z => g.marker([z.re, z.im], { shape: 'x', size: 6, color: 'ink-2', width: 2 }));
+      if (isFixed()) { const f = plants[st.plant].fixed; g.dot([f, 0], { r: 5, color: 'ink-2' }); g.text([f, 0], 'fixed', { font: 'ui', italic: false, size: 12, color: 'ink-2', align: 'center', dy: 24 }); }
+      if (sim) sim.ev.forEach(z => g.dot([z.re, z.im], { r: 11, hollow: true, ring: false, color: 'ink', width: 1.5 }));
+    };
+    const h1 = sp.addHandle({
+      get: () => (real() ? [st.reals[0], 0] : [st.pair[0], st.pair[1]]),
+      set: (x, y) => { if (real()) st.reals[0] = x; else st.pair = [x, Math.min(YL, Math.max(0, y))]; st.msg = ''; update(); },
+      color: 'c7', snap: 0.05
+    });
+    const h2 = sp.addHandle({
+      get: () => (real() ? [st.reals[1], 0] : [st.pair[0], -st.pair[1]]),
+      set: (x, y) => { if (real()) st.reals[1] = x; else st.pair = [x, Math.min(YL, Math.max(0, -y))]; st.msg = ''; update(); },
+      color: 'c7', snap: 0.05
+    });
+    void h1;
+    ph.draw = g => {
+      if (!sim) return;
+      g.field(x => M.mv(sim.Acl, x), { n: 15, len: 10, alpha: 0.32 });
+      const e2 = M.eig2(sim.Acl);
+      if (e2.real && Math.abs(e2.disc) > 1e-9) e2.vectors.forEach(v => { if (v) g.ray([0, 0], v, { color: 'muted', width: 1, dash: [5, 4] }); });
+      g.path(sim.xs, { color: 'c7', width: 2.25 });
+    };
+    ph.addHandle({ get: () => st.x0, set: (x, y) => { st.x0 = [x, y]; update(); }, color: 'c7', snap: 0.05 });
+    px.draw = g => {
+      if (!sim) return;
+      g.path(sim.xs.map((q, k) => [k * h, q[0]]), { color: 'c1', width: 2 });
+      g.path(sim.xs.map((q, k) => [k * h, q[1]]), { color: 'c2', width: 2 });
+    };
+    pu.draw = g => { if (sim) g.path(sim.us.map((u, k) => [k * h, u]), { color: 'c5', width: 2 }); };
+
+    const panel = ui.panel('#place-controls');
+    const selP = panel.select({ id: 'place-plant', label: 'Plant', value: 'dint', options: [
+      ['dint', 'Double integrator: q″ = u'], ['unst', 'Unstable: q″ = q + u'], ['osc', 'Oscillator: q″ = −q + u'], ['fixed', 'Uncontrollable mode']],
+      onChange: v => { st.plant = v; if (v === 'fixed') { st.mode = 'real'; selM.set('real'); } st.msg = ''; sync(); update(); } });
+    const selM = panel.select({ id: 'place-mode', label: 'Desired poles', value: 'pair', options: [['pair', 'complex pair'], ['real', 'two real poles']],
+      onChange: v => { if (isFixed()) { selM.set('real'); return; } st.mode = v; sync(); update(); } });
+    panel.buttons([
+      { label: 'Halve speed', onClick: () => scale(0.5) },
+      { label: 'Double speed', onClick: () => scale(2) },
+      { label: 'Reset', onClick: () => { st.pair = [-1, 1]; st.reals = [-1, -2]; st.x0 = [1, 0]; st.msg = ''; update(); } }
+    ]);
+    const out = panel.readout({});
+    panel.note(ui.legend([
+      { color: 'ink-2', label: 'open-loop pole (cross)', kind: 'dot' }, { color: 'c7', label: 'desired pole, state trajectory', kind: 'dot' },
+      { color: 'c1', label: 'position x₁' }, { color: 'c2', label: 'velocity x₂' }, { color: 'c5', label: 'input u' }]));
+    void selP;
+    function inRange(re, im) { return re >= XL[0] && re <= XL[1] && Math.abs(im) <= YL; }
+    function scale(c) {
+      if (real()) {
+        const r = st.reals.map((v, i) => (i === 0 || !isFixed() ? v * c : v));
+        if (r.every(v => inRange(v, 0))) { st.reals = r; st.msg = ''; } else st.msg = 'edge of the plot reached';
+      } else {
+        const q = [st.pair[0] * c, st.pair[1] * c];
+        if (inRange(q[0], q[1])) { st.pair = q; st.msg = ''; } else st.msg = 'edge of the plot reached';
+      }
+      update();
+    }
+    function sync() { h2.hidden = isFixed(); }
+    function update() {
+      compute();
+      const mx = Math.min(60, absMax(sim.xs.map(q => Math.max(Math.abs(q[0]), Math.abs(q[1]))), 1));
+      px.setLimits(null, [-1.12 * mx, 1.12 * mx]);
+      const mu = Math.min(600, absMax(sim.us, 0.5));
+      pu.setLimits(null, [-1.12 * mu, 1.12 * mu]);
+      const stable = sim.ev.every(z => z.re < -1e-9);
+      const peakU = absMax(sim.us, 0), peakV = absMax(sim.xs.map(q => q[1]), 0);
+      out.set(
+        `${ui.mat(sim.K, 2, { name: 'K' })}` +
+        `<span>eigenvalues of <i>A</i> − <i>BK</i> <span class="num">${sim.ev.map(z => fmtC(z, 2)).join(', ')}</span></span>` +
+        (sim.blown ? '<span class="tag bad">trajectory diverges</span>' :
+          `<span>peak |<i>u</i>| <span class="num">${fmt(peakU, 2)}</span></span><span>peak |<i>x</i><sub>2</sub>| <span class="num">${fmt(peakV, 2)}</span></span>`) +
+        `<span>‖<i>K</i>‖ <span class="num">${fmt(M.norm2(sim.K), 2)}</span></span>` +
+        (stable ? '<span class="tag good">closed loop stable</span>' : '<span class="tag bad">closed loop not stable</span>') +
+        (isFixed() ? '<span class="tag">eigenvalue −2 is uncontrollable: fixed</span>' : '') +
+        (st.msg ? `<span class="tag">${st.msg}</span>` : '')
+      );
+      sp.redraw(); ph.redraw(); px.redraw(); pu.redraw();
+    }
+    sync(); update();
+  })();
+
+  /* ---------------- Visual 10.2: observer and separation ---------------- */
+  (function () {
+    const A = [[0, 1], [-1, 0]], B = [[0], [1]], C = [[1, 0]];
+    const K = S.place(A, B, [{ re: -1, im: 1 }, { re: -1, im: -1 }]);
+    const st = { wo: 2, sigma: 0.05, fb: true, seed: 11 };
+    const T = 16, h = 0.02, N = Math.round(T / h), x0 = [1, 0], xh0 = [0, 0];
+    const gainL = wo => { const c = wo / Math.SQRT2; return M.T(S.place(M.T(A), M.T(C), [{ re: -c, im: c }, { re: -c, im: -c }])); };
+    const pos = new Plot('#obs-pos', { xlim: [0, T], ylim: [-1.6, 1.6], frame: true, aspect: 0.52, minH: 200, xlabel: 't', label: 'True position, estimate and measurements' });
+    const vel = new Plot('#obs-vel', { xlim: [0, T], ylim: [-1.6, 1.6], frame: true, aspect: 0.52, minH: 200, xlabel: 't', label: 'True velocity and its estimate' });
+    const err = new Plot('#obs-err', { xlim: [0, T], ylim: [1e-4, 4], logy: true, frame: true, aspect: 0.52, minH: 200, xlabel: 't', label: 'Norm of the estimation error on a log scale' });
+    const spec = new Plot('#obs-spec', { xlim: [-5, 1.6], ylim: [-4.6, 4.6], equal: true, maxH: 300, label: 'Controller eigenvalues, observer eigenvalues and eigenvalues of the full closed loop' });
+    [pos, vel, err, spec].forEach(capFirst);
+    let R = null;
+    function run(L, sigma) {
+      const f = st.fb ? 1 : 0, BK = M.scale(M.mul(B, K), f), LC = M.mul(L, C);
+      const F = M.blocks([[A, M.scale(BK, -1)], [LC, M.sub(M.sub(A, BK), LC)]]);
+      const G = [[0], [0], [L[0][0]], [L[1][0]]];
+      const d = S.c2d(F, G, h), rnd = M.randn(st.seed), gcol = M.col(d.Bd, 0);
+      let z = [x0[0], x0[1], xh0[0], xh0[1]];
+      const zs = [z.slice()], ys = [];
+      for (let k = 0; k < N; k++) {
+        const v = sigma * rnd();
+        ys.push(z[0] + v);
+        z = M.vadd(M.mv(d.Ad, z), M.vscale(gcol, v));
+        zs.push(z.slice());
+      }
+      return { zs, ys, F };
+    }
+    function compute() {
+      const L = gainL(st.wo), noisy = run(L, st.sigma), clean = run(L, 0);
+      const en = q => Math.max(1e-7, Math.hypot(q[0] - q[2], q[1] - q[3]));
+      const evF = M.eigvals(noisy.F);
+      const evK = M.eig2(st.fb ? M.sub(A, M.mul(B, K)) : A).values, evL = M.eig2(M.sub(A, M.mul(L, C))).values;
+      const union = evK.concat(evL);
+      const dev = evF.reduce((m, z) => Math.max(m, Math.min(...union.map(w => Math.hypot(z.re - w.re, z.im - w.im)))), 0);
+      let ss = 0, cnt = 0; for (let k = Math.round(N / 2); k <= N; k++) { const e = en(noisy.zs[k]); ss += e * e; cnt++; }
+      let t10 = NaN; const e0 = en(clean.zs[0]); for (let k = 0; k <= N; k++) { let ok = true; for (let j = k; j <= N; j += 5) if (en(clean.zs[j]) > 0.1 * e0) { ok = false; break; } if (ok) { t10 = k * h; break; } }
+      R = { L, noisy, clean, en, evF, evK, evL, dev, rms: Math.sqrt(ss / cnt), t10 };
+    }
+    pos.draw = g => {
+      if (!R) return;
+      if (st.sigma > 0) for (let k = 0; k < N; k += 4) g.dot([k * h, R.noisy.ys[k]], { r: 1.7, color: 'muted', alpha: 0.65, ring: false });
+      g.path(R.noisy.zs.map((q, k) => [k * h, q[0]]), { color: 'c1', width: 2.25 });
+      g.path(R.noisy.zs.map((q, k) => [k * h, q[2]]), { color: 'c2', width: 1.75 });
+    };
+    vel.draw = g => {
+      if (!R) return;
+      g.path(R.noisy.zs.map((q, k) => [k * h, q[1]]), { color: 'c1', width: 2.25 });
+      g.path(R.noisy.zs.map((q, k) => [k * h, q[3]]), { color: 'c2', width: 1.75 });
+    };
+    err.draw = g => {
+      if (!R) return;
+      g.path(R.clean.zs.map((q, k) => [k * h, R.en(q)]), { color: 'muted', width: 1.5, dash: [6, 4] });
+      g.path(R.noisy.zs.map((q, k) => [k * h, R.en(q)]), { color: 'c8', width: 1.75 });
+    };
+    spec.draw = g => {
+      if (!R) return;
+      g.poly([[0, -20], [20, -20], [20, 20], [0, 20]], { fill: 'c8', fillAlpha: 0.06, stroke: false });
+      g.vline(0, { color: 'axis', width: 1.5 });
+      R.evK.forEach(z => g.dot([z.re, z.im], { r: 5.5, color: 'c3' }));
+      R.evL.forEach(z => g.dot([z.re, z.im], { r: 5.5, color: 'c2' }));
+      R.evF.forEach(z => g.dot([z.re, z.im], { r: 10.5, hollow: true, ring: false, color: 'ink', width: 1.5 }));
+    };
+    const panel = ui.panel('#obs-controls');
+    panel.slider({ id: 'obs-wo', label: 'Observer speed $\\omega_o$', min: 0.3, max: 6, step: 0.05, value: st.wo, digits: 2, onInput: LT.throttle(v => { st.wo = v; update(); }) });
+    panel.slider({ id: 'obs-sigma', label: 'Noise std of $v$', min: 0, max: 0.3, step: 0.005, value: st.sigma, digits: 3, onInput: LT.throttle(v => { st.sigma = v; update(); }) });
+    panel.toggle({ id: 'obs-fb', label: 'Feedback $u = -K\\hat x$', value: st.fb, onChange: v => { st.fb = v; update(); } });
+    panel.buttons([{ label: 'New noise sample', onClick: () => { st.seed = (st.seed * 7 + 13) % 9973; update(); } }]);
+    const out = panel.readout({});
+    panel.note(ui.legend([
+      { color: 'c1', label: 'true state' }, { color: 'c2', label: 'estimate, observer eigenvalues' }, { color: 'muted', label: 'measurements', kind: 'dot' },
+      { color: 'c8', label: 'error norm' }, { color: 'c3', label: 'eigenvalues of A − BK (of A without feedback)', kind: 'dot' }]));
+    function update() {
+      compute();
+      out.set(
+        `${ui.mat(R.L, 2, { name: 'L' })}${ui.mat(K, 2, { name: 'K' })}` +
+        `<span>eigenvalues of the 4 × 4 closed loop <span class="num">${R.evF.map(z => fmtC(z, 2)).join(', ')}</span></span>` +
+        `<span>distance to the union <span class="num">${LT.fmtSig(R.dev, 2)}</span></span>` +
+        `<span>noise-free error below 10% after <span class="num">${Number.isFinite(R.t10) ? fmt(R.t10, 2) : '&gt; 16'}</span></span>` +
+        `<span>root-mean-square error for <i>t</i> ≥ 8 <span class="num">${fmt(R.rms, 3)}</span></span>` +
+        (st.fb ? '<span class="tag good">output feedback on</span>' : '<span class="tag">estimation only, u = 0</span>')
+      );
+      pos.redraw(); vel.redraw(); err.redraw(); spec.redraw();
+    }
+    update();
+  })();
+
+  /* ---------------- Visual 10.3: integral feedback and perfect adaptation ---------------- */
+  (function () {
+    const st = { a: 1, b: 1, kp: 2, ki: 2, d0: -0.8 };
+    const T = 20, h = 0.02, N = Math.round(T / h), kD = Math.round(10 / h), r = 1;
+    const py = new Plot('#int-y', { xlim: [0, T], ylim: [-0.2, 1.6], frame: true, aspect: 0.56, minH: 210, xlabel: 't', label: 'Output under proportional and proportional-integral control' });
+    const pu = new Plot('#int-u', { xlim: [0, T], ylim: [-0.5, 3], frame: true, aspect: 0.56, minH: 210, xlabel: 't', label: 'Inputs of both controllers and the input that holds the output at the reference' });
+    [py, pu].forEach(capFirst);
+    let R = null;
+    function simulate() {
+      const { a, b, kp, ki, d0 } = st;
+      const dP = S.c2d([[-(a + b * kp)]], [[b * kp, b]], h);
+      const dI = S.c2d([[-(a + b * kp), b * ki], [-1, 0]], [[b * kp, b], [1, 0]], h);
+      let yP = 0, zI = [0, 0];
+      const res = { yP: [], yI: [], uP: [], uI: [] };
+      const cap = v => (Number.isFinite(v) && Math.abs(v) < 1e4 ? v : NaN);
+      for (let k = 0; k <= N; k++) {
+        const d = k >= kD ? d0 : 0;
+        res.yP.push(cap(yP)); res.uP.push(cap(kp * (r - yP)));
+        res.yI.push(cap(zI[0])); res.uI.push(cap(kp * (r - zI[0]) + ki * zI[1]));
+        yP = dP.Ad[0][0] * yP + dP.Bd[0][0] * r + dP.Bd[0][1] * d;
+        zI = M.vadd(M.mv(dI.Ad, zI), M.mv(dI.Bd, [r, d]));
+      }
+      const al = a + b * kp, disc = al * al - 4 * b * ki;
+      const piPoles = disc >= 0 ? [{ re: (-al + Math.sqrt(disc)) / 2, im: 0 }, { re: (-al - Math.sqrt(disc)) / 2, im: 0 }] : [{ re: -al / 2, im: Math.sqrt(-disc) / 2 }, { re: -al / 2, im: -Math.sqrt(-disc) / 2 }];
+      R = Object.assign(res, { pPole: -al, piPoles, eInf: al > 0 ? (a * r - b * d0) / al : NaN });
+    }
+    py.draw = g => {
+      if (!R) return;
+      g.vline(10, { color: 'muted', width: 1, dash: [3, 4] });
+      g.hline(r, { color: 'ink-2', width: 1.25, dash: [6, 4] });
+      g.path(R.yP.map((y, k) => [k * h, y]), { color: 'c2', width: 2 });
+      g.path(R.yI.map((y, k) => [k * h, y]), { color: 'c3', width: 2.25 });
+    };
+    py.after = g => { g.text([py.X(10) + 6, py.Y(py.ylim[1]) + 14], 'disturbance on', { px: true, font: 'ui', italic: false, size: 11.5, color: 'muted' }); };
+    pu.draw = g => {
+      if (!R) return;
+      const need = st.a * r / st.b;
+      g.vline(10, { color: 'muted', width: 1, dash: [3, 4] });
+      g.path([[0, need], [10, need], [10, need - st.d0], [T, need - st.d0]], { color: 'ink-2', width: 1.25, dash: [6, 4] });
+      g.path(R.uP.map((u, k) => [k * h, u]), { color: 'c2', width: 2 });
+      g.path(R.uI.map((u, k) => [k * h, u]), { color: 'c3', width: 2.25 });
+    };
+    const panel = ui.panel('#int-controls');
+    const presets = { nom: [1, 1], slow: [0.2, 1], weak: [1, 0.3], unst: [-0.5, 1] };
+    panel.select({ id: 'int-preset', label: 'Plant', value: 'nom', options: [['nom', 'Nominal (a = 1, b = 1)'], ['slow', 'Slow plant (a = 0.2)'], ['weak', 'Weak actuator (b = 0.3)'], ['unst', 'Unstable plant (a = −0.5)']],
+      onChange: v => { const p = presets[v]; st.a = p[0]; st.b = p[1]; sa.set(p[0]); sb.set(p[1]); update(); } });
+    const sa = panel.slider({ id: 'int-a', label: 'Plant $a$', min: -1, max: 3, step: 0.05, value: st.a, onInput: v => { st.a = v; update(); } });
+    const sb = panel.slider({ id: 'int-b', label: 'Plant $b$', min: 0.1, max: 3, step: 0.05, value: st.b, onInput: v => { st.b = v; update(); } });
+    panel.slider({ id: 'int-kp', label: 'Gain $k_p$', min: 0, max: 6, step: 0.05, value: st.kp, onInput: v => { st.kp = v; update(); } });
+    panel.slider({ id: 'int-ki', label: 'Gain $k_i$', min: 0, max: 4, step: 0.05, value: st.ki, onInput: v => { st.ki = v; update(); } });
+    panel.slider({ id: 'int-d', label: 'Disturbance $d_0$', min: -1.5, max: 1.5, step: 0.05, value: st.d0, onInput: v => { st.d0 = v; update(); } });
+    const out = panel.readout({});
+    panel.note(ui.legend([{ color: 'c2', label: 'proportional' }, { color: 'c3', label: 'proportional–integral' }, { color: 'ink-2', label: 'reference r; required input', kind: 'dash' }]));
+    function update() {
+      simulate();
+      const all = finite(R.yP.concat(R.yI));
+      const lo = Math.max(-5, Math.min(-0.2, ...all) - 0.1), hi = Math.min(5, Math.max(1.6, ...all) + 0.1);
+      py.setLimits(null, [lo, hi]);
+      const need = st.a * r / st.b, allU = finite(R.uP.concat(R.uI)).concat([need, need - st.d0]);
+      const ulo = Math.max(-12, Math.min(-0.5, ...allU) - 0.2), uhi = Math.min(12, Math.max(1, ...allU) + 0.3);
+      pu.setLimits(null, [ulo, uhi]);
+      const stP = R.pPole < -1e-9, stI = R.piPoles.every(z => z.re < -1e-9);
+      const eP = r - R.yP[N], eI = r - R.yI[N];
+      out.set(
+        `<span>proportional: pole <span class="num">${fmt(R.pPole, 2)}</span></span>` +
+        (stP ? `<span><i>e</i><sub>∞</sub> predicted <span class="num">${fmt(R.eInf, 3)}</span>, simulated <i>e</i>(20) <span class="num">${fmt(eP, 3)}</span></span>` : '<span class="tag bad">proportional loop unstable</span>') +
+        `<span>proportional–integral: poles <span class="num">${R.piPoles.map(z => fmtC(z, 2)).join(', ')}</span></span>` +
+        (stI ? `<span>simulated <i>e</i>(20) <span class="num">${fmt(eI, 3)}</span></span><span class="tag good">stable: error tends to 0</span>` : '<span class="tag bad">integral loop unstable</span>')
+      );
+      py.redraw(); pu.redraw();
+    }
+    update();
+  })();
+})();
+</script>
+</body>
+</html>
